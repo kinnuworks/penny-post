@@ -31,28 +31,14 @@ import {
 import { deviceUtcOffsetMinutes } from './delivery'
 import { drawPenPal, flushExchange, noteForExchange } from './exchange'
 import { flushOutbox, forget, keepForUpload } from './outbox'
+import { PostProblem } from './problem'
 import { isDeclined } from '../../utils/describe-wallet-error'
 import { useSend } from './use-send'
 
 // .skr names live on mainnet whichever network the app is pointed at.
 const mainnetRpc = createSolanaRpc(MAINNET_RPC_URL)
 
-/** A failure the reader can do something about. `reason` picks the sentence shown. */
-export class PostProblem extends Error {
-  constructor(
-    public reason:
-      | 'no-such-reader'
-      | 'nobody-waiting'
-      | 'to-yourself'
-      | 'no-free-stamp'
-      | 'no-genesis-token'
-      | 'not-arrived'
-      | 'office-closed'
-      | 'sealed-for-another-phone',
-  ) {
-    super(reason)
-  }
-}
+export { PostProblem }
 
 function clusterOf(chain: string): Cluster {
   return chain === 'solana:mainnet' ? 'mainnet' : 'devnet'

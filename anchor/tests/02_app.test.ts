@@ -1,5 +1,5 @@
 import { PENNY_POST_ERROR__PRICE_BELOW_FLOOR } from '../src'
-import { type KeyPairSigner } from '@solana/kit'
+import { generateKeyPairSigner, type Instruction, type KeyPairSigner } from '@solana/kit'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { encodeCard, hashCard, type CardContent } from '../../src/features/card/card'
 import {
@@ -16,6 +16,8 @@ import {
   newCardId,
   priceToReach,
 } from '../../src/features/post/chain'
+import { dryRun } from '../../src/features/post/dry-run'
+import { PostProblem } from '../../src/features/post/problem'
 import { errorCodeOf, giveTokens, newWallet, rpc, send, SKR, SKR_MINT, skrBalance } from './harness'
 
 // Drives the program through the same functions the app calls, so the code
@@ -131,5 +133,73 @@ describe('the app, talking to the program', () => {
     const tooLow = await buildSetLetterbox({ ...settings, price: postOffice.floorPrice - 1n })
     expect(await errorCodeOf(send(reader, tooLow))).toBe(PENNY_POST_ERROR__PRICE_BELOW_FLOOR)
     expect((await fetchLetterbox(rpc, reader.address))?.price).toBe(12n * SKR)
+  })
+
+  // --- the dry run that goes ahead of the wallet ------------------------------
+
+  /** The reason the dry run gives for refusing, or null if it lets the instructions through. */
+  async function refusal(payer: KeyPairSigner, instructions: Instruction[]): Promise<string | null> {
+    try {
+      await dryRun(rpc, payer.address, instructions)
+      return null
+    } catch (error) {
+      if (error instanceof PostProblem) {
+        return error.reason
+      }
+      throw error
+    }
+  }
+
+  function aCardFrom(sender: KeyPairSigner, postage: bigint) {
+    return buildPostCard({
+      cardId: newCardId(),
+      contentHash: hashCard(encodeCard(card)),
+      express: false,
+      postage,
+      postageMint: SKR_MINT,
+      recipient: reader.address,
+      sender,
+      stamp: card.stampId,
+    })
+  }
+
+  it('dry-runs a good card without posting it', async () => {
+    const before = await skrBalance(writer.address)
+    const { instructions } = await aCardFrom(writer, 12n * SKR)
+
+    expect(await refusal(writer, instructions)).toBeNull()
+    expect(await skrBalance(writer.address)).toBe(before)
+    expect(await listCardsFrom(rpc, writer.address)).toEqual([])
+  })
+
+  it('names a price that has gone up', async () => {
+    const { instructions } = await aCardFrom(writer, 5n * SKR)
+    expect(await refusal(writer, instructions)).toBe('price-changed')
+  })
+
+  it('names a wallet with too little postage, or none at all', async () => {
+    const [empty, nearlyEmpty] = await Promise.all([newWallet(), newWallet()])
+    await giveTokens(nearlyEmpty.address, SKR_MINT, 1n * SKR)
+
+    expect(await refusal(empty, (await aCardFrom(empty, 12n * SKR)).instructions)).toBe('short-of-postage')
+    expect(await refusal(nearlyEmpty, (await aCardFrom(nearlyEmpty, 12n * SKR)).instructions)).toBe('short-of-postage')
+  })
+
+  it('names a wallet with too little SOL, or none at all', async () => {
+    const [unseen, nearlyEmpty] = await Promise.all([generateKeyPairSigner(), newWallet(0.0001)])
+    await Promise.all([unseen, nearlyEmpty].map((wallet) => giveTokens(wallet.address, SKR_MINT, 20n * SKR)))
+
+    expect(await refusal(unseen, (await aCardFrom(unseen, 12n * SKR)).instructions)).toBe('short-of-sol')
+    expect(await refusal(nearlyEmpty, (await aCardFrom(nearlyEmpty, 12n * SKR)).instructions)).toBe('short-of-sol')
+  })
+
+  it('names a card that has not arrived yet', async () => {
+    await send(writer, (await aCardFrom(writer, 12n * SKR)).instructions)
+    const [posted] = await listCardsTo(rpc, reader.address)
+
+    const opening = await buildOpenCard({ card: posted, postageMint: SKR_MINT, recipient: reader })
+    expect(await refusal(reader, opening)).toBe('too-early')
+
+    await send(reader, await buildReturnCard({ caller: reader, card: posted, postageMint: SKR_MINT }))
   })
 })

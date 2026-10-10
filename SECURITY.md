@@ -4,7 +4,7 @@ Penny Post holds other people's postage for up to a week, so this file says plai
 
 ## Status
 
-The program has 22 unit tests and 30 end-to-end tests, which run on a local fork of mainnet against the real SKR mint and a real Seeker Genesis Token. It has not been deployed, the app has not been run on a phone, and nobody outside the project has reviewed any of it. Do not send it funds you would mind losing.
+The program has 22 unit tests and 36 end-to-end tests, which run on a local fork of mainnet against the real SKR mint and a real Seeker Genesis Token. It has not been deployed, the app has not been run on a phone, and nobody outside the project has reviewed any of it. Do not send it funds you would mind losing.
 
 ## What the program trusts
 

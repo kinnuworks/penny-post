@@ -14,10 +14,11 @@ import {
 } from '@solana/kit'
 import { useMobileWallet } from '@wallet-ui/react-native-kit'
 import { waitForConfirmation } from '../../utils/wait-for-confirmation'
+import { dryRun } from './dry-run'
 
 /**
- * Sends instructions through the wallet with Mobile Wallet Adapter, then waits
- * until the cluster confirms them.
+ * Dry-runs the instructions, sends them through the wallet with Mobile Wallet
+ * Adapter, then waits until the cluster confirms them.
  *
  * A signature coming back from the wallet only means the wallet agreed. The
  * transaction can still fail on-chain, so nothing is treated as done until
@@ -39,6 +40,9 @@ export function useSend() {
     // so the same instance pays the fee and is handed to the instruction builders.
     const signer = getTransactionSigner(account.address, minContextSlot)
     const instructions = await build(signer)
+
+    // Ask the cluster first. A card the program would refuse never reaches the wallet.
+    await dryRun(client.rpc, account.address, instructions)
 
     const message = pipe(
       createTransactionMessage({ version: 0 }),
