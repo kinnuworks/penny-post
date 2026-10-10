@@ -65,6 +65,7 @@ export type PostCardInstruction<
   TAccountRecipientLetterbox extends string | AccountMeta<string> = string,
   TAccountSenderToken extends string | AccountMeta<string> = string,
   TAccountSenderSeal extends string | AccountMeta<string> = string,
+  TAccountSgtToken extends string | AccountMeta<string> = string,
   TAccountPostOffice extends string | AccountMeta<string> = string,
   TAccountPostageMint extends string | AccountMeta<string> = string,
   TAccountTokenProgram extends string | AccountMeta<string> = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
@@ -85,6 +86,7 @@ export type PostCardInstruction<
         : TAccountRecipientLetterbox,
       TAccountSenderToken extends string ? WritableAccount<TAccountSenderToken> : TAccountSenderToken,
       TAccountSenderSeal extends string ? WritableAccount<TAccountSenderSeal> : TAccountSenderSeal,
+      TAccountSgtToken extends string ? ReadonlyAccount<TAccountSgtToken> : TAccountSgtToken,
       TAccountPostOffice extends string ? ReadonlyAccount<TAccountPostOffice> : TAccountPostOffice,
       TAccountPostageMint extends string ? WritableAccount<TAccountPostageMint> : TAccountPostageMint,
       TAccountTokenProgram extends string ? ReadonlyAccount<TAccountTokenProgram> : TAccountTokenProgram,
@@ -100,6 +102,7 @@ export type PostCardInstructionData = {
   contentHash: ReadonlyUint8Array
   stamp: number
   express: boolean
+  maxExpressFee: bigint
 }
 
 export type PostCardInstructionDataArgs = {
@@ -108,6 +111,7 @@ export type PostCardInstructionDataArgs = {
   contentHash: ReadonlyUint8Array
   stamp: number
   express: boolean
+  maxExpressFee: number | bigint
 }
 
 export function getPostCardInstructionDataEncoder(): FixedSizeEncoder<PostCardInstructionDataArgs> {
@@ -119,6 +123,7 @@ export function getPostCardInstructionDataEncoder(): FixedSizeEncoder<PostCardIn
       ['contentHash', fixEncoderSize(getBytesEncoder(), 32)],
       ['stamp', getU16Encoder()],
       ['express', getBooleanEncoder()],
+      ['maxExpressFee', getU64Encoder()],
     ]),
     (value) => ({ ...value, discriminator: POST_CARD_DISCRIMINATOR }),
   )
@@ -132,6 +137,7 @@ export function getPostCardInstructionDataDecoder(): FixedSizeDecoder<PostCardIn
     ['contentHash', fixDecoderSize(getBytesDecoder(), 32)],
     ['stamp', getU16Decoder()],
     ['express', getBooleanDecoder()],
+    ['maxExpressFee', getU64Decoder()],
   ])
 }
 
@@ -150,6 +156,7 @@ export type PostCardAsyncInput<
   TAccountRecipientLetterbox extends InstructionAccountInput = InstructionAccountInput,
   TAccountSenderToken extends InstructionAccountInput = InstructionAccountInput,
   TAccountSenderSeal extends InstructionAccountInput = InstructionAccountInput,
+  TAccountSgtToken extends InstructionAccountInput = InstructionAccountInput,
   TAccountPostOffice extends InstructionAccountInput = InstructionAccountInput,
   TAccountPostageMint extends InstructionAccountInput = InstructionAccountInput,
   TAccountTokenProgram extends InstructionAccountInput = InstructionAccountInput,
@@ -168,6 +175,11 @@ export type PostCardAsyncInput<
   recipientLetterbox?: TAccountRecipientLetterbox
   senderToken?: TAccountSenderToken
   senderSeal?: TAccountSenderSeal
+  /**
+   * must be owned by Token-2022, and the handler requires that it still
+   * holds the seal's token for the sender.
+   */
+  sgtToken?: TAccountSgtToken
   postOffice?: TAccountPostOffice
   postageMint: TAccountPostageMint
   tokenProgram?: TAccountTokenProgram
@@ -177,6 +189,7 @@ export type PostCardAsyncInput<
   contentHash: PostCardInstructionDataArgs['contentHash']
   stamp: PostCardInstructionDataArgs['stamp']
   express: PostCardInstructionDataArgs['express']
+  maxExpressFee: PostCardInstructionDataArgs['maxExpressFee']
 }
 
 export async function getPostCardInstructionAsync<
@@ -187,6 +200,7 @@ export async function getPostCardInstructionAsync<
   TAccountRecipientLetterbox extends InstructionAccountInput,
   TAccountSenderToken extends InstructionAccountInput,
   TAccountSenderSeal extends InstructionAccountInput,
+  TAccountSgtToken extends InstructionAccountInput,
   TAccountPostOffice extends InstructionAccountInput,
   TAccountPostageMint extends InstructionAccountInput,
   TAccountTokenProgram extends InstructionAccountInput,
@@ -201,6 +215,7 @@ export async function getPostCardInstructionAsync<
     TAccountRecipientLetterbox,
     TAccountSenderToken,
     TAccountSenderSeal,
+    TAccountSgtToken,
     TAccountPostOffice,
     TAccountPostageMint,
     TAccountTokenProgram,
@@ -220,6 +235,7 @@ export async function getPostCardInstructionAsync<
     >,
     ResolvedInstructionAccountMeta<TAccountSenderToken, InstructionAccountInputAddress<TAccountSenderToken>>,
     ResolvedInstructionAccountMeta<TAccountSenderSeal, InstructionAccountInputAddress<TAccountSenderSeal>>,
+    ResolvedInstructionAccountMeta<TAccountSgtToken, InstructionAccountInputAddress<TAccountSgtToken>>,
     ResolvedInstructionAccountMeta<TAccountPostOffice, InstructionAccountInputAddress<TAccountPostOffice>>,
     ResolvedInstructionAccountMeta<TAccountPostageMint, InstructionAccountInputAddress<TAccountPostageMint>>,
     ResolvedInstructionAccountMeta<TAccountTokenProgram, InstructionAccountInputAddress<TAccountTokenProgram>>,
@@ -241,6 +257,7 @@ export async function getPostCardInstructionAsync<
     recipientLetterbox: { value: input.recipientLetterbox ?? null, isSigner: false, isWritable: true },
     senderToken: { value: input.senderToken ?? null, isSigner: false, isWritable: true },
     senderSeal: { value: input.senderSeal ?? null, isSigner: false, isWritable: true },
+    sgtToken: { value: input.sgtToken ?? null, isSigner: false, isWritable: false },
     postOffice: { value: input.postOffice ?? null, isSigner: false, isWritable: false },
     postageMint: { value: input.postageMint ?? null, isSigner: false, isWritable: true },
     tokenProgram: { value: input.tokenProgram ?? null, isSigner: false, isWritable: false },
@@ -293,6 +310,7 @@ export async function getPostCardInstructionAsync<
       getAccountMeta('recipientLetterbox', accounts.recipientLetterbox),
       getAccountMeta('senderToken', accounts.senderToken),
       getAccountMeta('senderSeal', accounts.senderSeal),
+      getAccountMeta('sgtToken', accounts.sgtToken),
       getAccountMeta('postOffice', accounts.postOffice),
       getAccountMeta('postageMint', accounts.postageMint),
       getAccountMeta('tokenProgram', accounts.tokenProgram),
@@ -312,6 +330,7 @@ export async function getPostCardInstructionAsync<
     >,
     ResolvedInstructionAccountMeta<TAccountSenderToken, InstructionAccountInputAddress<TAccountSenderToken>>,
     ResolvedInstructionAccountMeta<TAccountSenderSeal, InstructionAccountInputAddress<TAccountSenderSeal>>,
+    ResolvedInstructionAccountMeta<TAccountSgtToken, InstructionAccountInputAddress<TAccountSgtToken>>,
     ResolvedInstructionAccountMeta<TAccountPostOffice, InstructionAccountInputAddress<TAccountPostOffice>>,
     ResolvedInstructionAccountMeta<TAccountPostageMint, InstructionAccountInputAddress<TAccountPostageMint>>,
     ResolvedInstructionAccountMeta<TAccountTokenProgram, InstructionAccountInputAddress<TAccountTokenProgram>>,
@@ -327,6 +346,7 @@ export type PostCardInput<
   TAccountRecipientLetterbox extends InstructionAccountInput = InstructionAccountInput,
   TAccountSenderToken extends InstructionAccountInput = InstructionAccountInput,
   TAccountSenderSeal extends InstructionAccountInput = InstructionAccountInput,
+  TAccountSgtToken extends InstructionAccountInput = InstructionAccountInput,
   TAccountPostOffice extends InstructionAccountInput = InstructionAccountInput,
   TAccountPostageMint extends InstructionAccountInput = InstructionAccountInput,
   TAccountTokenProgram extends InstructionAccountInput = InstructionAccountInput,
@@ -345,6 +365,11 @@ export type PostCardInput<
   recipientLetterbox: TAccountRecipientLetterbox
   senderToken?: TAccountSenderToken
   senderSeal?: TAccountSenderSeal
+  /**
+   * must be owned by Token-2022, and the handler requires that it still
+   * holds the seal's token for the sender.
+   */
+  sgtToken?: TAccountSgtToken
   postOffice: TAccountPostOffice
   postageMint: TAccountPostageMint
   tokenProgram?: TAccountTokenProgram
@@ -354,6 +379,7 @@ export type PostCardInput<
   contentHash: PostCardInstructionDataArgs['contentHash']
   stamp: PostCardInstructionDataArgs['stamp']
   express: PostCardInstructionDataArgs['express']
+  maxExpressFee: PostCardInstructionDataArgs['maxExpressFee']
 }
 
 export function getPostCardInstruction<
@@ -364,6 +390,7 @@ export function getPostCardInstruction<
   TAccountRecipientLetterbox extends InstructionAccountInput,
   TAccountSenderToken extends InstructionAccountInput,
   TAccountSenderSeal extends InstructionAccountInput,
+  TAccountSgtToken extends InstructionAccountInput,
   TAccountPostOffice extends InstructionAccountInput,
   TAccountPostageMint extends InstructionAccountInput,
   TAccountTokenProgram extends InstructionAccountInput,
@@ -378,6 +405,7 @@ export function getPostCardInstruction<
     TAccountRecipientLetterbox,
     TAccountSenderToken,
     TAccountSenderSeal,
+    TAccountSgtToken,
     TAccountPostOffice,
     TAccountPostageMint,
     TAccountTokenProgram,
@@ -396,6 +424,7 @@ export function getPostCardInstruction<
   >,
   ResolvedInstructionAccountMeta<TAccountSenderToken, InstructionAccountInputAddress<TAccountSenderToken>>,
   ResolvedInstructionAccountMeta<TAccountSenderSeal, InstructionAccountInputAddress<TAccountSenderSeal>>,
+  ResolvedInstructionAccountMeta<TAccountSgtToken, InstructionAccountInputAddress<TAccountSgtToken>>,
   ResolvedInstructionAccountMeta<TAccountPostOffice, InstructionAccountInputAddress<TAccountPostOffice>>,
   ResolvedInstructionAccountMeta<TAccountPostageMint, InstructionAccountInputAddress<TAccountPostageMint>>,
   ResolvedInstructionAccountMeta<TAccountTokenProgram, InstructionAccountInputAddress<TAccountTokenProgram>>,
@@ -416,6 +445,7 @@ export function getPostCardInstruction<
     recipientLetterbox: { value: input.recipientLetterbox ?? null, isSigner: false, isWritable: true },
     senderToken: { value: input.senderToken ?? null, isSigner: false, isWritable: true },
     senderSeal: { value: input.senderSeal ?? null, isSigner: false, isWritable: true },
+    sgtToken: { value: input.sgtToken ?? null, isSigner: false, isWritable: false },
     postOffice: { value: input.postOffice ?? null, isSigner: false, isWritable: false },
     postageMint: { value: input.postageMint ?? null, isSigner: false, isWritable: true },
     tokenProgram: { value: input.tokenProgram ?? null, isSigner: false, isWritable: false },
@@ -444,6 +474,7 @@ export function getPostCardInstruction<
       getAccountMeta('recipientLetterbox', accounts.recipientLetterbox),
       getAccountMeta('senderToken', accounts.senderToken),
       getAccountMeta('senderSeal', accounts.senderSeal),
+      getAccountMeta('sgtToken', accounts.sgtToken),
       getAccountMeta('postOffice', accounts.postOffice),
       getAccountMeta('postageMint', accounts.postageMint),
       getAccountMeta('tokenProgram', accounts.tokenProgram),
@@ -463,6 +494,7 @@ export function getPostCardInstruction<
     >,
     ResolvedInstructionAccountMeta<TAccountSenderToken, InstructionAccountInputAddress<TAccountSenderToken>>,
     ResolvedInstructionAccountMeta<TAccountSenderSeal, InstructionAccountInputAddress<TAccountSenderSeal>>,
+    ResolvedInstructionAccountMeta<TAccountSgtToken, InstructionAccountInputAddress<TAccountSgtToken>>,
     ResolvedInstructionAccountMeta<TAccountPostOffice, InstructionAccountInputAddress<TAccountPostOffice>>,
     ResolvedInstructionAccountMeta<TAccountPostageMint, InstructionAccountInputAddress<TAccountPostageMint>>,
     ResolvedInstructionAccountMeta<TAccountTokenProgram, InstructionAccountInputAddress<TAccountTokenProgram>>,
@@ -489,10 +521,15 @@ export type ParsedPostCardInstruction<
     recipientLetterbox: TAccountMetas[4]
     senderToken?: TAccountMetas[5] | undefined
     senderSeal?: TAccountMetas[6] | undefined
-    postOffice: TAccountMetas[7]
-    postageMint: TAccountMetas[8]
-    tokenProgram: TAccountMetas[9]
-    systemProgram: TAccountMetas[10]
+    /**
+     * must be owned by Token-2022, and the handler requires that it still
+     * holds the seal's token for the sender.
+     */
+    sgtToken?: TAccountMetas[7] | undefined
+    postOffice: TAccountMetas[8]
+    postageMint: TAccountMetas[9]
+    tokenProgram: TAccountMetas[10]
+    systemProgram: TAccountMetas[11]
   }
   data: PostCardInstructionData
 }
@@ -500,10 +537,10 @@ export type ParsedPostCardInstruction<
 export function parsePostCardInstruction<TProgram extends string, TAccountMetas extends readonly AccountMeta[]>(
   instruction: Instruction<TProgram> & InstructionWithAccounts<TAccountMetas> & InstructionWithData<ReadonlyUint8Array>,
 ): ParsedPostCardInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 11) {
+  if (instruction.accounts.length < 12) {
     throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__INSUFFICIENT_ACCOUNT_METAS, {
       actualAccountMetas: instruction.accounts.length,
-      expectedAccountMetas: 11,
+      expectedAccountMetas: 12,
     })
   }
   let accountIndex = 0
@@ -526,6 +563,7 @@ export function parsePostCardInstruction<TProgram extends string, TAccountMetas 
       recipientLetterbox: getNextAccount(),
       senderToken: getNextOptionalAccount(),
       senderSeal: getNextOptionalAccount(),
+      sgtToken: getNextOptionalAccount(),
       postOffice: getNextAccount(),
       postageMint: getNextAccount(),
       tokenProgram: getNextAccount(),

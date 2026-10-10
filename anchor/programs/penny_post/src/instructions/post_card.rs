@@ -5,11 +5,12 @@ use crate::{
     constants::*,
     error::PostError,
     events::CardPosted,
+    sgt::require_held,
     state::{local_day, next_delivery, Card, Letterbox, PostOffice, Seal},
 };
 
 #[derive(Accounts)]
-#[instruction(card_id: u64, postage: u64, content_hash: [u8; 32], stamp: u16, express: bool)]
+#[instruction(card_id: u64)]
 pub struct PostCard<'info> {
     #[account(mut)]
     pub sender: Signer<'info>,
@@ -48,6 +49,11 @@ pub struct PostCard<'info> {
     pub sender_token: Option<Box<Account<'info, TokenAccount>>>,
     #[account(mut, seeds = [SEAL_SEED, sender_seal.sgt_mint.as_ref()], bump = sender_seal.bump)]
     pub sender_seal: Option<Box<Account<'info, Seal>>>,
+    /// CHECK: the sender's Genesis Token account, needed for a free card. It
+    /// must be owned by Token-2022, and the handler requires that it still
+    /// holds the seal's token for the sender.
+    #[account(owner = TOKEN_2022_PROGRAM_ID @ PostError::GenesisTokenNotHeld)]
+    pub sgt_token: Option<UncheckedAccount<'info>>,
     #[account(seeds = [POST_OFFICE_SEED], bump = post_office.bump, has_one = postage_mint)]
     pub post_office: Box<Account<'info, PostOffice>>,
     #[account(mut)]
@@ -63,6 +69,7 @@ pub fn handle_post_card(
     content_hash: [u8; 32],
     stamp: u16,
     express: bool,
+    max_express_fee: u64,
 ) -> Result<()> {
     let now = Clock::get()?.unix_timestamp;
     let sender = ctx.accounts.sender.key();
@@ -86,6 +93,17 @@ pub fn handle_post_card(
         // A free card spends the sender's one stamp for the UTC day.
         let seal = ctx.accounts.sender_seal.as_mut().ok_or(PostError::NoSeal)?;
         require_keys_eq!(seal.holder, sender, PostError::SealNotYours);
+        // The seal records who showed the token last. The token may have moved
+        // on since, so the stamp is only good while it is still in this wallet.
+        let sgt_token = ctx
+            .accounts
+            .sgt_token
+            .as_ref()
+            .ok_or(PostError::GenesisTokenNotHeld)?;
+        {
+            let data = sgt_token.try_borrow_data()?;
+            require_held(&data, &seal.sgt_mint, &sender)?;
+        }
         let today = now.div_euclid(SECONDS_PER_DAY);
         require!(seal.last_free_day < today, PostError::StampAlreadyUsed);
         seal.last_free_day = today;
@@ -96,8 +114,11 @@ pub fn handle_post_card(
         require!(postage >= price, PostError::PostageTooLow);
 
         if let Some(letterbox) = letterbox.as_mut() {
+            // The counter only moves forward. An express card posted after a
+            // card for tomorrow is counted with tomorrow's, so the two kinds
+            // cannot be alternated to reset each other's count.
             let day = local_day(deliver_at, utc_offset_minutes).ok_or(PostError::Overflow)?;
-            if letterbox.paid_day != day {
+            if day > letterbox.paid_day {
                 letterbox.paid_day = day;
                 letterbox.paid_count = 0;
             }
@@ -129,8 +150,12 @@ pub fn handle_post_card(
     card.stamp = stamp;
     card.express = express;
     card.bump = ctx.bumps.card;
+    card.burn_bps = post_office.burn_bps;
 
+    // The fee is read from terms the admin can change, so the sender names the
+    // most they will pay and a change in between cannot cost them more.
     let express_fee = if express { post_office.express_fee } else { 0 };
+    require!(express_fee <= max_express_fee, PostError::ExpressFeeTooHigh);
     if postage > 0 || express_fee > 0 {
         let sender_token = ctx
             .accounts

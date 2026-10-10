@@ -72,7 +72,7 @@ export type ReturnCardInstruction<
       TAccountVault extends string ? WritableAccount<TAccountVault> : TAccountVault,
       TAccountSenderToken extends string ? WritableAccount<TAccountSenderToken> : TAccountSenderToken,
       TAccountPostOffice extends string ? ReadonlyAccount<TAccountPostOffice> : TAccountPostOffice,
-      TAccountPostageMint extends string ? ReadonlyAccount<TAccountPostageMint> : TAccountPostageMint,
+      TAccountPostageMint extends string ? WritableAccount<TAccountPostageMint> : TAccountPostageMint,
       TAccountTokenProgram extends string ? ReadonlyAccount<TAccountTokenProgram> : TAccountTokenProgram,
       ...TRemainingAccounts,
     ]
@@ -169,7 +169,7 @@ export async function getReturnCardInstructionAsync<
     vault: { value: input.vault ?? null, isSigner: false, isWritable: true },
     senderToken: { value: input.senderToken ?? null, isSigner: false, isWritable: true },
     postOffice: { value: input.postOffice ?? null, isSigner: false, isWritable: false },
-    postageMint: { value: input.postageMint ?? null, isSigner: false, isWritable: false },
+    postageMint: { value: input.postageMint ?? null, isSigner: false, isWritable: true },
     tokenProgram: { value: input.tokenProgram ?? null, isSigner: false, isWritable: false },
   }
   const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>
@@ -282,7 +282,7 @@ export function getReturnCardInstruction<
     vault: { value: input.vault ?? null, isSigner: false, isWritable: true },
     senderToken: { value: input.senderToken ?? null, isSigner: false, isWritable: true },
     postOffice: { value: input.postOffice ?? null, isSigner: false, isWritable: false },
-    postageMint: { value: input.postageMint ?? null, isSigner: false, isWritable: false },
+    postageMint: { value: input.postageMint ?? null, isSigner: false, isWritable: true },
     tokenProgram: { value: input.tokenProgram ?? null, isSigner: false, isWritable: false },
   }
   const accounts = originalAccounts as Record<keyof typeof originalAccounts, ResolvedInstructionAccount>

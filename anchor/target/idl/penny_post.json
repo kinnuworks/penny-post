@@ -454,6 +454,14 @@
           }
         },
         {
+          "name": "sgt_token",
+          "docs": [
+            "must be owned by Token-2022, and the handler requires that it still",
+            "holds the seal's token for the sender."
+          ],
+          "optional": true
+        },
+        {
           "name": "post_office",
           "pda": {
             "seeds": [
@@ -517,6 +525,10 @@
         {
           "name": "express",
           "type": "bool"
+        },
+        {
+          "name": "max_express_fee",
+          "type": "u64"
         }
       ]
     },
@@ -622,6 +634,7 @@
         },
         {
           "name": "postage_mint",
+          "writable": true,
           "relations": [
             "post_office"
           ]
@@ -1093,6 +1106,11 @@
       "code": 6018,
       "name": "Overflow",
       "msg": "Arithmetic overflow"
+    },
+    {
+      "code": 6019,
+      "name": "ExpressFeeTooHigh",
+      "msg": "The express fee is higher than the sender agreed to"
     }
   ],
   "types": [
@@ -1156,6 +1174,14 @@
           {
             "name": "bump",
             "type": "u8"
+          },
+          {
+            "name": "burn_bps",
+            "docs": [
+              "The post office's burn share on the day this card was posted. A later",
+              "change to the terms does not reach postage already in the post."
+            ],
+            "type": "u16"
           }
         ]
       }

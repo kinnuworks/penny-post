@@ -96,6 +96,9 @@ pub struct Card {
     pub stamp: u16,
     pub express: bool,
     pub bump: u8,
+    /// The post office's burn share on the day this card was posted. A later
+    /// change to the terms does not reach postage already in the post.
+    pub burn_bps: u16,
 }
 
 /// Next 08:00 in the reader's time zone, strictly after `now`.

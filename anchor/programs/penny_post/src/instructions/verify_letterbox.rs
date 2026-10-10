@@ -4,7 +4,7 @@ use crate::{
     constants::*,
     error::PostError,
     events::LetterboxVerified,
-    sgt::{read_genesis_token, read_holding},
+    sgt::{read_genesis_token, require_held},
     state::{Letterbox, PostOffice, Seal},
 };
 
@@ -64,17 +64,10 @@ pub fn handle_verify_letterbox(ctx: Context<VerifyLetterbox>) -> Result<()> {
         PostError::NotGenesisToken
     );
 
-    let holding = {
+    {
         let data = ctx.accounts.sgt_token.try_borrow_data()?;
-        read_holding(&data)?
-    };
-    require_keys_eq!(holding.mint, sgt_mint, PostError::GenesisTokenNotHeld);
-    require_keys_eq!(
-        holding.owner,
-        ctx.accounts.owner.key(),
-        PostError::GenesisTokenNotHeld
-    );
-    require!(holding.amount == 1, PostError::GenesisTokenNotHeld);
+        require_held(&data, &sgt_mint, &ctx.accounts.owner.key())?;
+    }
 
     // A seal that already exists keeps its `last_free_day`. Only the holder changes.
     let seal = &mut ctx.accounts.seal;

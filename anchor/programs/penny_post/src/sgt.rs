@@ -19,6 +19,10 @@ use crate::error::PostError;
 #[cfg(test)]
 const BASE_MINT_LEN: usize = 82;
 const BASE_ACCOUNT_LEN: usize = 165;
+/// A Token-2022 multisig is this long and is made of bytes its creator picks.
+/// Token-2022 itself refuses to read one as a mint or a token account, and so
+/// does this module.
+const MULTISIG_LEN: usize = 355;
 /// Token account layout: mint (32), owner (32), amount (8), delegate option (36), state (1).
 const HOLDING_STATE_OFFSET: usize = 108;
 /// `AccountState::Initialized` and `AccountState::Frozen`. A Genesis Token sits
@@ -54,7 +58,7 @@ pub struct Holding {
 /// account behind in the old wallet, so the caller must check `amount`.
 pub fn read_holding(data: &[u8]) -> Result<Holding> {
     require!(
-        data.len() >= BASE_ACCOUNT_LEN,
+        data.len() >= BASE_ACCOUNT_LEN && data.len() != MULTISIG_LEN,
         PostError::GenesisTokenNotHeld
     );
     // An account with extensions says what it is in the byte after the base.
@@ -79,6 +83,16 @@ pub fn read_holding(data: &[u8]) -> Result<Holding> {
     })
 }
 
+/// Requires that a Token-2022 token account holds exactly one of `mint` for
+/// `owner`, right now.
+pub fn require_held(data: &[u8], mint: &Pubkey, owner: &Pubkey) -> Result<()> {
+    let holding = read_holding(data)?;
+    require_keys_eq!(holding.mint, *mint, PostError::GenesisTokenNotHeld);
+    require_keys_eq!(holding.owner, *owner, PostError::GenesisTokenNotHeld);
+    require!(holding.amount == 1, PostError::GenesisTokenNotHeld);
+    Ok(())
+}
+
 pub fn read_genesis_token(data: &[u8]) -> Result<GenesisToken> {
     let mint_authority = read_mint_authority(data)?;
     let member = find_extension(data, EXTENSION_TOKEN_GROUP_MEMBER)?;
@@ -96,7 +110,10 @@ pub fn read_genesis_token(data: &[u8]) -> Result<GenesisToken> {
 }
 
 fn read_mint_authority(data: &[u8]) -> Result<Pubkey> {
-    require!(data.len() > BASE_ACCOUNT_LEN, PostError::NotGenesisToken);
+    require!(
+        data.len() > BASE_ACCOUNT_LEN && data.len() != MULTISIG_LEN,
+        PostError::NotGenesisToken
+    );
     // COption<Pubkey>: a four-byte tag, then the key.
     let tag = u32::from_le_bytes(read_array(data, 0)?);
     require!(tag == 1, PostError::NotGenesisToken);
@@ -109,7 +126,10 @@ fn read_mint_authority(data: &[u8]) -> Result<Pubkey> {
 
 /// Walks the type-length-value entries after the account type byte.
 fn find_extension(data: &[u8], wanted: u16) -> Result<&[u8]> {
-    require!(data.len() > BASE_ACCOUNT_LEN, PostError::NotGenesisToken);
+    require!(
+        data.len() > BASE_ACCOUNT_LEN && data.len() != MULTISIG_LEN,
+        PostError::NotGenesisToken
+    );
     require!(
         data[BASE_ACCOUNT_LEN] == ACCOUNT_TYPE_MINT,
         PostError::NotGenesisToken
@@ -284,5 +304,49 @@ mod tests {
     fn rejects_empty_and_truncated_data() {
         assert!(read_genesis_token(&[]).is_err());
         assert!(read_genesis_token(&real_mint()[..BASE_ACCOUNT_LEN + 3]).is_err());
+    }
+
+    /// A multisig is 355 bytes its creator chooses: two counts, a flag, then
+    /// eleven "signer keys". This one is filled in to read as a token account
+    /// that holds the real Genesis Token.
+    fn multisig_dressed_as_a_holding() -> Vec<u8> {
+        let mut data = real_holding()[..BASE_ACCOUNT_LEN].to_vec();
+        data.push(ACCOUNT_TYPE_HOLDING);
+        data.resize(MULTISIG_LEN, 0);
+        data
+    }
+
+    #[test]
+    fn rejects_a_multisig_dressed_as_a_holding() {
+        let forged = multisig_dressed_as_a_holding();
+        assert!(read_holding(&forged).is_err());
+        // One byte longer or shorter and the same bytes read as a holding, so
+        // it is the length check doing the refusing.
+        let mut longer = forged.clone();
+        longer.push(0);
+        assert_eq!(read_holding(&longer).unwrap().amount, 1);
+        assert_eq!(read_holding(&forged[..MULTISIG_LEN - 1]).unwrap().amount, 1);
+    }
+
+    #[test]
+    fn rejects_a_multisig_dressed_as_a_mint() {
+        let mut forged = real_mint();
+        forged.resize(MULTISIG_LEN, 0);
+        assert!(read_genesis_token(&forged).is_err());
+    }
+
+    #[test]
+    fn requires_the_token_to_be_in_this_wallet_now() {
+        let mint = Pubkey::from_str("5mXbkqKz883aufhAsx3p5Z1NcvD2ppZbdTTznM6oUKLj").unwrap();
+        let holder = Pubkey::from_str("D2ehKLUQApN8ZxcANjwuTJC7bk7BMJn2voofXy17tCrs").unwrap();
+        let someone_else = Pubkey::new_unique();
+
+        assert!(require_held(&real_holding(), &mint, &holder).is_ok());
+        assert!(require_held(&real_holding(), &mint, &someone_else).is_err());
+        assert!(require_held(&real_holding(), &someone_else, &holder).is_err());
+        // The token has moved on and left this account empty.
+        let mut emptied = real_holding();
+        emptied[64..72].fill(0);
+        assert!(require_held(&emptied, &mint, &holder).is_err());
     }
 }

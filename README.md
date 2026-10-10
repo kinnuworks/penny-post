@@ -21,7 +21,7 @@ A letterbox takes three paid cards a day at most, and the reader sets the price.
 
 | Part                                                                                                  | State                                                                                                                                                                    |
 | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `anchor/programs/penny_post`: the program, eight instructions                                         | Builds for Solana. 22 unit tests and 36 end-to-end tests pass on a fork of mainnet, against the real SKR mint and a real Genesis Token. Not deployed to any network yet. |
+| `anchor/programs/penny_post`: the program, eight instructions                                         | Builds for Solana. 25 unit tests and 41 end-to-end tests pass on a fork of mainnet, against the real SKR mint and a real Genesis Token. Not deployed to any network yet. |
 | Genesis Token check inside the program                                                                | Tested on a real mint and on real holdings, one full and one emptied.                                                                                                    |
 | App: wallet connect, letterbox, writing a card, posting, signing for a card, sending back, kept cards | Written. Typechecks, lints and bundles. Not run on a phone yet.                                                                                                          |
 | Sealed letters                                                                                        | Written, with unit tests. Not run on a phone yet.                                                                                                                        |
@@ -88,22 +88,23 @@ pnpm run android:release
 
 ## The program
 
-| Instruction        | Who signs         | What it does                                                                |
-| ------------------ | ----------------- | --------------------------------------------------------------------------- |
-| `open_post_office` | Upgrade authority | Runs once. Fixes the postage token and the Genesis Token group for good.    |
-| `set_terms`        | Admin             | Changes the floor price, the express fee and the burn share (20% ceiling).  |
-| `open_letterbox`   | Reader            | Creates the reader's letterbox with a reading key, price and time zone.     |
-| `set_letterbox`    | Reader            | Changes those three settings.                                               |
-| `verify_letterbox` | Reader            | Proves the wallet holds a Genesis Token and ties its seal to the letterbox. |
-| `post_card`        | Sender            | Creates the card and its vault, and moves postage into the vault.           |
-| `open_card`        | Reader            | Pays the reader, burns the share, closes the card and vault.                |
-| `return_card`      | Anyone, or reader | Refunds the sender after expiry, or earlier if the reader sends it back.    |
+| Instruction        | Who signs         | What it does                                                                                               |
+| ------------------ | ----------------- | ---------------------------------------------------------------------------------------------------------- |
+| `open_post_office` | Upgrade authority | Runs once. Fixes the postage token and the Genesis Token group for good.                                   |
+| `set_terms`        | Admin             | Changes the floor price, the express fee and the burn share (20% ceiling).                                 |
+| `open_letterbox`   | Reader            | Creates the reader's letterbox with a reading key, price and time zone.                                    |
+| `set_letterbox`    | Reader            | Changes those three settings.                                                                              |
+| `verify_letterbox` | Reader            | Proves the wallet holds a Genesis Token and ties its seal to the letterbox.                                |
+| `post_card`        | Sender            | Creates the card and its vault, and moves postage into the vault. A free card must show the Genesis Token. |
+| `open_card`        | Reader            | Pays the reader, burns the share, closes the card and vault.                                               |
+| `return_card`      | Anyone, or reader | Refunds the sender after expiry, or earlier if the reader sends it back.                                   |
 
 Choices worth knowing about:
 
 - Each card has its own vault and the card account is the vault's authority. There is no shared pool.
 - The server never holds a key or a token, and the app ships no API key. The card store accepts a card's contents only if their SHA-256 is the hash of a card that already exists on-chain. Sealed letters reach it already encrypted.
 - `post_card` pins the reader's letterbox address by its seeds, so a sender cannot leave it out to dodge the reader's price.
+- A sender never pays more than they agreed to. They name the postage and the highest express fee in their own transaction, and a card keeps the burn share it was posted under.
 - `open_card` and `return_card` empty the vault by its real balance. Sending stray tokens to a vault cannot lock a card.
 - The Genesis Token check reads the mint's `TokenGroupMember` extension and the holder's token account by hand, and only after confirming Token-2022 owns both. A real Genesis Token sits frozen in its account, and the check allows for that. The free stamp is keyed on the token's mint, as Solana Mobile's own guidance says it should be.
 

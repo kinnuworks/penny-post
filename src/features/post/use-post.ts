@@ -278,6 +278,11 @@ export function usePostCard() {
       if (free && !(seal && hasFreeStamp(seal, Math.floor(Date.now() / 1000)))) {
         throw new PostProblem('no-free-stamp')
       }
+      // The program checks that the Genesis Token is still in this wallet, so it needs to be shown where.
+      const genesisToken = free ? await findGenesisToken(client.rpc, account.address) : null
+      if (free && genesisToken?.mint !== seal?.sgtMint) {
+        throw new PostProblem('no-genesis-token')
+      }
 
       // The return address is the writer's own .skr name, if they have set one.
       const signed: CardContent = {
@@ -299,20 +304,23 @@ export function usePostCard() {
             cardId,
             contentHash: hashCard(bytes),
             express,
+            maxExpressFee: office.expressFee,
             postage: free ? 0n : priceToReach(office, readerLetterbox),
             postageMint: office.postageMint,
             recipient: reader.address,
             seal: free ? seal?.address : undefined,
             sender,
+            sgtToken: genesisToken?.tokenAccount,
             stamp: card.stampId,
           })
           return instructions
         })
       } catch (error) {
-        // If the wallet said no, nothing was posted. If the app only lost track
-        // of a transaction that did land, the outbox still has the contents and
-        // delivers them later, so they are left where they are.
-        if (isDeclined(error)) {
+        // If the wallet said no, or the dry run refused before the wallet was
+        // asked, nothing was posted. If the app only lost track of a transaction
+        // that did land, the outbox still has the contents and delivers them
+        // later, so they are left where they are.
+        if (isDeclined(error) || error instanceof PostProblem) {
           await forget(address)
         }
         throw error
@@ -331,7 +339,14 @@ export function usePostCard() {
       void flushExchange()
       return { card: address, delivered, express, readerName: reader.name, sealed: isSealed(bytes) }
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['letterbox', chain, account?.address] }),
+    onSettled: (_receipt, error) => {
+      void queryClient.invalidateQueries({ queryKey: ['letterbox', chain, account?.address] })
+      if (error) {
+        // A refusal can mean the terms or the reader's price moved. Read them again before the next try.
+        void queryClient.invalidateQueries({ queryKey: ['post-office', chain] })
+        void queryClient.invalidateQueries({ queryKey: ['quote', chain] })
+      }
+    },
   })
 }
 

@@ -40,4 +40,6 @@ pub enum PostError {
     GenesisTokenNotHeld,
     #[msg("Arithmetic overflow")]
     Overflow,
+    #[msg("The express fee is higher than the sender agreed to")]
+    ExpressFeeTooHigh,
 }

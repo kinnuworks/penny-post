@@ -1,8 +1,10 @@
+import { getTransferInstruction } from '@solana-program/token'
 import { type Address, type KeyPairSigner } from '@solana/kit'
 import { beforeAll, describe, expect, it } from 'vitest'
 import {
   fetchCard,
   findSealPda,
+  findVaultPda,
   getVerifyLetterboxInstructionAsync,
   PENNY_POST_ERROR__NOT_DELIVERED_YET,
   PENNY_POST_ERROR__NOT_EXPIRED_YET,
@@ -46,6 +48,7 @@ describe('the clock', () => {
   let stranger: KeyPairSigner
   let seeker: KeyPairSigner
   let seal: Address
+  let sgtToken: Address
 
   beforeAll(async () => {
     ;[writer, reader, stranger, seeker] = await Promise.all([newWallet(), newWallet(), newWallet(), newWallet()])
@@ -66,11 +69,8 @@ describe('the clock', () => {
     // The Genesis Token's seal was used earlier today by the first test file.
     // Here it arrives in a new wallet, which inherits that used stamp.
     await giveTokens(seeker.address, REAL_SGT_MINT, 1n, TOKEN_2022_PROGRAM_ADDRESS)
-    const verify = await getVerifyLetterboxInstructionAsync({
-      owner: seeker,
-      sgtMint: REAL_SGT_MINT,
-      sgtToken: await tokenAccountOf(seeker.address, REAL_SGT_MINT, TOKEN_2022_PROGRAM_ADDRESS),
-    })
+    sgtToken = await tokenAccountOf(seeker.address, REAL_SGT_MINT, TOKEN_2022_PROGRAM_ADDRESS)
+    const verify = await getVerifyLetterboxInstructionAsync({ owner: seeker, sgtMint: REAL_SGT_MINT, sgtToken })
     await send(seeker, [verify])
     ;[seal] = await findSealPda({ sgtMint: REAL_SGT_MINT })
   })
@@ -80,11 +80,13 @@ describe('the clock', () => {
       cardId: newCardId(),
       contentHash: CONTENT_HASH,
       express: false,
+      maxExpressFee: 0n,
       postage,
       postageMint: SKR_MINT,
       recipient: reader.address,
       seal: withSeal ? seal : undefined,
       sender: from,
+      sgtToken: withSeal ? sgtToken : undefined,
       stamp: 1,
     })
   }
@@ -120,14 +122,29 @@ describe('the clock', () => {
     const again = await post(seeker, 0n, true)
     expect(await errorCodeOf(send(seeker, again.instructions))).toBe(PENNY_POST_ERROR__STAMP_ALREADY_USED)
 
-    // A free card carries no postage, so opening it involves no token account at all.
+    // Somebody drops a little SKR into the free card's vault, hoping to jam it.
+    const [vault] = await findVaultPda({ card })
+    await send(writer, [
+      getTransferInstruction({
+        amount: 1n,
+        authority: writer,
+        destination: vault,
+        source: await tokenAccountOf(writer.address),
+      }),
+    ])
+
+    // A free card carries no postage, so opening it involves no token account
+    // at all. The stray token is burned and the card opens as usual.
     const { data } = await fetchCard(rpc, card)
     await travelTo(data.deliverAt + 60n)
     const posted = (await listCardsTo(rpc, reader.address)).find((entry) => entry.address === card)!
     const open = await buildOpenCard({ card: posted, postageMint: SKR_MINT, recipient: reader })
     expect(open).toHaveLength(1)
+    const before = await skrBalance(reader.address)
     await send(reader, open)
     expect(await accountExists(card)).toBe(false)
+    expect(await accountExists(vault)).toBe(false)
+    expect(await skrBalance(reader.address)).toBe(before)
   })
 
   it('goes back to its sender after a week, and anyone can carry it', async () => {

@@ -92,7 +92,7 @@ export const copy = {
     'not-arrived':
       "The card is here, but its picture and message are still on the sender's phone. Try again in a minute.",
     'office-closed': 'The post office is not open on this network yet.',
-    'price-changed': 'Their price changed while you were writing. Post it again and the stamp will carry the new one.',
+    'price-changed': 'The price changed while you were writing. Post it again and the stamp will carry the new one.',
     'sealed-for-another-phone':
       'This letter was sealed for a different phone. It can be sent back, but it cannot be read here.',
     'short-of-postage': 'This wallet does not hold enough to pay for that stamp. Top it up, or pick a cheaper one.',

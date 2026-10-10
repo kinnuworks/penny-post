@@ -84,6 +84,7 @@ pub mod penny_post {
         content_hash: [u8; 32],
         stamp: u16,
         express: bool,
+        max_express_fee: u64,
     ) -> Result<()> {
         crate::instructions::post_card::handle_post_card(
             ctx,
@@ -92,6 +93,7 @@ pub mod penny_post {
             content_hash,
             stamp,
             express,
+            max_express_fee,
         )
     }
 

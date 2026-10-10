@@ -57,7 +57,7 @@ On screen: the doormat with a paid card on it.
 
 On screen: the repository's test output, then the program on the explorer.
 
-> The program has [22] unit tests and [36] end-to-end tests, run against real SKR and a real Seeker Genesis Token. It is live on mainnet. [N] cards have been posted so far. Penny Post. The post comes once a day.
+> The program has [25] unit tests and [41] end-to-end tests, run against real SKR and a real Seeker Genesis Token. It is live on mainnet. [N] cards have been posted so far. Penny Post. The post comes once a day.
 
 ## After recording
 

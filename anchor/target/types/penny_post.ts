@@ -460,6 +460,14 @@ export type PennyPost = {
           }
         },
         {
+          "name": "sgtToken",
+          "docs": [
+            "must be owned by Token-2022, and the handler requires that it still",
+            "holds the seal's token for the sender."
+          ],
+          "optional": true
+        },
+        {
           "name": "postOffice",
           "pda": {
             "seeds": [
@@ -523,6 +531,10 @@ export type PennyPost = {
         {
           "name": "express",
           "type": "bool"
+        },
+        {
+          "name": "maxExpressFee",
+          "type": "u64"
         }
       ]
     },
@@ -628,6 +640,7 @@ export type PennyPost = {
         },
         {
           "name": "postageMint",
+          "writable": true,
           "relations": [
             "postOffice"
           ]
@@ -1099,6 +1112,11 @@ export type PennyPost = {
       "code": 6018,
       "name": "overflow",
       "msg": "Arithmetic overflow"
+    },
+    {
+      "code": 6019,
+      "name": "expressFeeTooHigh",
+      "msg": "The express fee is higher than the sender agreed to"
     }
   ],
   "types": [
@@ -1162,6 +1180,14 @@ export type PennyPost = {
           {
             "name": "bump",
             "type": "u8"
+          },
+          {
+            "name": "burnBps",
+            "docs": [
+              "The post office's burn share on the day this card was posted. A later",
+              "change to the terms does not reach postage already in the post."
+            ],
+            "type": "u16"
           }
         ]
       }

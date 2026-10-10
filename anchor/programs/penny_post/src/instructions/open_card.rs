@@ -62,8 +62,16 @@ pub fn handle_open_card(ctx: Context<OpenCard>) -> Result<()> {
     // The vault can hold more than the postage if someone sent tokens straight
     // to it. Empty it fully, or the close below would fail and lock the card.
     let held = ctx.accounts.vault.amount;
-    let burned = burn_share(card.postage, ctx.accounts.post_office.burn_bps)?.min(held);
-    let paid_to_reader = held.checked_sub(burned).ok_or(PostError::Overflow)?;
+    let recipient_token = ctx.accounts.recipient_token.as_ref();
+    let (paid_to_reader, burned) = if card.postage == 0 && recipient_token.is_none() {
+        // A free card carries nothing for the reader, who may hold no token
+        // account at all. Whatever a stranger left in its vault is burned.
+        (0, held)
+    } else {
+        // The share is the one the card was posted under.
+        let burned = burn_share(card.postage, card.burn_bps)?.min(held);
+        (held.checked_sub(burned).ok_or(PostError::Overflow)?, burned)
+    };
 
     let sender = card.sender;
     let card_id = card.card_id.to_le_bytes();
@@ -78,11 +86,7 @@ pub fn handle_open_card(ctx: Context<OpenCard>) -> Result<()> {
     };
 
     if paid_to_reader > 0 {
-        let recipient_token = ctx
-            .accounts
-            .recipient_token
-            .as_ref()
-            .ok_or(PostError::MissingReaderToken)?;
+        let recipient_token = recipient_token.ok_or(PostError::MissingReaderToken)?;
         vault::pay_out(
             &vault_accounts,
             recipient_token.to_account_info(),

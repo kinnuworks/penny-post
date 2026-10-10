@@ -42,6 +42,7 @@ pub struct ReturnCard<'info> {
     pub sender_token: Option<Box<Account<'info, TokenAccount>>>,
     #[account(seeds = [POST_OFFICE_SEED], bump = post_office.bump, has_one = postage_mint)]
     pub post_office: Box<Account<'info, PostOffice>>,
+    #[account(mut)]
     pub postage_mint: Box<Account<'info, Mint>>,
     pub token_program: Program<'info, Token>,
 }
@@ -55,7 +56,13 @@ pub fn handle_return_card(ctx: Context<ReturnCard>) -> Result<()> {
         PostError::NotExpiredYet
     );
 
-    let refunded = ctx.accounts.vault.amount;
+    let held = ctx.accounts.vault.amount;
+    let sender_token = ctx.accounts.sender_token.as_ref();
+    // A free card has nothing of the sender's in its vault, and the sender may
+    // hold no token account. Whatever a stranger left there is burned. A paid
+    // card always goes back to the sender's own account.
+    let only_strays = card.postage == 0 && sender_token.is_none();
+    let refunded = if only_strays { 0 } else { held };
     let sender = card.sender;
     let recipient = card.recipient;
     let card_id = card.card_id.to_le_bytes();
@@ -69,12 +76,10 @@ pub fn handle_return_card(ctx: Context<ReturnCard>) -> Result<()> {
         card: ctx.accounts.card.to_account_info(),
     };
 
-    if refunded > 0 {
-        let sender_token = ctx
-            .accounts
-            .sender_token
-            .as_ref()
-            .ok_or(PostError::MissingSenderToken)?;
+    if only_strays {
+        vault::burn(&vault_accounts, held, card_seeds)?;
+    } else if refunded > 0 {
+        let sender_token = sender_token.ok_or(PostError::MissingSenderToken)?;
         vault::pay_out(
             &vault_accounts,
             sender_token.to_account_info(),

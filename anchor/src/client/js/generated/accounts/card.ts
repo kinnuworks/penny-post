@@ -65,6 +65,11 @@ export type Card = {
   stamp: number
   express: boolean
   bump: number
+  /**
+   * The post office's burn share on the day this card was posted. A later
+   * change to the terms does not reach postage already in the post.
+   */
+  burnBps: number
 }
 
 export type CardArgs = {
@@ -80,6 +85,11 @@ export type CardArgs = {
   stamp: number
   express: boolean
   bump: number
+  /**
+   * The post office's burn share on the day this card was posted. A later
+   * change to the terms does not reach postage already in the post.
+   */
+  burnBps: number
 }
 
 /** Gets the encoder for {@link CardArgs} account data. */
@@ -98,6 +108,7 @@ export function getCardEncoder(): FixedSizeEncoder<CardArgs> {
       ['stamp', getU16Encoder()],
       ['express', getBooleanEncoder()],
       ['bump', getU8Encoder()],
+      ['burnBps', getU16Encoder()],
     ]),
     (value) => ({ ...value, discriminator: CARD_DISCRIMINATOR }),
   )
@@ -118,6 +129,7 @@ export function getCardDecoder(): FixedSizeDecoder<Card> {
     ['stamp', getU16Decoder()],
     ['express', getBooleanDecoder()],
     ['bump', getU8Decoder()],
+    ['burnBps', getU16Decoder()],
   ])
 }
 
@@ -177,5 +189,5 @@ export async function fetchAllMaybeCard(
 }
 
 export function getCardSize(): number {
-  return 148
+  return 150
 }

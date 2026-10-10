@@ -139,13 +139,20 @@ export interface PostCardInput {
   cardId: bigint
   contentHash: Uint8Array
   express: boolean
-  /** Zero for a free card, which needs `seal`. */
+  /**
+   * The express fee the sender has been shown. The program refuses the card if
+   * the fee has gone above this in the meantime. Ignored unless `express` is set.
+   */
+  maxExpressFee: bigint
+  /** Zero for a free card, which needs `seal` and `sgtToken`. */
   postage: bigint
   postageMint: Address
   recipient: Address
   /** The sender's seal, for a free card. */
   seal?: Address
   sender: TransactionSigner
+  /** The token account holding the sender's Genesis Token, for a free card. */
+  sgtToken?: Address
   stamp: number
 }
 
@@ -156,11 +163,13 @@ export async function buildPostCard(input: PostCardInput): Promise<{ card: Addre
     cardId: input.cardId,
     contentHash: input.contentHash,
     express: input.express,
+    maxExpressFee: input.express ? input.maxExpressFee : 0n,
     postage: input.postage,
     postageMint: input.postageMint,
     recipient: input.recipient,
     sender: input.sender,
     senderSeal: input.seal,
+    sgtToken: input.sgtToken,
     senderToken: movesTokens ? await tokenAccount(input.sender.address, input.postageMint) : undefined,
     stamp: input.stamp,
   })
@@ -197,21 +206,33 @@ export async function buildOpenCard(input: {
   return [createTokenAccount, open]
 }
 
-/** Sends a card back to its sender. The reader can do this at any time. */
+/**
+ * Sends a card back to its sender. The reader can do this at any time. If the
+ * card carries postage, the sender's token account is created first when it no
+ * longer exists, so closing it cannot strand the refund.
+ */
 export async function buildReturnCard(input: {
   caller: TransactionSigner
   card: PostedCard
   postageMint: Address
 }): Promise<Instruction[]> {
-  return [
-    await getReturnCardInstructionAsync({
-      caller: input.caller,
-      card: input.card.address,
-      postageMint: input.postageMint,
-      sender: input.card.sender,
-      senderToken: input.card.postage > 0n ? await tokenAccount(input.card.sender, input.postageMint) : undefined,
-    }),
-  ]
+  const paid = input.card.postage > 0n
+  const giveBack = await getReturnCardInstructionAsync({
+    caller: input.caller,
+    card: input.card.address,
+    postageMint: input.postageMint,
+    sender: input.card.sender,
+    senderToken: paid ? await tokenAccount(input.card.sender, input.postageMint) : undefined,
+  })
+  if (!paid) {
+    return [giveBack]
+  }
+  const createTokenAccount = await getCreateAssociatedTokenIdempotentInstructionAsync({
+    mint: input.postageMint,
+    owner: input.card.sender,
+    payer: input.caller,
+  })
+  return [createTokenAccount, giveBack]
 }
 
 /** What a paid card must carry to reach this reader. */

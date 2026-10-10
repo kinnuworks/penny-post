@@ -52,11 +52,14 @@ export const PENNY_POST_ERROR__NOT_GENESIS_TOKEN = 0x1780 // 6016
 export const PENNY_POST_ERROR__GENESIS_TOKEN_NOT_HELD = 0x1781 // 6017
 /** Overflow: Arithmetic overflow */
 export const PENNY_POST_ERROR__OVERFLOW = 0x1782 // 6018
+/** ExpressFeeTooHigh: The express fee is higher than the sender agreed to */
+export const PENNY_POST_ERROR__EXPRESS_FEE_TOO_HIGH = 0x1783 // 6019
 
 export type PennyPostError =
   | typeof PENNY_POST_ERROR__BAD_LETTERBOX
   | typeof PENNY_POST_ERROR__BAD_UTC_OFFSET
   | typeof PENNY_POST_ERROR__BURN_SHARE_TOO_HIGH
+  | typeof PENNY_POST_ERROR__EXPRESS_FEE_TOO_HIGH
   | typeof PENNY_POST_ERROR__GENESIS_TOKEN_NOT_HELD
   | typeof PENNY_POST_ERROR__LETTERBOX_FULL
   | typeof PENNY_POST_ERROR__MISSING_READER_TOKEN
@@ -80,6 +83,7 @@ if (process.env['NODE_ENV'] !== 'production') {
     [PENNY_POST_ERROR__BAD_LETTERBOX]: `The recipient letterbox account does not hold a letterbox`,
     [PENNY_POST_ERROR__BAD_UTC_OFFSET]: `That time zone offset is outside UTC-12:00 to UTC+14:00`,
     [PENNY_POST_ERROR__BURN_SHARE_TOO_HIGH]: `The burn share is above the 20% ceiling`,
+    [PENNY_POST_ERROR__EXPRESS_FEE_TOO_HIGH]: `The express fee is higher than the sender agreed to`,
     [PENNY_POST_ERROR__GENESIS_TOKEN_NOT_HELD]: `The Genesis Token is not in this wallet`,
     [PENNY_POST_ERROR__LETTERBOX_FULL]: `This letterbox has taken its paid cards for that day`,
     [PENNY_POST_ERROR__MISSING_READER_TOKEN]: `A paid card needs the reader's token account`,
