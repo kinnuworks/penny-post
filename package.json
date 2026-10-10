@@ -36,7 +36,8 @@
     "start": "expo start",
     "web": "expo start --web",
     "test": "vitest run src",
-    "anchor:unit": "cd anchor && cargo test -p penny_post --lib"
+    "anchor:unit": "cd anchor && cargo test -p penny_post --lib",
+    "post-office": "tsx scripts/post-office.ts"
   },
   "dependencies": {
     "@expo-google-fonts/besley": "^0.4.1",
@@ -89,6 +90,7 @@
     "eslint": "^9.25.0",
     "eslint-config-expo": "~57.0.0",
     "prettier": "^3.9.6",
+    "tsx": "^4.23.15",
     "typescript": "~6.0.3",
     "vite": "^8.0.5",
     "vitest": "^5.0.2"

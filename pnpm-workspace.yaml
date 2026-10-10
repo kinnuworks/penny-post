@@ -1,4 +1,5 @@
 allowBuilds:
+  esbuild: false
   unrs-resolver: false
 minimumReleaseAgeExclude:
   - '@solana-mobile/mobile-wallet-adapter-protocol-kit@3.0.1'

@@ -19,14 +19,16 @@ A letterbox takes three paid cards a day at most, and the reader sets the price.
 
 ## What is built
 
-| Part                                                               | State                                                           |
-| ------------------------------------------------------------------ | --------------------------------------------------------------- |
-| `anchor/programs/penny_post`: the program, eight instructions      | Written, with unit tests. Not yet compiled against a validator. |
-| Genesis Token check inside the program                             | Written. Parser tested against a real mint read from mainnet.   |
-| App shell: wallet connect through Mobile Wallet Adapter, letterbox | Typechecks and lints clean. First screen only.                  |
-| Writing, stamping and opening cards in the app                     | Not started.                                                    |
-| Sealed letters, `.skr` lookup, the pen-pal exchange                | Not started.                                                    |
-| Mainnet deployment                                                 | Not started.                                                    |
+| Part                                                                                                  | State                                                                                                                                                                    |
+| ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `anchor/programs/penny_post`: the program, eight instructions                                         | Builds for Solana. 22 unit tests and 30 end-to-end tests pass on a fork of mainnet, against the real SKR mint and a real Genesis Token. Not deployed to any network yet. |
+| Genesis Token check inside the program                                                                | Tested on a real mint and on real holdings, one full and one emptied.                                                                                                    |
+| App: wallet connect, letterbox, writing a card, posting, signing for a card, sending back, kept cards | Written. Typechecks, lints and bundles. Not run on a phone yet.                                                                                                          |
+| Sealed letters                                                                                        | Written, with unit tests. Not run on a phone yet.                                                                                                                        |
+| `.skr` lookup                                                                                         | Matches AllDomains' own library for three names on mainnet.                                                                                                              |
+| `supabase/functions/cards`: the card store                                                            | Deployed. Its refusals are tested. Accepting a card is not, because that needs the program on a network.                                                                 |
+| Pen-pal exchange, home-screen widget, the 08:00 notification                                          | Not started.                                                                                                                                                             |
+| Devnet and mainnet deployment                                                                         | Not started.                                                                                                                                                             |
 
 This table is kept honest. If a row says "not started", it is not in the build.
 
@@ -46,7 +48,7 @@ npx -y solana-mobile@latest doctor
 pnpm run android
 ```
 
-Tests and checks:
+App tests and checks:
 
 ```bash
 pnpm test
@@ -56,14 +58,20 @@ pnpm test
 pnpm run ci
 ```
 
-The program needs the Rust, Solana and Anchor toolchains:
+The program needs the Rust, Solana and Anchor toolchains, and Surfpool for the end-to-end tests. `anchor:unit` runs the Rust unit tests. `anchor:test` starts a local validator that forks mainnet and runs all three test files in order.
 
 ```bash
 pnpm run anchor:unit
 ```
 
 ```bash
-pnpm run anchor:setup
+pnpm run anchor:test
+```
+
+To open the post office on a network once the program is deployed there:
+
+```bash
+pnpm post-office open --cluster devnet
 ```
 
 ## The program
@@ -82,10 +90,10 @@ pnpm run anchor:setup
 Choices worth knowing about:
 
 - Each card has its own vault and the card account is the vault's authority. There is no shared pool.
-- The server never holds a key or a token. It stores card images, and sealed letters reach it already encrypted.
+- The server never holds a key or a token, and the app ships no API key. The card store accepts a card's contents only if their SHA-256 is the hash of a card that already exists on-chain. Sealed letters reach it already encrypted.
 - `post_card` pins the reader's letterbox address by its seeds, so a sender cannot leave it out to dodge the reader's price.
 - `open_card` and `return_card` empty the vault by its real balance. Sending stray tokens to a vault cannot lock a card.
-- The Genesis Token check reads the mint's `TokenGroupMember` extension, and only after confirming Token-2022 owns the account. The free stamp is keyed on the token's mint, as Solana Mobile's own guidance says it should be.
+- The Genesis Token check reads the mint's `TokenGroupMember` extension and the holder's token account by hand, and only after confirming Token-2022 owns both. A real Genesis Token sits frozen in its account, and the check allows for that. The free stamp is keyed on the token's mint, as Solana Mobile's own guidance says it should be.
 
 See [SECURITY.md](SECURITY.md) for the threat model and what has not been reviewed.
 
