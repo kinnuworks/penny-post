@@ -1,3 +1,4 @@
+import { PENNY_POST_ERROR__PRICE_BELOW_FLOOR } from '../src'
 import { type KeyPairSigner } from '@solana/kit'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { encodeCard, hashCard, type CardContent } from '../../src/features/card/card'
@@ -6,6 +7,7 @@ import {
   buildOpenLetterbox,
   buildPostCard,
   buildReturnCard,
+  buildSetLetterbox,
   fetchLetterbox,
   fetchPostOffice,
   fetchSealHeldBy,
@@ -14,7 +16,7 @@ import {
   newCardId,
   priceToReach,
 } from '../../src/features/post/chain'
-import { giveTokens, newWallet, rpc, send, SKR, SKR_MINT, skrBalance } from './harness'
+import { errorCodeOf, giveTokens, newWallet, rpc, send, SKR, SKR_MINT, skrBalance } from './harness'
 
 // Drives the program through the same functions the app calls, so the code
 // that ships on the phone is what gets tested. It needs the post office that
@@ -115,5 +117,19 @@ describe('the app, talking to the program', () => {
 
     expect(await skrBalance(writer.address)).toBe(before)
     expect(await listCardsFrom(rpc, writer.address)).toEqual([])
+  })
+
+  it('lets the reader change their price, and holds them to the floor', async () => {
+    const postOffice = (await fetchPostOffice(rpc))!
+    const settings = { owner: reader, readingKey: new Uint8Array(32).fill(9), utcOffsetMinutes: 330 }
+
+    await send(reader, await buildSetLetterbox({ ...settings, price: 12n * SKR }))
+    const letterbox = await fetchLetterbox(rpc, reader.address)
+    expect(letterbox?.price).toBe(12n * SKR)
+    expect(priceToReach(postOffice, letterbox)).toBe(12n * SKR)
+
+    const tooLow = await buildSetLetterbox({ ...settings, price: postOffice.floorPrice - 1n })
+    expect(await errorCodeOf(send(reader, tooLow))).toBe(PENNY_POST_ERROR__PRICE_BELOW_FLOOR)
+    expect((await fetchLetterbox(rpc, reader.address))?.price).toBe(12n * SKR)
   })
 })

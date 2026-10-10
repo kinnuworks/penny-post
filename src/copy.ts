@@ -36,6 +36,19 @@ export const copy = {
     claimingStamp: 'Looking for your Seeker',
   },
 
+  price: {
+    change: 'Change it',
+    title: 'What a stranger pays',
+    youKeep: (amount: string, token: string) =>
+      `You get ${amount} ${token} each time you sign for a card. The post office burns the rest.`,
+    belowFloor: (amount: string, token: string) => `The post office will not go lower than ${amount} ${token}.`,
+    notAnAmount: 'That is not an amount. Try something like 10.',
+    inThePost: 'Cards already in the post keep the postage they were sent with.',
+    set: 'Set the price',
+    setting: 'Setting it',
+    leave: 'Leave it as it is',
+  },
+
   open: {
     title: 'A card for you',
     hint: 'Sign for it and it turns over.',

@@ -17,6 +17,7 @@ import {
   buildOpenLetterbox,
   buildPostCard,
   buildReturnCard,
+  buildSetLetterbox,
   buildVerifyLetterbox,
   fetchLetterbox,
   fetchPostOffice,
@@ -203,6 +204,32 @@ export function useOpenLetterbox() {
     },
     // Refresh even after a failure: the wallet may have submitted the
     // transaction after the app stopped waiting for it.
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['letterbox', chain, account?.address] }),
+  })
+}
+
+/** Changes what a stranger pays to reach this letterbox. Cards already posted keep their postage. */
+export function useSetPrice() {
+  const { account, chain } = useMobileWallet()
+  const send = useSend()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (price: bigint) => {
+      if (!account) {
+        throw new PostProblem('office-closed')
+      }
+      // The instruction rewrites the whole letterbox, so the key and the clock go along unchanged.
+      const readingKey = await loadOrCreateReadingKey(account.address)
+      await send((owner) =>
+        buildSetLetterbox({
+          owner,
+          price,
+          readingKey: readingKey.publicKey,
+          utcOffsetMinutes: deviceUtcOffsetMinutes(),
+        }),
+      )
+    },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['letterbox', chain, account?.address] }),
   })
 }

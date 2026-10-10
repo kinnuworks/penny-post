@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Pressable, ScrollView, Text, View } from 'react-native'
 import { InkButton } from '../../components/ink-button'
 import { StampArt } from '../../components/stamp-art'
@@ -23,6 +23,7 @@ import {
   useSkrName,
   useVerifyLetterbox,
 } from '../post/use-post'
+import { PriceDesk } from './price-desk'
 
 // The doormat: what has arrived, what is on its way, and the counter where the
 // next card gets written.
@@ -43,6 +44,7 @@ export function LetterboxScreen({
   const openLetterbox = useOpenLetterbox()
   const verify = useVerifyLetterbox()
   useFlushOutbox()
+  const [isPricing, setIsPricing] = useState(false)
 
   const token = office.data ? tokenName(office.data.postageMint) : ''
   const decimals = office.data?.decimals ?? 0
@@ -76,10 +78,22 @@ export function LetterboxScreen({
           {seal ? `  ·  ${copy.letterbox.seeker(seal.memberNumber.toLocaleString('en-US'))}` : ''}
         </Text>
         <Text className="mb-1 mt-1 font-title text-title text-ink">{copy.letterbox.heading}</Text>
-        {letterbox && office.data ? (
-          <Text className="mb-5 font-body text-body text-ink-soft">
-            {copy.letterbox.price(formatTokens(letterbox.price, decimals), token)}
-          </Text>
+        {letterbox && office.data && isPricing ? (
+          <PriceDesk
+            burnBps={office.data.burnBps}
+            current={letterbox.price}
+            decimals={decimals}
+            floor={office.data.floorPrice}
+            onDone={() => setIsPricing(false)}
+            token={token}
+          />
+        ) : letterbox && office.data ? (
+          <View className="mb-5 flex-row flex-wrap items-baseline gap-x-2">
+            <Text className="font-body text-body text-ink-soft">
+              {copy.letterbox.price(formatTokens(letterbox.price, decimals), token)}
+            </Text>
+            <TextLink label={copy.price.change} onPress={() => setIsPricing(true)} />
+          </View>
         ) : (
           <View className="mb-5" />
         )}
