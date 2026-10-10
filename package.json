@@ -37,7 +37,8 @@
     "web": "expo start --web",
     "test": "vitest run src",
     "anchor:unit": "cd anchor && cargo test -p penny_post --lib",
-    "post-office": "tsx scripts/post-office.ts"
+    "post-office": "tsx scripts/post-office.ts",
+    "android:apk": "expo prebuild -p android --no-install && cd android && ./gradlew assembleDebug -PreactNativeArchitectures=arm64-v8a"
   },
   "dependencies": {
     "@expo-google-fonts/besley": "^0.4.1",
