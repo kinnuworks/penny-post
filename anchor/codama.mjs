@@ -1,5 +1,5 @@
 export default {
-  idl: 'target/idl/dak.json',
+  idl: 'target/idl/penny_post.json',
   scripts: {
     js: {
       from: '@codama/renderers-js',

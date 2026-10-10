@@ -1,10 +1,10 @@
-# Dak
+# Penny Post
 
 A letterbox for every `.skr` name.
 
-Every Seeker came with an address. Dak lets people write to it. The post comes once a day, at eight in the morning where the reader lives. Friends write for free. Anyone else pays postage in SKR, and the postage goes to the reader when they turn the card over.
+Every Seeker came with an address. Penny Post lets people write to it. The post comes once a day, at eight in the morning where the reader lives. Friends write for free. Anyone else pays postage in SKR, and the postage goes to the reader when they turn the card over.
 
-Dak is the Hindi and Urdu word for post. It is an entry for [Clock In](https://solanamobile.radiant.nexus/), the third Solana Mobile hackathon.
+In 1840 the Penny Post made the sender pay for a letter instead of the person receiving it. Here the sender still pays, and the reader keeps the postage. This is an entry for [Clock In](https://solanamobile.radiant.nexus/), the third Solana Mobile hackathon.
 
 ## How it works
 
@@ -21,7 +21,7 @@ A letterbox takes three paid cards a day at most, and the reader sets the price.
 
 | Part                                                               | State                                                           |
 | ------------------------------------------------------------------ | --------------------------------------------------------------- |
-| `anchor/programs/dak`: the on-chain program, eight instructions    | Written, with unit tests. Not yet compiled against a validator. |
+| `anchor/programs/penny_post`: the program, eight instructions      | Written, with unit tests. Not yet compiled against a validator. |
 | Genesis Token check inside the program                             | Written. Parser tested against a real mint read from mainnet.   |
 | App shell: wallet connect through Mobile Wallet Adapter, letterbox | Typechecks and lints clean. First screen only.                  |
 | Writing, stamping and opening cards in the app                     | Not started.                                                    |

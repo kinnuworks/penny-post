@@ -3,7 +3,7 @@ use anchor_spl::token::{self, Burn, Mint, Token, TokenAccount, TransferChecked};
 
 use crate::{
     constants::*,
-    error::DakError,
+    error::PostError,
     events::CardPosted,
     state::{local_day, next_delivery, Card, Letterbox, PostOffice, Seal},
 };
@@ -42,8 +42,8 @@ pub struct PostCard<'info> {
     pub recipient_letterbox: UncheckedAccount<'info>,
     #[account(
         mut,
-        constraint = sender_token.mint == post_office.postage_mint @ DakError::WrongTokenAccount,
-        constraint = sender_token.owner == sender.key() @ DakError::WrongTokenAccount,
+        constraint = sender_token.mint == post_office.postage_mint @ PostError::WrongTokenAccount,
+        constraint = sender_token.owner == sender.key() @ PostError::WrongTokenAccount,
     )]
     pub sender_token: Option<Box<Account<'info, TokenAccount>>>,
     #[account(mut, seeds = [SEAL_SEED, sender_seal.sgt_mint.as_ref()], bump = sender_seal.bump)]
@@ -67,7 +67,7 @@ pub fn handle_post_card(
     let now = Clock::get()?.unix_timestamp;
     let sender = ctx.accounts.sender.key();
     let recipient = ctx.accounts.recipient.key();
-    require_keys_neq!(sender, recipient, DakError::SelfAddressed);
+    require_keys_neq!(sender, recipient, PostError::SelfAddressed);
 
     let post_office = &ctx.accounts.post_office;
     let mut letterbox = load_letterbox(&ctx.accounts.recipient_letterbox)?;
@@ -76,41 +76,41 @@ pub fn handle_post_card(
     let deliver_at = if express {
         now
     } else {
-        next_delivery(now, utc_offset_minutes).ok_or(DakError::Overflow)?
+        next_delivery(now, utc_offset_minutes).ok_or(PostError::Overflow)?
     };
     let expires_at = deliver_at
         .checked_add(SHELF_LIFE_SECONDS)
-        .ok_or(DakError::Overflow)?;
+        .ok_or(PostError::Overflow)?;
 
     if postage == 0 {
         // A free card spends the sender's one stamp for the UTC day.
-        let seal = ctx.accounts.sender_seal.as_mut().ok_or(DakError::NoSeal)?;
-        require_keys_eq!(seal.holder, sender, DakError::SealNotYours);
+        let seal = ctx.accounts.sender_seal.as_mut().ok_or(PostError::NoSeal)?;
+        require_keys_eq!(seal.holder, sender, PostError::SealNotYours);
         let today = now.div_euclid(SECONDS_PER_DAY);
-        require!(seal.last_free_day < today, DakError::StampAlreadyUsed);
+        require!(seal.last_free_day < today, PostError::StampAlreadyUsed);
         seal.last_free_day = today;
     } else {
         let price = letterbox
             .as_ref()
             .map_or(post_office.floor_price, |l| l.price.max(post_office.floor_price));
-        require!(postage >= price, DakError::PostageTooLow);
+        require!(postage >= price, PostError::PostageTooLow);
 
         if let Some(letterbox) = letterbox.as_mut() {
-            let day = local_day(deliver_at, utc_offset_minutes).ok_or(DakError::Overflow)?;
+            let day = local_day(deliver_at, utc_offset_minutes).ok_or(PostError::Overflow)?;
             if letterbox.paid_day != day {
                 letterbox.paid_day = day;
                 letterbox.paid_count = 0;
             }
             require!(
                 letterbox.paid_count < MAX_PAID_CARDS_PER_DAY,
-                DakError::LetterboxFull
+                PostError::LetterboxFull
             );
             letterbox.paid_count += 1;
         }
     }
 
     if let Some(letterbox) = letterbox.as_mut() {
-        letterbox.received = letterbox.received.checked_add(1).ok_or(DakError::Overflow)?;
+        letterbox.received = letterbox.received.checked_add(1).ok_or(PostError::Overflow)?;
         store_letterbox(&ctx.accounts.recipient_letterbox, letterbox)?;
     }
 
@@ -133,7 +133,7 @@ pub fn handle_post_card(
             .accounts
             .sender_token
             .as_ref()
-            .ok_or(DakError::MissingSenderToken)?;
+            .ok_or(PostError::MissingSenderToken)?;
         let token_program = ctx.accounts.token_program.key();
 
         if postage > 0 {
@@ -185,7 +185,7 @@ fn load_letterbox(info: &UncheckedAccount) -> Result<Option<Letterbox>> {
     }
     let data = info.try_borrow_data()?;
     let mut bytes: &[u8] = &data;
-    let letterbox = Letterbox::try_deserialize(&mut bytes).map_err(|_| DakError::BadLetterbox)?;
+    let letterbox = Letterbox::try_deserialize(&mut bytes).map_err(|_| PostError::BadLetterbox)?;
     Ok(Some(letterbox))
 }
 

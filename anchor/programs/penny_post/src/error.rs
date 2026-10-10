@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 
 #[error_code]
-pub enum DakError {
+pub enum PostError {
     #[msg("Only the program's upgrade authority can open the post office")]
     NotUpgradeAuthority,
     #[msg("The burn share is above the 20% ceiling")]

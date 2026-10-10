@@ -3,7 +3,7 @@ use anchor_spl::{token_2022, token_interface::TokenAccount};
 
 use crate::{
     constants::*,
-    error::DakError,
+    error::PostError,
     events::LetterboxVerified,
     sgt::read_genesis_token,
     state::{Letterbox, PostOffice, Seal},
@@ -28,13 +28,13 @@ pub struct VerifyLetterbox<'info> {
     pub post_office: Account<'info, PostOffice>,
     /// CHECK: must be owned by Token-2022. The handler reads its mint authority
     /// and group membership and compares both with the post office's record.
-    #[account(owner = token_2022::ID @ DakError::NotGenesisToken)]
+    #[account(owner = token_2022::ID @ PostError::NotGenesisToken)]
     pub sgt_mint: UncheckedAccount<'info>,
     #[account(
-        constraint = *sgt_token.to_account_info().owner == token_2022::ID @ DakError::GenesisTokenNotHeld,
-        constraint = sgt_token.mint == sgt_mint.key() @ DakError::GenesisTokenNotHeld,
-        constraint = sgt_token.owner == owner.key() @ DakError::GenesisTokenNotHeld,
-        constraint = sgt_token.amount == 1 @ DakError::GenesisTokenNotHeld,
+        constraint = *sgt_token.to_account_info().owner == token_2022::ID @ PostError::GenesisTokenNotHeld,
+        constraint = sgt_token.mint == sgt_mint.key() @ PostError::GenesisTokenNotHeld,
+        constraint = sgt_token.owner == owner.key() @ PostError::GenesisTokenNotHeld,
+        constraint = sgt_token.amount == 1 @ PostError::GenesisTokenNotHeld,
     )]
     pub sgt_token: InterfaceAccount<'info, TokenAccount>,
     #[account(
@@ -56,12 +56,12 @@ pub fn handle_verify_letterbox(ctx: Context<VerifyLetterbox>) -> Result<()> {
         let data = ctx.accounts.sgt_mint.try_borrow_data()?;
         read_genesis_token(&data)?
     };
-    require_keys_eq!(token.member_mint, sgt_mint, DakError::NotGenesisToken);
-    require_keys_eq!(token.group, post_office.sgt_group, DakError::NotGenesisToken);
+    require_keys_eq!(token.member_mint, sgt_mint, PostError::NotGenesisToken);
+    require_keys_eq!(token.group, post_office.sgt_group, PostError::NotGenesisToken);
     require_keys_eq!(
         token.mint_authority,
         post_office.sgt_mint_authority,
-        DakError::NotGenesisToken
+        PostError::NotGenesisToken
     );
 
     // A seal that already exists keeps its `last_free_day`. Only the holder changes.

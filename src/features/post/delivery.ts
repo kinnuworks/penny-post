@@ -1,5 +1,5 @@
 // The same clock the program keeps: the post comes at 08:00 in the reader's
-// own time zone. Kept in step with `next_delivery` in anchor/programs/dak/src/state.rs.
+// own time zone. Kept in step with `next_delivery` in anchor/programs/penny_post/src/state.rs.
 
 const SECONDS_PER_DAY = 86_400
 const DELIVERY_SECOND_OF_DAY = 8 * 3_600

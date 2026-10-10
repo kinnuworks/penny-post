@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "Dak",
-    "slug": "dak",
-    "scheme": "dak",
+    "name": "Penny Post",
+    "slug": "penny-post",
+    "scheme": "pennypost",
     "version": "0.1.0",
     "userInterfaceStyle": "automatic",
     "orientation": "portrait",
     "backgroundColor": "#F4EBDD",
     "android": {
-      "package": "post.dak.app",
+      "package": "post.penny.app",
       "versionCode": 1,
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
@@ -37,7 +37,8 @@
             "backgroundColor": "#1F1915"
           }
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "icon": "./assets/icon.png"
   }

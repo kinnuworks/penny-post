@@ -1,13 +1,13 @@
 [package]
-name = "dak"
+name = "penny_post"
 version = "0.1.0"
-description = "Dak: a letterbox for every .skr name. Postage sits in escrow until the reader signs for the card."
+description = "Penny Post: a letterbox for every .skr name. Postage sits in escrow until the reader signs for the card."
 edition.workspace = true
 rust-version.workspace = true
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "dak"
+name = "penny_post"
 
 [features]
 default = []

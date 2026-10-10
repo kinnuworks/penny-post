@@ -2,12 +2,12 @@
 // Written the way the person behind a post office counter would talk.
 
 export const copy = {
-  appName: 'Dak',
+  appName: 'Penny Post',
   tagline: 'The post comes once a day.',
 
   welcome: {
     title: 'You have an address. Nobody has written to it yet.',
-    body: 'Dak is a letterbox for your wallet. Friends write for free. Anyone else pays postage, and the postage is yours when you turn the card over.',
+    body: 'Penny Post is a letterbox for your wallet. Friends write for free. Anyone else pays postage, and the postage is yours when you turn the card over.',
     connect: 'Show me my letterbox',
     connecting: 'Finding your wallet',
   },

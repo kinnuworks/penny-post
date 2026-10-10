@@ -3,7 +3,7 @@ use anchor_spl::token::{Mint, Token, TokenAccount};
 
 use crate::{
     constants::*,
-    error::DakError,
+    error::PostError,
     events::CardReturned,
     state::{Card, PostOffice},
     vault::{self, VaultAccounts},
@@ -36,8 +36,8 @@ pub struct ReturnCard<'info> {
     pub vault: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
-        constraint = sender_token.mint == post_office.postage_mint @ DakError::WrongTokenAccount,
-        constraint = sender_token.owner == card.sender @ DakError::WrongTokenAccount,
+        constraint = sender_token.mint == post_office.postage_mint @ PostError::WrongTokenAccount,
+        constraint = sender_token.owner == card.sender @ PostError::WrongTokenAccount,
     )]
     pub sender_token: Option<Box<Account<'info, TokenAccount>>>,
     #[account(seeds = [POST_OFFICE_SEED], bump = post_office.bump, has_one = postage_mint)]
@@ -50,7 +50,7 @@ pub fn handle_return_card(ctx: Context<ReturnCard>) -> Result<()> {
     let now = Clock::get()?.unix_timestamp;
     let card = &ctx.accounts.card;
     let caller_is_reader = ctx.accounts.caller.key() == card.recipient;
-    require!(now >= card.expires_at || caller_is_reader, DakError::NotExpiredYet);
+    require!(now >= card.expires_at || caller_is_reader, PostError::NotExpiredYet);
 
     let refunded = ctx.accounts.vault.amount;
     let sender = card.sender;
@@ -71,7 +71,7 @@ pub fn handle_return_card(ctx: Context<ReturnCard>) -> Result<()> {
             .accounts
             .sender_token
             .as_ref()
-            .ok_or(DakError::MissingSenderToken)?;
+            .ok_or(PostError::MissingSenderToken)?;
         vault::pay_out(
             &vault_accounts,
             sender_token.to_account_info(),

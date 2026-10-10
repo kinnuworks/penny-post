@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::Mint;
 
-use crate::{constants::*, error::DakError, program::Dak, state::PostOffice};
+use crate::{constants::*, error::PostError, program::PennyPost, state::PostOffice};
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct Terms {
@@ -12,7 +12,7 @@ pub struct Terms {
 
 impl Terms {
     pub fn check(&self) -> Result<()> {
-        require!(self.burn_bps <= MAX_BURN_BPS, DakError::BurnShareTooHigh);
+        require!(self.burn_bps <= MAX_BURN_BPS, PostError::BurnShareTooHigh);
         Ok(())
     }
 }
@@ -33,11 +33,11 @@ pub struct OpenPostOffice<'info> {
     pub post_office: Account<'info, PostOffice>,
     pub postage_mint: Account<'info, Mint>,
     #[account(
-        constraint = program.programdata_address()? == Some(program_data.key()) @ DakError::NotUpgradeAuthority
+        constraint = program.programdata_address()? == Some(program_data.key()) @ PostError::NotUpgradeAuthority
     )]
-    pub program: Program<'info, Dak>,
+    pub program: Program<'info, PennyPost>,
     #[account(
-        constraint = program_data.upgrade_authority_address == Some(admin.key()) @ DakError::NotUpgradeAuthority
+        constraint = program_data.upgrade_authority_address == Some(admin.key()) @ PostError::NotUpgradeAuthority
     )]
     pub program_data: Account<'info, ProgramData>,
     pub system_program: Program<'info, System>,

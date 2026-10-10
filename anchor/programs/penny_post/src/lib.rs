@@ -1,4 +1,4 @@
-//! Dak: a letterbox for every wallet.
+//! Penny Post: a letterbox for every wallet.
 //!
 //! A card is posted to a wallet with postage held in the card's own vault. The
 //! post comes once a day, at 08:00 in the reader's time zone. When the reader
@@ -24,7 +24,7 @@ pub use state::*;
 declare_id!("BneHHhN7nSXgjZytQWLsi1TRY7xMz83FxpkKgoCb1n2d");
 
 #[program]
-pub mod dak {
+pub mod penny_post {
     use super::*;
 
     pub fn open_post_office(

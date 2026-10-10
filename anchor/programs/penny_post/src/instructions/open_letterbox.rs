@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 use crate::{
     constants::*,
-    error::DakError,
+    error::PostError,
     state::{Letterbox, PostOffice},
 };
 
@@ -51,10 +51,10 @@ pub fn check_letterbox_settings(
     price: u64,
     utc_offset_minutes: i16,
 ) -> Result<()> {
-    require!(price >= post_office.floor_price, DakError::PriceBelowFloor);
+    require!(price >= post_office.floor_price, PostError::PriceBelowFloor);
     require!(
         (MIN_UTC_OFFSET_MINUTES..=MAX_UTC_OFFSET_MINUTES).contains(&utc_offset_minutes),
-        DakError::BadUtcOffset
+        PostError::BadUtcOffset
     );
     Ok(())
 }

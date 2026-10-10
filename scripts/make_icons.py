@@ -1,4 +1,4 @@
-"""Draws Dak's mark: the face of a pillar box, a vermilion block with a letter slot.
+"""Draws Penny Post's mark: the face of a pillar box, a vermilion block with a letter slot.
 
 Run from the repo root:  python3 scripts/make_icons.py
 Writes assets/icon.png, assets/adaptive-foreground.png and assets/splash.png.

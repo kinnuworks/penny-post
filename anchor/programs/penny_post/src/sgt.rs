@@ -8,7 +8,7 @@
 
 use anchor_lang::prelude::*;
 
-use crate::error::DakError;
+use crate::error::PostError;
 
 /// Length of the base mint, and of the padded base every extended account shares.
 #[cfg(test)]
@@ -33,7 +33,7 @@ pub struct GenesisToken {
 pub fn read_genesis_token(data: &[u8]) -> Result<GenesisToken> {
     let mint_authority = read_mint_authority(data)?;
     let member = find_extension(data, EXTENSION_TOKEN_GROUP_MEMBER)?;
-    require!(member.len() == TOKEN_GROUP_MEMBER_LEN, DakError::NotGenesisToken);
+    require!(member.len() == TOKEN_GROUP_MEMBER_LEN, PostError::NotGenesisToken);
 
     Ok(GenesisToken {
         mint_authority,
@@ -44,35 +44,35 @@ pub fn read_genesis_token(data: &[u8]) -> Result<GenesisToken> {
 }
 
 fn read_mint_authority(data: &[u8]) -> Result<Pubkey> {
-    require!(data.len() > BASE_ACCOUNT_LEN, DakError::NotGenesisToken);
+    require!(data.len() > BASE_ACCOUNT_LEN, PostError::NotGenesisToken);
     // COption<Pubkey>: a four-byte tag, then the key.
     let tag = u32::from_le_bytes(read_array(data, 0)?);
-    require!(tag == 1, DakError::NotGenesisToken);
-    require!(data[MINT_IS_INITIALIZED_OFFSET] == 1, DakError::NotGenesisToken);
+    require!(tag == 1, PostError::NotGenesisToken);
+    require!(data[MINT_IS_INITIALIZED_OFFSET] == 1, PostError::NotGenesisToken);
     read_pubkey(data, 4)
 }
 
 /// Walks the type-length-value entries after the account type byte.
 fn find_extension(data: &[u8], wanted: u16) -> Result<&[u8]> {
-    require!(data.len() > BASE_ACCOUNT_LEN, DakError::NotGenesisToken);
-    require!(data[BASE_ACCOUNT_LEN] == ACCOUNT_TYPE_MINT, DakError::NotGenesisToken);
+    require!(data.len() > BASE_ACCOUNT_LEN, PostError::NotGenesisToken);
+    require!(data[BASE_ACCOUNT_LEN] == ACCOUNT_TYPE_MINT, PostError::NotGenesisToken);
 
     let mut cursor = BASE_ACCOUNT_LEN + 1;
     while cursor + 4 <= data.len() {
         let kind = u16::from_le_bytes(read_array(data, cursor)?);
         let length = usize::from(u16::from_le_bytes(read_array(data, cursor + 2)?));
         let start = cursor + 4;
-        let end = start.checked_add(length).ok_or(DakError::NotGenesisToken)?;
+        let end = start.checked_add(length).ok_or(PostError::NotGenesisToken)?;
         if kind == 0 {
             break;
         }
-        require!(end <= data.len(), DakError::NotGenesisToken);
+        require!(end <= data.len(), PostError::NotGenesisToken);
         if kind == wanted {
             return Ok(&data[start..end]);
         }
         cursor = end;
     }
-    err!(DakError::NotGenesisToken)
+    err!(PostError::NotGenesisToken)
 }
 
 fn read_pubkey(data: &[u8], offset: usize) -> Result<Pubkey> {
@@ -80,8 +80,8 @@ fn read_pubkey(data: &[u8], offset: usize) -> Result<Pubkey> {
 }
 
 fn read_array<const N: usize>(data: &[u8], offset: usize) -> Result<[u8; N]> {
-    let end = offset.checked_add(N).ok_or(DakError::NotGenesisToken)?;
-    let slice = data.get(offset..end).ok_or(DakError::NotGenesisToken)?;
+    let end = offset.checked_add(N).ok_or(PostError::NotGenesisToken)?;
+    let slice = data.get(offset..end).ok_or(PostError::NotGenesisToken)?;
     let mut out = [0u8; N];
     out.copy_from_slice(slice);
     Ok(out)

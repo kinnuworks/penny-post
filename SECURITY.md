@@ -1,6 +1,6 @@
 # Security
 
-Dak holds other people's postage for up to a week, so this file says plainly what protects it and what has not been checked.
+Penny Post holds other people's postage for up to a week, so this file says plainly what protects it and what has not been checked.
 
 ## Status
 

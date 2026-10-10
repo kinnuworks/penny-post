@@ -3,7 +3,7 @@ use anchor_spl::token::{Mint, Token, TokenAccount};
 
 use crate::{
     constants::*,
-    error::DakError,
+    error::PostError,
     events::CardOpened,
     state::{Card, Letterbox, PostOffice},
     vault::{self, VaultAccounts},
@@ -38,8 +38,8 @@ pub struct OpenCard<'info> {
     pub vault: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
-        constraint = recipient_token.mint == post_office.postage_mint @ DakError::WrongTokenAccount,
-        constraint = recipient_token.owner == recipient.key() @ DakError::WrongTokenAccount,
+        constraint = recipient_token.mint == post_office.postage_mint @ PostError::WrongTokenAccount,
+        constraint = recipient_token.owner == recipient.key() @ PostError::WrongTokenAccount,
     )]
     pub recipient_token: Option<Box<Account<'info, TokenAccount>>>,
     #[account(
@@ -58,13 +58,13 @@ pub struct OpenCard<'info> {
 pub fn handle_open_card(ctx: Context<OpenCard>) -> Result<()> {
     let now = Clock::get()?.unix_timestamp;
     let card = &ctx.accounts.card;
-    require!(now >= card.deliver_at, DakError::NotDeliveredYet);
+    require!(now >= card.deliver_at, PostError::NotDeliveredYet);
 
     // The vault can hold more than the postage if someone sent tokens straight
     // to it. Empty it fully, or the close below would fail and lock the card.
     let held = ctx.accounts.vault.amount;
     let burned = burn_share(card.postage, ctx.accounts.post_office.burn_bps)?.min(held);
-    let paid_to_reader = held.checked_sub(burned).ok_or(DakError::Overflow)?;
+    let paid_to_reader = held.checked_sub(burned).ok_or(PostError::Overflow)?;
 
     let sender = card.sender;
     let card_id = card.card_id.to_le_bytes();
@@ -83,7 +83,7 @@ pub fn handle_open_card(ctx: Context<OpenCard>) -> Result<()> {
             .accounts
             .recipient_token
             .as_ref()
-            .ok_or(DakError::MissingReaderToken)?;
+            .ok_or(PostError::MissingReaderToken)?;
         vault::pay_out(
             &vault_accounts,
             recipient_token.to_account_info(),
@@ -96,11 +96,11 @@ pub fn handle_open_card(ctx: Context<OpenCard>) -> Result<()> {
     vault::close(&vault_accounts, ctx.accounts.sender.to_account_info(), card_seeds)?;
 
     if let Some(letterbox) = ctx.accounts.recipient_letterbox.as_mut() {
-        letterbox.opened = letterbox.opened.checked_add(1).ok_or(DakError::Overflow)?;
+        letterbox.opened = letterbox.opened.checked_add(1).ok_or(PostError::Overflow)?;
         letterbox.earned = letterbox
             .earned
             .checked_add(paid_to_reader)
-            .ok_or(DakError::Overflow)?;
+            .ok_or(PostError::Overflow)?;
     }
 
     emit!(CardOpened {
@@ -117,9 +117,9 @@ pub fn handle_open_card(ctx: Context<OpenCard>) -> Result<()> {
 pub fn burn_share(postage: u64, burn_bps: u16) -> Result<u64> {
     let share = u128::from(postage)
         .checked_mul(u128::from(burn_bps))
-        .ok_or(DakError::Overflow)?
+        .ok_or(PostError::Overflow)?
         / BPS_DENOMINATOR;
-    u64::try_from(share).map_err(|_| DakError::Overflow.into())
+    u64::try_from(share).map_err(|_| PostError::Overflow.into())
 }
 
 #[cfg(test)]
