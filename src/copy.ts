@@ -32,6 +32,8 @@ export const copy = {
     price: (amount: string, token: string) => `A stranger pays ${amount} ${token} to reach you.`,
     seeker: (memberNumber: string) => `Seeker No. ${memberNumber}`,
     kept: 'Cards you have kept',
+    claimStamp: 'I have a Seeker. Put my daily stamp on the counter.',
+    claimingStamp: 'Looking for your Seeker',
   },
 
   open: {
@@ -69,6 +71,8 @@ export const copy = {
     'no-such-reader': 'Nobody goes by that name. Check the spelling, or use their wallet address.',
     'to-yourself': 'That is your own address. Writing to yourself costs a stamp and proves very little.',
     'no-free-stamp': 'There is no free stamp on the counter today. Pick another one.',
+    'no-genesis-token':
+      'There is no Seeker Genesis Token in this wallet. The free daily stamp is for Seeker owners. Everything else works without one.',
     'not-arrived':
       "The card is here, but its picture and message are still on the sender's phone. Try again in a minute.",
     'office-closed': 'The post office is not open on this network yet.',

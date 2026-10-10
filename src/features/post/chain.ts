@@ -13,6 +13,7 @@ import {
   getPostCardInstructionAsync,
   getReturnCardInstructionAsync,
   getSetLetterboxInstructionAsync,
+  getVerifyLetterboxInstructionAsync,
   PENNY_POST_PROGRAM_ADDRESS,
   type Card,
   type Letterbox,
@@ -123,6 +124,15 @@ export async function buildSetLetterbox(input: {
   utcOffsetMinutes: number
 }): Promise<Instruction[]> {
   return [await getSetLetterboxInstructionAsync(input)]
+}
+
+/** Ties the wallet's Genesis Token to its letterbox. The program checks the token itself. */
+export async function buildVerifyLetterbox(input: {
+  owner: TransactionSigner
+  sgtMint: Address
+  sgtToken: Address
+}): Promise<Instruction[]> {
+  return [await getVerifyLetterboxInstructionAsync(input)]
 }
 
 export interface PostCardInput {

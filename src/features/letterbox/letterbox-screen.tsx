@@ -12,7 +12,14 @@ import { stampById } from '../card/stamps'
 import { hasFreeStamp, type PostedCard } from '../post/chain'
 import { describeDelivery, deviceUtcOffsetMinutes, nextDelivery } from '../post/delivery'
 import { tokenName } from '../post/token-name'
-import { useDoormat, useFlushOutbox, useMyLetterbox, useOpenLetterbox, usePostOffice } from '../post/use-post'
+import {
+  useDoormat,
+  useFlushOutbox,
+  useMyLetterbox,
+  useOpenLetterbox,
+  usePostOffice,
+  useVerifyLetterbox,
+} from '../post/use-post'
 
 // The doormat: what has arrived, what is on its way, and the counter where the
 // next card gets written.
@@ -31,6 +38,7 @@ export function LetterboxScreen({
   const mine = useMyLetterbox()
   const doormat = useDoormat()
   const openLetterbox = useOpenLetterbox()
+  const verify = useVerifyLetterbox()
   useFlushOutbox()
 
   const token = office.data ? tokenName(office.data.postageMint) : ''
@@ -102,6 +110,16 @@ export function LetterboxScreen({
           <Text className="font-body text-body text-ink-soft">
             {hasFreeStamp(seal, now) ? copy.counter.stampReady : copy.counter.stampUsed}
           </Text>
+        ) : letterbox ? (
+          <>
+            <TextLink
+              label={verify.isPending ? copy.letterbox.claimingStamp : copy.letterbox.claimStamp}
+              onPress={() => (verify.isPending ? undefined : verify.mutate())}
+            />
+            {verify.error ? (
+              <Text className="font-body text-body text-accent-ink">{describeProblem(verify.error)}</Text>
+            ) : null}
+          </>
         ) : null}
         <InkButton disabled={isBusy || !office.data} label={copy.counter.write} onPress={() => router.push('/write')} />
         <View className="flex-row justify-between pt-1">

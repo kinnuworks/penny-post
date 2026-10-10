@@ -8,6 +8,7 @@ import { hashCard, type CardContent } from '../card/card'
 import { isSealed, packCard, unpackCard } from '../card/envelope'
 import { EXPRESS_STAMP_ID, FREE_STAMP_ID } from '../card/stamps'
 import { keep } from '../kept/kept-store'
+import { findGenesisToken } from '../letterbox/genesis-token'
 import { loadOrCreateReadingKey, loadReadingKey } from '../letterbox/reading-key-store'
 import { resolveRecipient } from '../names/skr'
 import { downloadCard, uploadCard, type Cluster } from './card-store'
@@ -16,6 +17,7 @@ import {
   buildOpenLetterbox,
   buildPostCard,
   buildReturnCard,
+  buildVerifyLetterbox,
   fetchLetterbox,
   fetchPostOffice,
   fetchSealHeldBy,
@@ -37,7 +39,13 @@ const mainnetRpc = createSolanaRpc(MAINNET_RPC_URL)
 export class PostProblem extends Error {
   constructor(
     public reason:
-      'no-such-reader' | 'to-yourself' | 'no-free-stamp' | 'not-arrived' | 'office-closed' | 'sealed-for-another-phone',
+      | 'no-such-reader'
+      | 'to-yourself'
+      | 'no-free-stamp'
+      | 'no-genesis-token'
+      | 'not-arrived'
+      | 'office-closed'
+      | 'sealed-for-another-phone',
   ) {
     super(reason)
   }
@@ -125,6 +133,27 @@ export function useOpenLetterbox() {
     },
     // Refresh even after a failure: the wallet may have submitted the
     // transaction after the app stopped waiting for it.
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['letterbox', chain, account?.address] }),
+  })
+}
+
+/** Finds the Seeker Genesis Token in the wallet and ties its seal to the letterbox. */
+export function useVerifyLetterbox() {
+  const { account, chain, client } = useMobileWallet()
+  const send = useSend()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!account) {
+        throw new PostProblem('office-closed')
+      }
+      const token = await findGenesisToken(client.rpc, account.address)
+      if (!token) {
+        throw new PostProblem('no-genesis-token')
+      }
+      await send((owner) => buildVerifyLetterbox({ owner, sgtMint: token.mint, sgtToken: token.tokenAccount }))
+    },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['letterbox', chain, account?.address] }),
   })
 }
