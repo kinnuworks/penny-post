@@ -10,7 +10,7 @@ import { EXPRESS_STAMP_ID, FREE_STAMP_ID } from '../card/stamps'
 import { keep } from '../kept/kept-store'
 import { findGenesisToken } from '../letterbox/genesis-token'
 import { loadOrCreateReadingKey, loadReadingKey } from '../letterbox/reading-key-store'
-import { resolveRecipient } from '../names/skr'
+import { parseSkrName, primarySkrName, resolveRecipient, resolveSkrName } from '../names/skr'
 import { downloadCard, uploadCard, type Cluster } from './card-store'
 import {
   buildOpenCard,
@@ -196,8 +196,14 @@ export function usePostCard() {
         throw new PostProblem('no-free-stamp')
       }
 
+      // The return address is the writer's own .skr name, if they have set one.
+      const signed: CardContent = {
+        ...card,
+        fromName: await primarySkrName(mainnetRpc, account.address).catch(() => null),
+      }
+
       // Sealed to the reader's key if they have a letterbox, an open postcard if not.
-      const bytes = packCard(card, readerLetterbox ? new Uint8Array(readerLetterbox.readingKey) : null)
+      const bytes = packCard(signed, readerLetterbox ? new Uint8Array(readerLetterbox.readingKey) : null)
       const cardId = newCardId()
       const cluster = clusterOf(chain)
       const [address] = await findCardPda({ cardId, sender: account.address })
@@ -269,6 +275,10 @@ export function useOpenCard() {
         throw new PostProblem('sealed-for-another-phone')
       }
 
+      // A card says who it is from, and anyone can write any name on a card. The
+      // name is only kept if it really does point at the wallet that posted it.
+      content = { ...content, fromName: await confirmedName(content.fromName, card.sender) }
+
       await send((recipient) => buildOpenCard({ card, postageMint: office.postageMint, recipient }))
 
       const burned = (card.postage * BigInt(office.burnBps)) / 10_000n
@@ -286,6 +296,25 @@ export function useOpenCard() {
       void queryClient.invalidateQueries({ queryKey: ['doormat', chain, account?.address] })
       void queryClient.invalidateQueries({ queryKey: ['kept', account?.address] })
     },
+  })
+}
+
+async function confirmedName(claimed: string | null, sender: Address): Promise<string | null> {
+  const label = claimed ? parseSkrName(claimed) : null
+  if (!label) {
+    return null
+  }
+  const owner = await resolveSkrName(mainnetRpc, label).catch(() => null)
+  return owner === sender ? `${label}.skr` : null
+}
+
+/** The .skr name a wallet goes by, for showing who a card is from. */
+export function useSkrName(wallet: Address | undefined) {
+  return useQuery({
+    enabled: !!wallet,
+    queryKey: ['skr-name', wallet],
+    queryFn: () => (wallet ? primarySkrName(mainnetRpc, wallet) : null),
+    staleTime: 10 * 60_000,
   })
 }
 

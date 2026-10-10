@@ -1,6 +1,6 @@
-import { createSolanaRpc } from '@solana/kit'
+import { createSolanaRpc, type Address } from '@solana/kit'
 import { describe, expect, it } from 'vitest'
-import { parseSkrName, resolveRecipient, resolveSkrName } from './skr'
+import { parseSkrName, primarySkrName, resolveRecipient, resolveSkrName } from './skr'
 
 describe('parseSkrName', () => {
   it('reads a name however it was typed', () => {
@@ -32,6 +32,13 @@ describe.runIf(process.env.LIVE === '1')('resolveSkrName against mainnet', () =>
   it('returns null for a name nobody holds', async () => {
     expect(await resolveSkrName(rpc, 'nobody-holds-this-name-9f3a')).toBeNull()
   }, 30_000)
+
+  it("reads a wallet's main name, and only if it still points back", async () => {
+    // This wallet had beeman.skr set as its main name when the test was written.
+    expect(await primarySkrName(rpc, '2c43Cag8oYcLKdSDKde9dj632LpejDAXB6DF32z9Ef7P' as Address)).toBe('beeman.skr')
+    // A wallet that has never set a main name has none.
+    expect(await primarySkrName(rpc, '11111111111111111111111111111111' as Address)).toBeNull()
+  }, 60_000)
 
   it('passes a wallet address straight through', async () => {
     const wallet = '4NmoyKKATGzcKiSijTteZDE1KpC46VzrAM2pv5mWaY2W'

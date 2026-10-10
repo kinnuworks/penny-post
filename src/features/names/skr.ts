@@ -20,6 +20,7 @@ type Rpc = ReturnType<typeof createSolanaRpc>
 
 const ANS_PROGRAM = address('ALTNSZ46uaAUU7XUV6awvdorLGqAsPwa9shm7h4uP2FK')
 const NAME_HOUSE_PROGRAM = address('NH3uX6FtVE2fNREAioP7hm5RaozotZxeL6khU1EHx51')
+const TLD_HOUSE_PROGRAM = address('TLDHkysf5pCnKsVA4gXpNvmy7psXLPEu4LAdDJthT9S')
 const SKR_PARENT = address('F3A8kuikEiu6k2399oSJ1PWfcJYDHqpwoQ2e8psSDNuF')
 const SKR_TLD_HOUSE = address('4RKP4BEMu5sXBfXSH7xN2owtQrnAJvhhwtBBmj9JEYkA')
 
@@ -103,6 +104,43 @@ export async function resolveRecipient(
   }
   const trimmed = input.trim()
   return isAddress(trimmed) ? { address: trimmed, name: null } : null
+}
+
+/**
+ * The `.skr` name a wallet has set as its main name, or null. The record is
+ * checked the other way round too, because it can outlive a name that has
+ * since moved to another wallet.
+ */
+export async function primarySkrName(rpc: Rpc, owner: Address): Promise<string | null> {
+  const [mainDomain] = await getProgramDerivedAddress({
+    programAddress: TLD_HOUSE_PROGRAM,
+    seeds: [new TextEncoder().encode('main_domain'), getAddressEncoder().encode(owner)],
+  })
+  const record = await fetchData(rpc, mainDomain)
+  if (!record) {
+    return null
+  }
+
+  // Main domain record: discriminator (8), name account (32), then two
+  // length-prefixed strings: the top-level domain and the name.
+  const tld = readString(record, 40)
+  const label = tld ? readString(record, tld.end) : null
+  if (!tld || !label || tld.text !== SUFFIX || parseSkrName(label.text + SUFFIX) !== label.text) {
+    return null
+  }
+  return (await resolveSkrName(rpc, label.text)) === owner ? label.text + SUFFIX : null
+}
+
+function readString(data: Uint8Array, offset: number): { end: number; text: string } | null {
+  if (offset + 4 > data.length) {
+    return null
+  }
+  const length = new DataView(data.buffer, data.byteOffset, data.byteLength).getUint32(offset, true)
+  const end = offset + 4 + length
+  if (length > 64 || end > data.length) {
+    return null
+  }
+  return { end, text: new TextDecoder().decode(data.subarray(offset + 4, end)) }
 }
 
 async function nftRecordFor(nameAccount: Address): Promise<Address> {

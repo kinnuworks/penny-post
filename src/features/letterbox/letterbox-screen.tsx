@@ -18,6 +18,7 @@ import {
   useMyLetterbox,
   useOpenLetterbox,
   usePostOffice,
+  useSkrName,
   useVerifyLetterbox,
 } from '../post/use-post'
 
@@ -148,6 +149,8 @@ function CardRow({
   token: string
 }) {
   const palette = usePalette()
+  const name = useSkrName(card.sender)
+  const from = copy.letterbox.from(name.data ?? ellipsify(card.sender))
   const stamp = stampById(card.stamp)
   const arrived = Number(card.deliverAt) <= now
   const inside =
@@ -161,7 +164,7 @@ function CardRow({
   return (
     <Pressable
       accessibilityHint={arrived ? 'Opens the card' : undefined}
-      accessibilityLabel={`${copy.letterbox.from(ellipsify(card.sender))}. ${inside}. ${status}.`}
+      accessibilityLabel={`${from}. ${inside}. ${status}.`}
       accessibilityRole="button"
       className={`flex-row items-center justify-between rounded-card border border-rule bg-paper-raised px-4 py-3 ${arrived ? 'active:bg-paper-sunk' : 'opacity-60'}`}
       disabled={!arrived}
@@ -169,7 +172,7 @@ function CardRow({
     >
       <View className="flex-1 pr-3">
         <Text className="font-caption text-caption uppercase tracking-widest text-ink-faint">{status}</Text>
-        <Text className="font-hand text-hand text-ink">{copy.letterbox.from(ellipsify(card.sender))}</Text>
+        <Text className="font-hand text-hand text-ink">{from}</Text>
         <Text className="font-body text-body text-ink-soft">{inside}</Text>
       </View>
       <StampArt art={stamp.art} backing={palette.paperRaised} label={stamp.name} size={0.62} />

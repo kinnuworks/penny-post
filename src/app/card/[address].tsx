@@ -8,7 +8,7 @@ import { emptyCard, type CardContent } from '../../features/card/card'
 import { FlipCard } from '../../features/card/flip-card'
 import { PostcardBack, PostcardFront } from '../../features/card/postcard'
 import { tokenName } from '../../features/post/token-name'
-import { useDoormat, useOpenCard, usePostOffice, useReturnCard } from '../../features/post/use-post'
+import { useDoormat, useOpenCard, usePostOffice, useReturnCard, useSkrName } from '../../features/post/use-post'
 import { describeProblem } from '../../utils/describe-problem'
 import { ellipsify } from '../../utils/ellipsify'
 import { formatTokens } from '../../utils/format-tokens'
@@ -31,6 +31,7 @@ export default function CardScreen() {
 
   // Kept from the first render: once the card is opened it leaves the doormat.
   const [card] = useState(() => doormat.data?.find((entry) => entry.address === address) ?? null)
+  const senderName = useSkrName(card?.sender)
   const token = office.data ? tokenName(office.data.postageMint) : ''
   const decimals = office.data?.decimals ?? 0
   const isBusy = openCard.isPending || returnCard.isPending
@@ -76,7 +77,9 @@ export default function CardScreen() {
                 postmark={{ date: postmarkDate(Number(card.postedAt)), place: 'Penny Post' }}
                 to="You"
               />
-              <Text className="mt-6 font-hand text-hand text-ink">{copy.letterbox.from(ellipsify(card.sender))}</Text>
+              <Text className="mt-6 font-hand text-hand text-ink">
+                {copy.letterbox.from(senderName.data ?? ellipsify(card.sender))}
+              </Text>
               <Text className="font-body text-body text-ink-soft">
                 {card.postage > 0n
                   ? copy.letterbox.paidInside(formatTokens(card.postage, decimals), token)
