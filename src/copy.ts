@@ -122,6 +122,9 @@ export const copy = {
   notification: {
     title: 'The post has come.',
     body: (count: number) => (count === 1 ? 'One card on the doormat.' : `${count} cards on the doormat.`),
+    quietTitle: "Eight o'clock.",
+    quietBody: 'The post has been round. Worth a look at the doormat.',
+    channel: 'The morning post',
   },
 
   errors: {

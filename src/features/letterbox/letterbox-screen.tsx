@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router'
+import { useEffect } from 'react'
 import { Pressable, ScrollView, Text, View } from 'react-native'
 import { InkButton } from '../../components/ink-button'
 import { StampArt } from '../../components/stamp-art'
@@ -11,6 +12,7 @@ import { useNow } from '../../utils/use-now'
 import { stampById } from '../card/stamps'
 import { hasFreeStamp, type PostedCard } from '../post/chain'
 import { describeDelivery, deviceUtcOffsetMinutes, nextDelivery } from '../post/delivery'
+import { askToRing, setMorningBells } from '../post/morning-bell'
 import { tokenName } from '../post/token-name'
 import {
   useDoormat,
@@ -48,6 +50,23 @@ export function LetterboxScreen({
   const seal = mine.data?.seal ?? null
   const cards = doormat.data ?? []
   const offset = deviceUtcOffsetMinutes()
+
+  // Once there is a letterbox, ask whether the morning bell may ring, and keep
+  // the coming week's bells in step with what is known to be in the post.
+  const hasLetterbox = !!letterbox
+  const arrivals = cards
+    .map((card) => Number(card.deliverAt))
+    .filter((arrival) => arrival > now)
+    .join(',')
+  useEffect(() => {
+    if (!hasLetterbox) {
+      return
+    }
+    const times = arrivals ? arrivals.split(',').map(Number) : []
+    void askToRing()
+      .then(() => setMorningBells(Math.floor(Date.now() / 1000), deviceUtcOffsetMinutes(), times))
+      .catch(() => undefined)
+  }, [hasLetterbox, arrivals])
 
   return (
     <ScrollView className="flex-1" contentContainerClassName="flex-grow justify-between px-6 pb-8 pt-10">
