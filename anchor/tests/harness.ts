@@ -7,6 +7,7 @@ import {
   createSolanaRpc,
   createSolanaRpcSubscriptions,
   createTransactionMessage,
+  generateKeyPairSigner,
   getAddressEncoder,
   getProgramDerivedAddress,
   getSignatureFromTransaction,
@@ -38,6 +39,7 @@ export const SGT_MINT_AUTHORITY = address('GT2zuHVaZQYZSyQMgJPLzvkmyztfyXg2NJunq
 export const REAL_SGT_MINT = address('5mXbkqKz883aufhAsx3p5Z1NcvD2ppZbdTTznM6oUKLj')
 export const TOKEN_2022_PROGRAM_ADDRESS = address('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb')
 const UPGRADEABLE_LOADER = address('BPFLoaderUpgradeab1e11111111111111111111111')
+const CLOCK_SYSVAR = address('SysvarC1ock11111111111111111111111111111111')
 const ASSOCIATED_TOKEN_PROGRAM = address('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL')
 
 /** One SKR, in base units. SKR has six decimals. */
@@ -125,9 +127,27 @@ export async function giveTokens(
   await cheat('surfnet_setTokenAccount', [owner, mint, { amount: Number(amount) }, tokenProgram])
 }
 
+/** A new wallet with some SOL in it, set directly so it works whatever the validator's clock says. */
+export async function newWallet(sol = 5): Promise<KeyPairSigner> {
+  const wallet = await generateKeyPairSigner()
+  await cheat('surfnet_setAccount', [wallet.address, { lamports: sol * 1_000_000_000 }])
+  return wallet
+}
+
 /** Moves the validator's clock forward to a Unix time in seconds. */
 export async function travelTo(unixSeconds: bigint) {
   await cheat('surfnet_timeTravel', [{ absoluteTimestamp: Number(unixSeconds) * 1000 }])
+}
+
+/** The validator's own idea of the time, in Unix seconds, read from the Clock sysvar. */
+export async function validatorTime(): Promise<bigint> {
+  const { value } = await rpc.getAccountInfo(CLOCK_SYSVAR, { encoding: 'base64' }).send()
+  if (!value) {
+    throw new Error('The validator has no clock.')
+  }
+  const data = Uint8Array.from(atob(value.data[0]), (character) => character.charCodeAt(0))
+  // Clock: slot (8), epoch start (8), epoch (8), leader schedule epoch (8), then the timestamp.
+  return new DataView(data.buffer).getBigInt64(32, true)
 }
 
 // --- Token helpers -----------------------------------------------------------

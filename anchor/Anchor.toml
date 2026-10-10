@@ -20,6 +20,6 @@ online = true
 datasource_rpc_url = "https://api.mainnet-beta.solana.com"
 
 [scripts]
-test = "npx vitest run --testTimeout=60000"
+test = "npx vitest run --testTimeout=60000 --config vitest.config.mts"
 
 [hooks]

@@ -52,7 +52,6 @@ import {
   skrSupply,
   TOKEN_2022_PROGRAM_ADDRESS,
   tokenAccountOf,
-  travelTo,
 } from './harness'
 
 // Anchor's own code for a failed `has_one` check.
@@ -63,7 +62,6 @@ const READER_PRICE = 5n * SKR
 const KOLKATA = 330
 const CONTENT_HASH = new Uint8Array(32).fill(7)
 const PILLAR_BOX = 2
-const SECONDS_PER_DAY = 86_400n
 
 describe('penny_post', () => {
   let admin: KeyPairSigner
@@ -416,37 +414,6 @@ describe('penny_post', () => {
     it('will not let the old holder use the seal', async () => {
       const attempt = postCard({ from: seeker, postage: 0n, seal, to: reader.address })
       expect(await errorCodeOf(attempt)).toBe(PENNY_POST_ERROR__SEAL_NOT_YOURS)
-    })
-
-    // --- the clock. These move time forward, so they run last. ----------------
-
-    it('holds an ordinary card until eight in the morning where the reader lives', async () => {
-      const { data } = await fetchCard(rpc, freeCard)
-      const localSecondOfDay = (data.deliverAt + BigInt(KOLKATA * 60)) % SECONDS_PER_DAY
-      expect(localSecondOfDay).toBe(8n * 3_600n)
-      expect(data.expiresAt).toBe(data.deliverAt + 7n * SECONDS_PER_DAY)
-
-      const early = openCard(reader, freeCard, seeker.address, { withToken: false })
-      expect(await errorCodeOf(early)).toBe(PENNY_POST_ERROR__NOT_DELIVERED_YET)
-
-      await travelTo(data.deliverAt + 60n)
-      // A free card carries no postage, so the reader needs no token account to open it.
-      await openCard(reader, freeCard, seeker.address, { withToken: false })
-      expect(await accountExists(freeCard)).toBe(false)
-    })
-
-    it('goes back to its sender after a week, and anyone can carry it', async () => {
-      const before = await skrBalance(sender.address)
-      const { card } = await postCard({ postage: 10n * SKR, to: reader.address })
-      const { data } = await fetchCard(rpc, card)
-
-      expect(await errorCodeOf(returnCard(stranger, card))).toBe(PENNY_POST_ERROR__NOT_EXPIRED_YET)
-
-      await travelTo(data.expiresAt + 60n)
-      await returnCard(stranger, card)
-
-      expect(await skrBalance(sender.address)).toBe(before)
-      expect(await accountExists(card)).toBe(false)
     })
   })
 })
