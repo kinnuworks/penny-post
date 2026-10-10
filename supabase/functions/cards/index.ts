@@ -7,6 +7,9 @@
 // and is owned by the Penny Post program. Posting a card costs the sender a
 // transaction and a stamp, so the chain is what limits how much can be stored.
 // Contents are filed under their hash, so a reader can check what they fetch.
+//
+// It is deployed without Supabase's JWT check, so the app ships no API key.
+// The check against the chain below is what decides who may store what.
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'

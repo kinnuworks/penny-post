@@ -1,48 +1,176 @@
-import { Text, View } from 'react-native'
+import { useRouter } from 'expo-router'
+import { Pressable, ScrollView, Text, View } from 'react-native'
 import { InkButton } from '../../components/ink-button'
+import { StampArt } from '../../components/stamp-art'
 import { copy } from '../../copy'
+import { usePalette } from '../../theme'
+import { describeProblem } from '../../utils/describe-problem'
 import { ellipsify } from '../../utils/ellipsify'
+import { formatTokens } from '../../utils/format-tokens'
 import { useNow } from '../../utils/use-now'
+import { stampById } from '../card/stamps'
+import { hasFreeStamp, type PostedCard } from '../post/chain'
 import { describeDelivery, deviceUtcOffsetMinutes, nextDelivery } from '../post/delivery'
+import { tokenName } from '../post/token-name'
+import { useDoormat, useFlushOutbox, useMyLetterbox, useOpenLetterbox, usePostOffice } from '../post/use-post'
 
-// The doormat. Cards will land here once the program is deployed; until then
-// this shows the empty state and when the next post is due.
+// The doormat: what has arrived, what is on its way, and the counter where the
+// next card gets written.
 export function LetterboxScreen({
   address,
   isBusy,
   onLeave,
-  onWrite,
 }: {
   address: string
   isBusy: boolean
   onLeave: () => void
-  onWrite: () => void
 }) {
+  const router = useRouter()
   const now = useNow()
+  const office = usePostOffice()
+  const mine = useMyLetterbox()
+  const doormat = useDoormat()
+  const openLetterbox = useOpenLetterbox()
+  useFlushOutbox()
+
+  const token = office.data ? tokenName(office.data.postageMint) : ''
+  const decimals = office.data?.decimals ?? 0
+  const letterbox = mine.data?.letterbox ?? null
+  const seal = mine.data?.seal ?? null
+  const cards = doormat.data ?? []
   const offset = deviceUtcOffsetMinutes()
-  const when = describeDelivery(nextDelivery(now, offset), now, offset)
 
   return (
-    <View className="flex-1 justify-between px-6 pb-8 pt-10">
+    <ScrollView className="flex-1" contentContainerClassName="flex-grow justify-between px-6 pb-8 pt-10">
       <View>
         <Text className="font-caption text-caption uppercase tracking-widest text-ink-faint">
           {copy.wallet.address(ellipsify(address))}
+          {seal ? `  ·  ${copy.letterbox.seeker(seal.memberNumber.toLocaleString('en-US'))}` : ''}
         </Text>
-        <Text className="mb-6 mt-1 font-title text-title text-ink">{copy.letterbox.heading}</Text>
+        <Text className="mb-1 mt-1 font-title text-title text-ink">{copy.letterbox.heading}</Text>
+        {letterbox && office.data ? (
+          <Text className="mb-5 font-body text-body text-ink-soft">
+            {copy.letterbox.price(formatTokens(letterbox.price, decimals), token)}
+          </Text>
+        ) : (
+          <View className="mb-5" />
+        )}
 
-        <View className="rounded-card border border-rule bg-paper-raised px-5 py-8">
-          <Text className="font-hand text-hand text-ink">{copy.letterbox.empty}</Text>
-          <Text className="mt-3 font-body text-body text-ink-soft">{copy.letterbox.emptyHint}</Text>
-          <View className="my-5 h-px bg-rule" />
-          <Text className="font-caption text-caption text-ink-faint">{copy.letterbox.nextPost(when)}</Text>
+        {office.isLoading || mine.isLoading ? null : !office.data ? (
+          <Notice>{copy.letterbox.closedHere}</Notice>
+        ) : !letterbox ? (
+          <View className="rounded-card border border-rule bg-paper-raised px-5 py-6">
+            <Text className="font-title text-heading text-ink">{copy.letterbox.noBoxTitle}</Text>
+            <Text className="mb-5 mt-2 font-body text-body text-ink-soft">{copy.letterbox.noBoxBody}</Text>
+            <InkButton
+              disabled={openLetterbox.isPending}
+              label={openLetterbox.isPending ? copy.letterbox.puttingUp : copy.letterbox.putUp}
+              onPress={() => openLetterbox.mutate()}
+            />
+            {openLetterbox.error ? (
+              <Text className="mt-3 font-body text-body text-accent-ink">{describeProblem(openLetterbox.error)}</Text>
+            ) : null}
+          </View>
+        ) : cards.length === 0 ? (
+          <View className="rounded-card border border-rule bg-paper-raised px-5 py-8">
+            <Text className="font-hand text-hand text-ink">{copy.letterbox.empty}</Text>
+            <Text className="mt-3 font-body text-body text-ink-soft">{copy.letterbox.emptyHint}</Text>
+            <View className="my-5 h-px bg-rule" />
+            <Text className="font-caption text-caption text-ink-faint">
+              {copy.letterbox.nextPost(describeDelivery(nextDelivery(now, offset), now, offset))}
+            </Text>
+          </View>
+        ) : (
+          <View className="gap-3">
+            {cards.map((card) => (
+              <CardRow
+                card={card}
+                decimals={decimals}
+                key={card.address}
+                now={now}
+                offset={offset}
+                onOpen={() => router.push(`/card/${card.address}`)}
+                token={token}
+              />
+            ))}
+          </View>
+        )}
+      </View>
+
+      <View className="mt-8 gap-3">
+        {seal ? (
+          <Text className="font-body text-body text-ink-soft">
+            {hasFreeStamp(seal, now) ? copy.counter.stampReady : copy.counter.stampUsed}
+          </Text>
+        ) : null}
+        <InkButton disabled={isBusy || !office.data} label={copy.counter.write} onPress={() => router.push('/write')} />
+        <View className="flex-row justify-between pt-1">
+          <TextLink label={copy.letterbox.kept} onPress={() => router.push('/kept')} />
+          <TextLink label={copy.wallet.leave} onPress={onLeave} />
         </View>
       </View>
+    </ScrollView>
+  )
+}
 
-      <View className="gap-3">
-        <Text className="font-body text-body text-ink-soft">{copy.counter.stampReady}</Text>
-        <InkButton disabled={isBusy} label={copy.counter.write} onPress={onWrite} />
-        <InkButton disabled={isBusy} label={copy.wallet.leave} onPress={onLeave} tone="plain" />
+// A card lying face down: who it is from, what is inside, and its stamp.
+function CardRow({
+  card,
+  decimals,
+  now,
+  offset,
+  onOpen,
+  token,
+}: {
+  card: PostedCard
+  decimals: number
+  now: number
+  offset: number
+  onOpen: () => void
+  token: string
+}) {
+  const palette = usePalette()
+  const stamp = stampById(card.stamp)
+  const arrived = Number(card.deliverAt) <= now
+  const inside =
+    card.postage > 0n
+      ? copy.letterbox.paidInside(formatTokens(card.postage, decimals), token)
+      : copy.letterbox.freeStamp
+  const status = arrived
+    ? copy.letterbox.onDoormat
+    : copy.letterbox.arrives(describeDelivery(Number(card.deliverAt), now, offset))
+
+  return (
+    <Pressable
+      accessibilityHint={arrived ? 'Opens the card' : undefined}
+      accessibilityLabel={`${copy.letterbox.from(ellipsify(card.sender))}. ${inside}. ${status}.`}
+      accessibilityRole="button"
+      className={`flex-row items-center justify-between rounded-card border border-rule bg-paper-raised px-4 py-3 ${arrived ? 'active:bg-paper-sunk' : 'opacity-60'}`}
+      disabled={!arrived}
+      onPress={onOpen}
+    >
+      <View className="flex-1 pr-3">
+        <Text className="font-caption text-caption uppercase tracking-widest text-ink-faint">{status}</Text>
+        <Text className="font-hand text-hand text-ink">{copy.letterbox.from(ellipsify(card.sender))}</Text>
+        <Text className="font-body text-body text-ink-soft">{inside}</Text>
       </View>
+      <StampArt art={stamp.art} backing={palette.paperRaised} label={stamp.name} size={0.62} />
+    </Pressable>
+  )
+}
+
+function Notice({ children }: { children: string }) {
+  return (
+    <View className="rounded-card border border-rule bg-paper-raised px-5 py-6">
+      <Text className="font-body text-body text-ink-soft">{children}</Text>
     </View>
+  )
+}
+
+function TextLink({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <Pressable accessibilityRole="button" hitSlop={10} onPress={onPress}>
+      <Text className="font-label text-label text-ink-soft underline">{label}</Text>
+    </Pressable>
   )
 }

@@ -17,7 +17,63 @@ export const copy = {
     empty: 'Nothing today. The postman did look.',
     emptyHint: 'Write to someone and the morning post gets a lot more interesting.',
     nextPost: (when: string) => `Next post: ${when}`,
-    paidCard: (amount: string) => `A stranger paid ${amount} SKR to reach you. Turn it over and it's yours.`,
+    closedHere: 'The post office is not open on this network yet.',
+    noBoxTitle: 'You have no letterbox yet.',
+    noBoxBody:
+      'Put one up and people can write to you. It takes one signature, and you set what a stranger pays to reach you.',
+    putUp: 'Put up a letterbox',
+    puttingUp: 'Putting it up',
+    onDoormat: 'On the doormat',
+    onItsWay: 'On its way',
+    from: (who: string) => `From ${who}`,
+    paidInside: (amount: string, token: string) => `${amount} ${token} inside`,
+    freeStamp: 'Came on a free stamp',
+    arrives: (when: string) => `Arrives ${when}`,
+    price: (amount: string, token: string) => `A stranger pays ${amount} ${token} to reach you.`,
+    seeker: (memberNumber: string) => `Seeker No. ${memberNumber}`,
+    kept: 'Cards you have kept',
+  },
+
+  open: {
+    title: 'A card for you',
+    hint: 'Sign for it and it turns over.',
+    sign: 'Sign for it',
+    signing: 'Signing',
+    sendBack: 'Send it back unopened',
+    sendingBack: 'Sending it back',
+    paid: (amount: string, token: string) => `${amount} ${token} is yours. It is in your wallet now.`,
+    free: 'No postage on this one. It came on a free stamp.',
+    done: 'Back to the letterbox',
+    returned: 'Sent back. The postage went home with it.',
+    gone: 'This card is no longer in the post.',
+  },
+
+  posted: {
+    title: 'In the box.',
+    waiting:
+      'The card is posted, but its picture and message are still on this phone. They go out the next time the app is open and online.',
+    sealed: 'Sealed. Only their phone can open it.',
+    openCard: 'They have no letterbox yet, so it went as an open postcard, the way a real one would.',
+    another: 'Write another',
+    home: 'Back to the letterbox',
+  },
+
+  kept: {
+    title: 'Kept',
+    empty: 'Nothing here yet. Cards you open are kept on this phone.',
+    back: 'Back to the letterbox',
+    paid: (amount: string, token: string) => `Paid you ${amount} ${token}`,
+  },
+
+  problems: {
+    'no-such-reader': 'Nobody goes by that name. Check the spelling, or use their wallet address.',
+    'to-yourself': 'That is your own address. Writing to yourself costs a stamp and proves very little.',
+    'no-free-stamp': 'There is no free stamp on the counter today. Pick another one.',
+    'not-arrived':
+      "The card is here, but its picture and message are still on the sender's phone. Try again in a minute.",
+    'office-closed': 'The post office is not open on this network yet.',
+    'sealed-for-another-phone':
+      'This letter was sealed for a different phone. It can be sent back, but it cannot be read here.',
   },
 
   counter: {
