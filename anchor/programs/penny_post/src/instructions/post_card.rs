@@ -70,7 +70,7 @@ pub fn handle_post_card(
     require_keys_neq!(sender, recipient, PostError::SelfAddressed);
 
     let post_office = &ctx.accounts.post_office;
-    let mut letterbox = load_letterbox(&ctx.accounts.recipient_letterbox)?;
+    let mut letterbox = Letterbox::load_if_open(&ctx.accounts.recipient_letterbox)?;
     let utc_offset_minutes = letterbox.as_ref().map_or(0, |l| l.utc_offset_minutes);
 
     let deliver_at = if express {
@@ -111,7 +111,7 @@ pub fn handle_post_card(
 
     if let Some(letterbox) = letterbox.as_mut() {
         letterbox.received = letterbox.received.checked_add(1).ok_or(PostError::Overflow)?;
-        store_letterbox(&ctx.accounts.recipient_letterbox, letterbox)?;
+        letterbox.store(&ctx.accounts.recipient_letterbox)?;
     }
 
     let card = &mut ctx.accounts.card;
@@ -175,22 +175,4 @@ pub fn handle_post_card(
         express,
     });
     Ok(())
-}
-
-/// Returns the letterbox at this address, or `None` if nobody has opened one.
-/// An opened letterbox is owned by this program and carries its discriminator.
-fn load_letterbox(info: &UncheckedAccount) -> Result<Option<Letterbox>> {
-    if info.owner != &crate::ID {
-        return Ok(None);
-    }
-    let data = info.try_borrow_data()?;
-    let mut bytes: &[u8] = &data;
-    let letterbox = Letterbox::try_deserialize(&mut bytes).map_err(|_| PostError::BadLetterbox)?;
-    Ok(Some(letterbox))
-}
-
-fn store_letterbox(info: &UncheckedAccount, letterbox: &Letterbox) -> Result<()> {
-    let mut data = info.try_borrow_mut_data()?;
-    let mut bytes: &mut [u8] = &mut data;
-    letterbox.try_serialize(&mut bytes)
 }

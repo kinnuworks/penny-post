@@ -43,6 +43,29 @@ pub struct Letterbox {
     pub bump: u8,
 }
 
+impl Letterbox {
+    /// Reads the letterbox at an address that was pinned by its seeds, or
+    /// returns `None` if nobody has opened one there. An opened letterbox is
+    /// owned by this program and carries its discriminator.
+    pub fn load_if_open(info: &AccountInfo) -> Result<Option<Letterbox>> {
+        if info.owner != &crate::ID {
+            return Ok(None);
+        }
+        let data = info.try_borrow_data()?;
+        let mut bytes: &[u8] = &data;
+        let letterbox = Letterbox::try_deserialize(&mut bytes)
+            .map_err(|_| crate::error::PostError::BadLetterbox)?;
+        Ok(Some(letterbox))
+    }
+
+    /// Writes a letterbox loaded with `load_if_open` back to its account.
+    pub fn store(&self, info: &AccountInfo) -> Result<()> {
+        let mut data = info.try_borrow_mut_data()?;
+        let mut bytes: &mut [u8] = &mut data;
+        self.try_serialize(&mut bytes)
+    }
+}
+
 /// One seal per Seeker Genesis Token. It follows the token, so moving the token
 /// to another wallet never buys a second free stamp.
 #[account]

@@ -30,6 +30,12 @@ importers:
       '@react-native-async-storage/async-storage':
         specifier: 2.2.0
         version: 2.2.0(react-native@0.86.2(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.2(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.8)(supports-color@8.1.1))
+      '@solana-program/system':
+        specifier: ^0.15.0
+        version: 0.15.0(@solana/kit@8.4.0(typescript@6.0.3))
+      '@solana-program/token':
+        specifier: ^0.17.0
+        version: 0.17.0(@solana/kit@8.4.0(typescript@6.0.3))
       '@solana/kit':
         specifier: ^8.4.0
         version: 8.4.0(typescript@6.0.3)
@@ -1376,6 +1382,16 @@ packages:
     peerDependenciesMeta:
       react-native:
         optional: true
+
+  '@solana-program/system@0.15.0':
+    resolution: {integrity: sha512-xE08wZCyNRhOaO/XNRd9A3kSLfUrTe/BnmAHhql8uqc2eriNy2ZmnvaGRrs0m+kOSihvUbANzHljmJsTzGL5kg==}
+    peerDependencies:
+      '@solana/kit': ^8.3.0
+
+  '@solana-program/token@0.17.0':
+    resolution: {integrity: sha512-l7EhF3lCWXXdOllGI8qnbF4Pj7pCT/5zJTW2lPsNUQfa7G28pnFhSssHW2GCW7dzGttSHgPdJYdQRB5rvQoN9Q==}
+    peerDependencies:
+      '@solana/kit': ^8.3.0
 
   '@solana/accounts@8.4.0':
     resolution: {integrity: sha512-YklERWeG5UD2fzxR0zwWgzCVyuHRqg6eTIyGBAe8hOWIim8TYS1aPBVFAlVkSZiAXaFRxmu1E3IRfeCe/QSQmg==}
@@ -6677,6 +6693,15 @@ snapshots:
       - fastestsmallesttextencoderdecoder
       - typescript
       - utf-8-validate
+
+  '@solana-program/system@0.15.0(@solana/kit@8.4.0(typescript@6.0.3))':
+    dependencies:
+      '@solana/kit': 8.4.0(typescript@6.0.3)
+
+  '@solana-program/token@0.17.0(@solana/kit@8.4.0(typescript@6.0.3))':
+    dependencies:
+      '@solana-program/system': 0.15.0(@solana/kit@8.4.0(typescript@6.0.3))
+      '@solana/kit': 8.4.0(typescript@6.0.3)
 
   '@solana/accounts@8.4.0(typescript@6.0.3)':
     dependencies:

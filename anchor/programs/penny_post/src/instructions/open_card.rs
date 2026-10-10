@@ -42,12 +42,11 @@ pub struct OpenCard<'info> {
         constraint = recipient_token.owner == recipient.key() @ PostError::WrongTokenAccount,
     )]
     pub recipient_token: Option<Box<Account<'info, TokenAccount>>>,
-    #[account(
-        mut,
-        seeds = [LETTERBOX_SEED, recipient.key().as_ref()],
-        bump = recipient_letterbox.bump
-    )]
-    pub recipient_letterbox: Option<Box<Account<'info, Letterbox>>>,
+    /// CHECK: the reader's letterbox address, pinned by its seeds. A reader can
+    /// open a card without ever opening a letterbox, so the handler loads it by
+    /// hand and skips the tally if there is none.
+    #[account(mut, seeds = [LETTERBOX_SEED, recipient.key().as_ref()], bump)]
+    pub recipient_letterbox: UncheckedAccount<'info>,
     #[account(seeds = [POST_OFFICE_SEED], bump = post_office.bump, has_one = postage_mint)]
     pub post_office: Box<Account<'info, PostOffice>>,
     #[account(mut)]
@@ -95,12 +94,13 @@ pub fn handle_open_card(ctx: Context<OpenCard>) -> Result<()> {
     vault::burn(&vault_accounts, burned, card_seeds)?;
     vault::close(&vault_accounts, ctx.accounts.sender.to_account_info(), card_seeds)?;
 
-    if let Some(letterbox) = ctx.accounts.recipient_letterbox.as_mut() {
+    if let Some(mut letterbox) = Letterbox::load_if_open(&ctx.accounts.recipient_letterbox)? {
         letterbox.opened = letterbox.opened.checked_add(1).ok_or(PostError::Overflow)?;
         letterbox.earned = letterbox
             .earned
             .checked_add(paid_to_reader)
             .ok_or(PostError::Overflow)?;
+        letterbox.store(&ctx.accounts.recipient_letterbox)?;
     }
 
     emit!(CardOpened {

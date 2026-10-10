@@ -21,7 +21,7 @@ pub use constants::*;
 pub use instructions::*;
 pub use state::*;
 
-declare_id!("BneHHhN7nSXgjZytQWLsi1TRY7xMz83FxpkKgoCb1n2d");
+declare_id!("D5LZ7kUmpXhE2hsKHnse9itthWHX6j8o4EkGcfz2MLAD");
 
 #[program]
 pub mod penny_post {
