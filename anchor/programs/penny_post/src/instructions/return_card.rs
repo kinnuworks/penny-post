@@ -50,7 +50,10 @@ pub fn handle_return_card(ctx: Context<ReturnCard>) -> Result<()> {
     let now = Clock::get()?.unix_timestamp;
     let card = &ctx.accounts.card;
     let caller_is_reader = ctx.accounts.caller.key() == card.recipient;
-    require!(now >= card.expires_at || caller_is_reader, PostError::NotExpiredYet);
+    require!(
+        now >= card.expires_at || caller_is_reader,
+        PostError::NotExpiredYet
+    );
 
     let refunded = ctx.accounts.vault.amount;
     let sender = card.sender;
@@ -80,7 +83,11 @@ pub fn handle_return_card(ctx: Context<ReturnCard>) -> Result<()> {
             card_seeds,
         )?;
     }
-    vault::close(&vault_accounts, ctx.accounts.sender.to_account_info(), card_seeds)?;
+    vault::close(
+        &vault_accounts,
+        ctx.accounts.sender.to_account_info(),
+        card_seeds,
+    )?;
 
     emit!(CardReturned {
         card: ctx.accounts.card.key(),

@@ -38,7 +38,11 @@ pub fn pay_out<'info>(
     )
 }
 
-pub fn burn<'info>(accounts: &VaultAccounts<'info>, amount: u64, card_seeds: &[&[u8]]) -> Result<()> {
+pub fn burn<'info>(
+    accounts: &VaultAccounts<'info>,
+    amount: u64,
+    card_seeds: &[&[u8]],
+) -> Result<()> {
     if amount == 0 {
         return Ok(());
     }

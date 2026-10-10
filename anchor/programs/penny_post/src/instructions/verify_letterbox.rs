@@ -1,11 +1,10 @@
 use anchor_lang::prelude::*;
-use anchor_spl::{token_2022, token_interface::TokenAccount};
 
 use crate::{
     constants::*,
     error::PostError,
     events::LetterboxVerified,
-    sgt::read_genesis_token,
+    sgt::{read_genesis_token, read_holding},
     state::{Letterbox, PostOffice, Seal},
 };
 
@@ -28,15 +27,12 @@ pub struct VerifyLetterbox<'info> {
     pub post_office: Account<'info, PostOffice>,
     /// CHECK: must be owned by Token-2022. The handler reads its mint authority
     /// and group membership and compares both with the post office's record.
-    #[account(owner = token_2022::ID @ PostError::NotGenesisToken)]
+    #[account(owner = TOKEN_2022_PROGRAM_ID @ PostError::NotGenesisToken)]
     pub sgt_mint: UncheckedAccount<'info>,
-    #[account(
-        constraint = *sgt_token.to_account_info().owner == token_2022::ID @ PostError::GenesisTokenNotHeld,
-        constraint = sgt_token.mint == sgt_mint.key() @ PostError::GenesisTokenNotHeld,
-        constraint = sgt_token.owner == owner.key() @ PostError::GenesisTokenNotHeld,
-        constraint = sgt_token.amount == 1 @ PostError::GenesisTokenNotHeld,
-    )]
-    pub sgt_token: InterfaceAccount<'info, TokenAccount>,
+    /// CHECK: must be owned by Token-2022. The handler reads it as a token
+    /// account and requires that it holds exactly one of `sgt_mint` for `owner`.
+    #[account(owner = TOKEN_2022_PROGRAM_ID @ PostError::GenesisTokenNotHeld)]
+    pub sgt_token: UncheckedAccount<'info>,
     #[account(
         init_if_needed,
         payer = owner,
@@ -57,12 +53,28 @@ pub fn handle_verify_letterbox(ctx: Context<VerifyLetterbox>) -> Result<()> {
         read_genesis_token(&data)?
     };
     require_keys_eq!(token.member_mint, sgt_mint, PostError::NotGenesisToken);
-    require_keys_eq!(token.group, post_office.sgt_group, PostError::NotGenesisToken);
+    require_keys_eq!(
+        token.group,
+        post_office.sgt_group,
+        PostError::NotGenesisToken
+    );
     require_keys_eq!(
         token.mint_authority,
         post_office.sgt_mint_authority,
         PostError::NotGenesisToken
     );
+
+    let holding = {
+        let data = ctx.accounts.sgt_token.try_borrow_data()?;
+        read_holding(&data)?
+    };
+    require_keys_eq!(holding.mint, sgt_mint, PostError::GenesisTokenNotHeld);
+    require_keys_eq!(
+        holding.owner,
+        ctx.accounts.owner.key(),
+        PostError::GenesisTokenNotHeld
+    );
+    require!(holding.amount == 1, PostError::GenesisTokenNotHeld);
 
     // A seal that already exists keeps its `last_free_day`. Only the holder changes.
     let seal = &mut ctx.accounts.seal;

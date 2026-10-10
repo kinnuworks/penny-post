@@ -19,6 +19,7 @@ import {
   getSetTermsInstructionAsync,
   getVerifyLetterboxInstructionAsync,
   PENNY_POST_ERROR__BURN_SHARE_TOO_HIGH,
+  PENNY_POST_ERROR__GENESIS_TOKEN_NOT_HELD,
   PENNY_POST_ERROR__LETTERBOX_FULL,
   PENNY_POST_ERROR__NO_SEAL,
   PENNY_POST_ERROR__NOT_DELIVERED_YET,
@@ -339,6 +340,17 @@ describe('penny_post', () => {
     expect(await errorCodeOf(send(reader, [instruction]))).toBe(PENNY_POST_ERROR__NOT_GENESIS_TOKEN)
   })
 
+  it('will not accept an account the Genesis Token has already left', async () => {
+    // Moving the token leaves an empty account behind in the old wallet.
+    await giveTokens(reader.address, REAL_SGT_MINT, 0n, TOKEN_2022_PROGRAM_ADDRESS)
+    const instruction = await getVerifyLetterboxInstructionAsync({
+      owner: reader,
+      sgtMint: REAL_SGT_MINT,
+      sgtToken: await tokenAccountOf(reader.address, REAL_SGT_MINT, TOKEN_2022_PROGRAM_ADDRESS),
+    })
+    expect(await errorCodeOf(send(reader, [instruction]))).toBe(PENNY_POST_ERROR__GENESIS_TOKEN_NOT_HELD)
+  })
+
   describe('with a real Genesis Token', () => {
     let seeker: KeyPairSigner
     let secondWallet: KeyPairSigner
@@ -374,6 +386,15 @@ describe('penny_post', () => {
 
       const [letterbox] = await findLetterboxPda({ owner: seeker.address })
       expect((await fetchLetterbox(rpc, letterbox)).data.sealMint).toBe(REAL_SGT_MINT)
+    })
+
+    it("will not verify a wallet against somebody else's token", async () => {
+      const instruction = await getVerifyLetterboxInstructionAsync({
+        owner: reader,
+        sgtMint: REAL_SGT_MINT,
+        sgtToken: await tokenAccountOf(seeker.address, REAL_SGT_MINT, TOKEN_2022_PROGRAM_ADDRESS),
+      })
+      expect(await errorCodeOf(send(reader, [instruction]))).toBe(PENNY_POST_ERROR__GENESIS_TOKEN_NOT_HELD)
     })
 
     it('posts one free card a day on the seal', async () => {

@@ -112,6 +112,7 @@ export type VerifyLetterboxAsyncInput<
   postOffice?: TAccountPostOffice
   /** and group membership and compares both with the post office's record. */
   sgtMint: TAccountSgtMint
+  /** account and requires that it holds exactly one of `sgt_mint` for `owner`. */
   sgtToken: TAccountSgtToken
   seal?: TAccountSeal
   systemProgram?: TAccountSystemProgram
@@ -225,6 +226,7 @@ export type VerifyLetterboxInput<
   postOffice: TAccountPostOffice
   /** and group membership and compares both with the post office's record. */
   sgtMint: TAccountSgtMint
+  /** account and requires that it holds exactly one of `sgt_mint` for `owner`. */
   sgtToken: TAccountSgtToken
   seal: TAccountSeal
   systemProgram?: TAccountSystemProgram
@@ -318,6 +320,7 @@ export type ParsedVerifyLetterboxInstruction<
     postOffice: TAccountMetas[2]
     /** and group membership and compares both with the post office's record. */
     sgtMint: TAccountMetas[3]
+    /** account and requires that it holds exactly one of `sgt_mint` for `owner`. */
     sgtToken: TAccountMetas[4]
     seal: TAccountMetas[5]
     systemProgram: TAccountMetas[6]

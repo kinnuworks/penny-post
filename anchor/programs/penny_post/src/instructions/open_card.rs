@@ -92,7 +92,11 @@ pub fn handle_open_card(ctx: Context<OpenCard>) -> Result<()> {
         )?;
     }
     vault::burn(&vault_accounts, burned, card_seeds)?;
-    vault::close(&vault_accounts, ctx.accounts.sender.to_account_info(), card_seeds)?;
+    vault::close(
+        &vault_accounts,
+        ctx.accounts.sender.to_account_info(),
+        card_seeds,
+    )?;
 
     if let Some(mut letterbox) = Letterbox::load_if_open(&ctx.accounts.recipient_letterbox)? {
         letterbox.opened = letterbox.opened.checked_add(1).ok_or(PostError::Overflow)?;

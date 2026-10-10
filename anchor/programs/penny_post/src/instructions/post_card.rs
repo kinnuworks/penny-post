@@ -90,9 +90,9 @@ pub fn handle_post_card(
         require!(seal.last_free_day < today, PostError::StampAlreadyUsed);
         seal.last_free_day = today;
     } else {
-        let price = letterbox
-            .as_ref()
-            .map_or(post_office.floor_price, |l| l.price.max(post_office.floor_price));
+        let price = letterbox.as_ref().map_or(post_office.floor_price, |l| {
+            l.price.max(post_office.floor_price)
+        });
         require!(postage >= price, PostError::PostageTooLow);
 
         if let Some(letterbox) = letterbox.as_mut() {
@@ -110,7 +110,10 @@ pub fn handle_post_card(
     }
 
     if let Some(letterbox) = letterbox.as_mut() {
-        letterbox.received = letterbox.received.checked_add(1).ok_or(PostError::Overflow)?;
+        letterbox.received = letterbox
+            .received
+            .checked_add(1)
+            .ok_or(PostError::Overflow)?;
         letterbox.store(&ctx.accounts.recipient_letterbox)?;
     }
 

@@ -10,6 +10,9 @@ rust-version = "1.89.0"
 
 [profile.release]
 overflow-checks = true
+# Size over speed: a smaller program costs less rent to deploy, and nothing
+# here is compute-heavy.
+opt-level = "z"
 lto = "fat"
 codegen-units = 1
 [profile.release.build-override]

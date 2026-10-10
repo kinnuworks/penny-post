@@ -862,7 +862,10 @@ export type PennyPost = {
           ]
         },
         {
-          "name": "sgtToken"
+          "name": "sgtToken",
+          "docs": [
+            "account and requires that it holds exactly one of `sgt_mint` for `owner`."
+          ]
         },
         {
           "name": "seal",

@@ -30,3 +30,6 @@ pub const BPS_DENOMINATOR: u128 = 10_000;
 /// UTC-12:00 to UTC+14:00.
 pub const MIN_UTC_OFFSET_MINUTES: i16 = -720;
 pub const MAX_UTC_OFFSET_MINUTES: i16 = 840;
+
+/// The Token-2022 program, which every Seeker Genesis Token lives under.
+pub const TOKEN_2022_PROGRAM_ID: Pubkey = pubkey!("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb");

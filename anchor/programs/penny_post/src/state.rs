@@ -103,7 +103,9 @@ pub fn next_delivery(now: i64, utc_offset_minutes: i16) -> Option<i64> {
     use crate::constants::*;
     let offset = i64::from(utc_offset_minutes).checked_mul(SECONDS_PER_MINUTE)?;
     let local = now.checked_add(offset)?;
-    let day_start = local.div_euclid(SECONDS_PER_DAY).checked_mul(SECONDS_PER_DAY)?;
+    let day_start = local
+        .div_euclid(SECONDS_PER_DAY)
+        .checked_mul(SECONDS_PER_DAY)?;
     let mut delivery = day_start.checked_add(DELIVERY_SECOND_OF_DAY)?;
     if delivery <= local {
         delivery = delivery.checked_add(SECONDS_PER_DAY)?;
@@ -141,7 +143,10 @@ mod tests {
     fn follows_the_readers_time_zone() {
         // 08:00 in Kolkata (UTC+5:30) is 02:30 UTC.
         let now = MIDNIGHT_UTC;
-        assert_eq!(next_delivery(now, 330), Some(MIDNIGHT_UTC + 2 * 3_600 + 1_800));
+        assert_eq!(
+            next_delivery(now, 330),
+            Some(MIDNIGHT_UTC + 2 * 3_600 + 1_800)
+        );
         // 08:00 in Los Angeles (UTC-7:00) is 15:00 UTC.
         assert_eq!(next_delivery(now, -420), Some(MIDNIGHT_UTC + 15 * 3_600));
     }
@@ -150,7 +155,10 @@ mod tests {
     fn local_day_changes_at_local_midnight() {
         let just_before = MIDNIGHT_UTC - 330 * 60 - 1;
         let just_after = MIDNIGHT_UTC - 330 * 60;
-        assert_eq!(local_day(just_before, 330).unwrap() + 1, local_day(just_after, 330).unwrap());
+        assert_eq!(
+            local_day(just_before, 330).unwrap() + 1,
+            local_day(just_after, 330).unwrap()
+        );
     }
 
     #[test]

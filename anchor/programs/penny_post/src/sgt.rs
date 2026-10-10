@@ -1,10 +1,15 @@
-//! Reads the two facts that make a Token-2022 mint a Seeker Genesis Token:
-//! its mint authority, and its `TokenGroupMember` extension.
+//! Reads the two facts that make a Token-2022 mint a Seeker Genesis Token (its
+//! mint authority and its `TokenGroupMember` extension), and reads who holds
+//! the token from its token account.
 //!
-//! The caller must first check that the account is owned by the Token-2022
+//! The caller must first check that each account is owned by the Token-2022
 //! program. Only that program can write a `TokenGroupMember` extension, and it
 //! does so only when the group's update authority signs, so a member entry
 //! under Token-2022 ownership cannot be forged.
+//!
+//! The layouts are read by hand so the program does not have to link the whole
+//! Token-2022 crate for a few fixed offsets. Every reader is tested against
+//! accounts copied from mainnet.
 
 use anchor_lang::prelude::*;
 
@@ -14,6 +19,14 @@ use crate::error::PostError;
 #[cfg(test)]
 const BASE_MINT_LEN: usize = 82;
 const BASE_ACCOUNT_LEN: usize = 165;
+/// Token account layout: mint (32), owner (32), amount (8), delegate option (36), state (1).
+const HOLDING_STATE_OFFSET: usize = 108;
+/// `AccountState::Initialized` and `AccountState::Frozen`. A Genesis Token sits
+/// frozen in its holder's account, so both count as held.
+const HOLDING_STATE_INITIALIZED: u8 = 1;
+const HOLDING_STATE_FROZEN: u8 = 2;
+/// `AccountType::Account` in the byte that follows the padded base.
+const ACCOUNT_TYPE_HOLDING: u8 = 2;
 /// Mint layout: authority option (36), supply (8), decimals (1), then this flag.
 const MINT_IS_INITIALIZED_OFFSET: usize = 45;
 /// `AccountType::Mint` in the byte that follows the padded base.
@@ -30,10 +43,49 @@ pub struct GenesisToken {
     pub member_number: u64,
 }
 
+/// A token account, as far as this program needs to know it.
+pub struct Holding {
+    pub mint: Pubkey,
+    pub owner: Pubkey,
+    pub amount: u64,
+}
+
+/// Reads a Token-2022 token account. Moving a Genesis Token leaves an empty
+/// account behind in the old wallet, so the caller must check `amount`.
+pub fn read_holding(data: &[u8]) -> Result<Holding> {
+    require!(
+        data.len() >= BASE_ACCOUNT_LEN,
+        PostError::GenesisTokenNotHeld
+    );
+    // An account with extensions says what it is in the byte after the base.
+    // One without is exactly the base length, which no mint is.
+    if data.len() > BASE_ACCOUNT_LEN {
+        require!(
+            data[BASE_ACCOUNT_LEN] == ACCOUNT_TYPE_HOLDING,
+            PostError::GenesisTokenNotHeld
+        );
+    }
+    let state = data[HOLDING_STATE_OFFSET];
+    require!(
+        state == HOLDING_STATE_INITIALIZED || state == HOLDING_STATE_FROZEN,
+        PostError::GenesisTokenNotHeld
+    );
+    Ok(Holding {
+        mint: read_pubkey(data, 0).map_err(|_| PostError::GenesisTokenNotHeld)?,
+        owner: read_pubkey(data, 32).map_err(|_| PostError::GenesisTokenNotHeld)?,
+        amount: u64::from_le_bytes(
+            read_array(data, 64).map_err(|_| PostError::GenesisTokenNotHeld)?,
+        ),
+    })
+}
+
 pub fn read_genesis_token(data: &[u8]) -> Result<GenesisToken> {
     let mint_authority = read_mint_authority(data)?;
     let member = find_extension(data, EXTENSION_TOKEN_GROUP_MEMBER)?;
-    require!(member.len() == TOKEN_GROUP_MEMBER_LEN, PostError::NotGenesisToken);
+    require!(
+        member.len() == TOKEN_GROUP_MEMBER_LEN,
+        PostError::NotGenesisToken
+    );
 
     Ok(GenesisToken {
         mint_authority,
@@ -48,21 +100,29 @@ fn read_mint_authority(data: &[u8]) -> Result<Pubkey> {
     // COption<Pubkey>: a four-byte tag, then the key.
     let tag = u32::from_le_bytes(read_array(data, 0)?);
     require!(tag == 1, PostError::NotGenesisToken);
-    require!(data[MINT_IS_INITIALIZED_OFFSET] == 1, PostError::NotGenesisToken);
+    require!(
+        data[MINT_IS_INITIALIZED_OFFSET] == 1,
+        PostError::NotGenesisToken
+    );
     read_pubkey(data, 4)
 }
 
 /// Walks the type-length-value entries after the account type byte.
 fn find_extension(data: &[u8], wanted: u16) -> Result<&[u8]> {
     require!(data.len() > BASE_ACCOUNT_LEN, PostError::NotGenesisToken);
-    require!(data[BASE_ACCOUNT_LEN] == ACCOUNT_TYPE_MINT, PostError::NotGenesisToken);
+    require!(
+        data[BASE_ACCOUNT_LEN] == ACCOUNT_TYPE_MINT,
+        PostError::NotGenesisToken
+    );
 
     let mut cursor = BASE_ACCOUNT_LEN + 1;
     while cursor + 4 <= data.len() {
         let kind = u16::from_le_bytes(read_array(data, cursor)?);
         let length = usize::from(u16::from_le_bytes(read_array(data, cursor + 2)?));
         let start = cursor + 4;
-        let end = start.checked_add(length).ok_or(PostError::NotGenesisToken)?;
+        let end = start
+            .checked_add(length)
+            .ok_or(PostError::NotGenesisToken)?;
         if kind == 0 {
             break;
         }
@@ -105,6 +165,62 @@ mod tests {
 
     fn real_mint() -> Vec<u8> {
         decode_hex(REAL_SGT_MINT_HEX)
+    }
+
+    /// The account that holds that token: BLJGXXKnNdZEaXTGqZaaNoZ1UkkbD1dXht8DjVz2eeZV.
+    fn real_holding() -> Vec<u8> {
+        decode_hex(include_str!("../tests/fixtures/sgt_holding_full.hex"))
+    }
+
+    /// An account the same token passed through and left empty.
+    fn emptied_holding() -> Vec<u8> {
+        decode_hex(include_str!("../tests/fixtures/sgt_holding_empty.hex"))
+    }
+
+    #[test]
+    fn reads_the_real_holding_which_is_frozen() {
+        let holding = read_holding(&real_holding()).unwrap();
+        assert_eq!(
+            holding.mint,
+            Pubkey::from_str("5mXbkqKz883aufhAsx3p5Z1NcvD2ppZbdTTznM6oUKLj").unwrap()
+        );
+        assert_eq!(
+            holding.owner,
+            Pubkey::from_str("D2ehKLUQApN8ZxcANjwuTJC7bk7BMJn2voofXy17tCrs").unwrap()
+        );
+        assert_eq!(holding.amount, 1);
+        assert_eq!(real_holding()[HOLDING_STATE_OFFSET], HOLDING_STATE_FROZEN);
+    }
+
+    #[test]
+    fn reads_an_emptied_holding_as_holding_nothing() {
+        let holding = read_holding(&emptied_holding()).unwrap();
+        assert_eq!(holding.amount, 0);
+    }
+
+    #[test]
+    fn reads_a_holding_with_no_extensions() {
+        let plain = &real_holding()[..BASE_ACCOUNT_LEN];
+        assert_eq!(read_holding(plain).unwrap().amount, 1);
+    }
+
+    #[test]
+    fn rejects_a_mint_passed_as_a_holding() {
+        assert!(read_holding(&real_mint()).is_err());
+    }
+
+    #[test]
+    fn rejects_an_uninitialized_or_short_holding() {
+        let mut data = real_holding();
+        data[HOLDING_STATE_OFFSET] = 0;
+        assert!(read_holding(&data).is_err());
+        assert!(read_holding(&real_holding()[..100]).is_err());
+        assert!(read_holding(&[]).is_err());
+    }
+
+    #[test]
+    fn rejects_a_holding_passed_as_a_mint() {
+        assert!(read_genesis_token(&real_holding()).is_err());
     }
 
     #[test]
