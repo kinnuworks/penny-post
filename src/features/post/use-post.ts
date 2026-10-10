@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMobileWallet } from '@wallet-ui/react-native-kit'
 import { DEFAULT_PRICE_TOKENS, MAINNET_RPC_URL } from '../../config'
 import { hashCard, type CardContent } from '../card/card'
-import { isSealed, packCard, unpackCard } from '../card/envelope'
+import { isSealed, isUsableReadingKey, packCard, unpackCard } from '../card/envelope'
 import { EXPRESS_STAMP_ID, FREE_STAMP_ID } from '../card/stamps'
 import { keep } from '../kept/kept-store'
 import { findGenesisToken } from '../letterbox/genesis-token'
@@ -102,6 +102,47 @@ export function useDoormat() {
     queryKey: ['doormat', chain, account?.address],
     queryFn: () => (account ? listCardsTo(client.rpc, account.address) : []),
     refetchInterval: 60_000,
+  })
+}
+
+export interface Quote {
+  /** Burned on top of the postage when the card goes express. */
+  expressFee: bigint
+  /** What a paid card must carry to reach this reader. */
+  price: bigint
+  /** True if the reader has a letterbox with a reading key, so the card can be sealed. */
+  sealed: boolean
+}
+
+/**
+ * What it costs to reach whoever is named in the "to" field, looked up before
+ * anything is signed. Null while the name does not resolve to anyone.
+ */
+export function useQuote(to: string) {
+  const { account, chain, client } = useMobileWallet()
+  const postOffice = usePostOffice()
+  const office = postOffice.data
+  const wanted = to.trim()
+
+  return useQuery({
+    enabled: !!account && !!office && wanted.length >= 5,
+    queryKey: ['quote', chain, wanted],
+    queryFn: async (): Promise<Quote | null> => {
+      if (!office) {
+        return null
+      }
+      const reader = await resolveRecipient(mainnetRpc, wanted)
+      if (!reader) {
+        return null
+      }
+      const letterbox = await fetchLetterbox(client.rpc, reader.address)
+      return {
+        expressFee: office.expressFee,
+        price: priceToReach(office, letterbox),
+        sealed: !!letterbox && isUsableReadingKey(new Uint8Array(letterbox.readingKey)),
+      }
+    },
+    staleTime: 60_000,
   })
 }
 

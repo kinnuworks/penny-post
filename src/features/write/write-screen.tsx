@@ -6,12 +6,16 @@ import { StampArt } from '../../components/stamp-art'
 import { copy } from '../../copy'
 import { usePalette } from '../../theme'
 import { describeProblem } from '../../utils/describe-problem'
+import { formatTokens } from '../../utils/format-tokens'
+import { useDebounced } from '../../utils/use-debounced'
 import { useNow } from '../../utils/use-now'
 import { emptyCard, isBlank, MAX_MESSAGE_LENGTH, type CardContent } from '../card/card'
 import { FlipCard } from '../card/flip-card'
 import { PostcardBack, PostcardFront } from '../card/postcard'
-import { EXPRESS_STAMP_ID, stampById, stamps } from '../card/stamps'
+import { EXPRESS_STAMP_ID, FREE_STAMP_ID, stampById, stamps } from '../card/stamps'
 import { describeDelivery, deviceUtcOffsetMinutes, nextDelivery } from '../post/delivery'
+import { tokenName } from '../post/token-name'
+import { usePostOffice, useQuote } from '../post/use-post'
 import { HandwritingPad } from './handwriting-pad'
 import { pickPhoto, type PhotoSource } from './pick-photo'
 
@@ -51,6 +55,15 @@ export function WriteScreen({
 
   const stamp = stampById(card.stampId)
   const express = card.stampId === EXPRESS_STAMP_ID
+  const free = card.stampId === FREE_STAMP_ID
+
+  // The price is looked up as the name is typed, so the writer sees what the
+  // card will cost before the wallet is ever asked to sign.
+  const office = usePostOffice()
+  const settledTo = useDebounced(to, 600)
+  const quote = useQuote(settledTo)
+  const token = office.data ? tokenName(office.data.postageMint) : ''
+  const decimals = office.data?.decimals ?? 0
   // The reader's time zone is not known until their letterbox is looked up, so
   // this is an estimate in the writer's own.
   const offset = deviceUtcOffsetMinutes()
@@ -251,6 +264,23 @@ export function WriteScreen({
 
       <View className="my-6 h-px bg-rule" />
       <Text className="mb-3 font-body text-body text-ink-soft">{arrives}</Text>
+      {quote.data ? (
+        <View className="mb-3 gap-1">
+          <Text className="font-body text-body text-ink">
+            {free ? copy.write.quoteFree : copy.write.quotePaid(formatTokens(quote.data.price, decimals), token)}
+          </Text>
+          {express ? (
+            <Text className="font-body text-body text-ink">
+              {copy.write.quoteExpress(formatTokens(quote.data.expressFee, decimals), token)}
+            </Text>
+          ) : null}
+          <Text className="font-body text-body text-ink-soft">
+            {quote.data.sealed ? copy.write.quoteSealed : copy.write.quoteOpen}
+          </Text>
+        </View>
+      ) : quote.isFetched && settledTo.trim().length >= 5 && settledTo === to ? (
+        <Text className="mb-3 font-body text-body text-ink-soft">{copy.write.quoteNobody}</Text>
+      ) : null}
       {(complaint ?? error) ? (
         <Text className="mb-3 font-body text-body text-accent-ink">{complaint ?? error}</Text>
       ) : null}

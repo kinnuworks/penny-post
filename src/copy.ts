@@ -116,6 +116,13 @@ export const copy = {
     needsMessage: 'A blank card is a strange thing to get. Write something or add a picture.',
     arrives: (when: string) => `Arrives ${when}.`,
     arrivesExpress: 'Arrives the moment you post it.',
+    quotePaid: (amount: string, token: string) =>
+      `Postage is ${amount} ${token}. It is theirs when they open the card.`,
+    quoteExpress: (amount: string, token: string) => `Express adds ${amount} ${token}, which is burned.`,
+    quoteFree: 'This one goes on your free stamp. No postage.',
+    quoteSealed: 'It will be sealed, so only their phone can read it.',
+    quoteOpen: 'They have no letterbox yet, so it goes as an open postcard.',
+    quoteNobody: 'Nobody goes by that name.',
     notOpenYet: 'The post office is not open yet. Your card is still here on the counter.',
   },
 
