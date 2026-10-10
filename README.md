@@ -25,9 +25,13 @@ A letterbox takes three paid cards a day at most, and the reader sets the price.
 | Genesis Token check inside the program                                                                | Tested on a real mint and on real holdings, one full and one emptied.                                                                                                    |
 | App: wallet connect, letterbox, writing a card, posting, signing for a card, sending back, kept cards | Written. Typechecks, lints and bundles. Not run on a phone yet.                                                                                                          |
 | Sealed letters                                                                                        | Written, with unit tests. Not run on a phone yet.                                                                                                                        |
-| `.skr` lookup                                                                                         | Matches AllDomains' own library for three names on mainnet.                                                                                                              |
+| `.skr` lookup, both directions                                                                        | Matches AllDomains' own library on mainnet.                                                                                                                              |
+| Free daily stamp for Seeker owners                                                                    | The app finds the Genesis Token and asks the program to verify it. Its reader is tested on real accounts. Not run on a Seeker.                                           |
 | `supabase/functions/cards`: the card store                                                            | Deployed. Its refusals are tested. Accepting a card is not, because that needs the program on a network.                                                                 |
-| Pen-pal exchange, home-screen widget, the 08:00 notification                                          | Not started.                                                                                                                                                             |
+| `supabase/functions/exchange`: the pen-pal exchange                                                   | Deployed. Its refusals are tested. Matching two writers is not, for the same reason.                                                                                     |
+| The 08:00 bell                                                                                        | Written. The planning is unit tested. Not run on a phone yet.                                                                                                            |
+| Release build, signed from a keystore in the environment                                              | Plugin written and applied.                                                                                                                                              |
+| Home-screen widget                                                                                    | Not started.                                                                                                                                                             |
 | Devnet and mainnet deployment                                                                         | Not started.                                                                                                                                                             |
 
 This table is kept honest. If a row says "not started", it is not in the build.
@@ -72,6 +76,12 @@ To open the post office on a network once the program is deployed there:
 
 ```bash
 pnpm post-office open --cluster devnet
+```
+
+A release APK for arm64, signed with your own keystore. The four `PENNY_POST_` variables it reads are listed at the top of `plugins/with-release-signing.js`.
+
+```bash
+pnpm run android:release
 ```
 
 ## The program

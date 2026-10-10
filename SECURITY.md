@@ -41,6 +41,16 @@ Card contents are too large to keep on-chain, so they are stored by one small fu
 - The app does not trust it. Whatever it returns must hash to what the chain recorded, or the app refuses it.
 - It takes no API key, so there is no key in the app to leak. That also means anyone can call it. Each call costs it one RPC request and at most 400 kB of reading.
 
+## The exchange
+
+The pen-pal exchange is a second small function, `supabase/functions/exchange`, with two tables that record who is owed a card.
+
+- It hands a writer the wallet that has waited longest. It never sees a message.
+- A writer is only counted as having sent a card after the function has read that card from the chain, from the right sender to the right reader.
+- The tables have row level security on and no policies, so nothing but the function can read or write them.
+- It takes no API key and does not ask for a signature, so anyone can draw on behalf of any wallet. The worst that does is use up that wallet's one draw for the day.
+- It does not check a reader's price. A reader in the exchange could set a high one. The app shows the price before anything is signed, and the writer can walk away.
+
 ## Known limits
 
 - An open postcard is stored unencrypted under its hash. The app does not show a card until the reader has signed for it, but a modified app could fetch and read one without opening it, which would leave the sender's postage unclaimed and returnable. A sealed letter can only be read by the reader's phone, and the same holds for it: that reader could read it without signing.
