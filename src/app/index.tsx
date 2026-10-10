@@ -1,4 +1,5 @@
 import { useMobileWallet } from '@wallet-ui/react-native-kit'
+import { useRouter } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { useState } from 'react'
 import { View } from 'react-native'
@@ -9,6 +10,7 @@ import { describeWalletError } from '../utils/describe-wallet-error'
 
 export default function App() {
   const insets = useSafeAreaInsets()
+  const router = useRouter()
   const { account, connect, disconnect } = useMobileWallet()
   const [error, setError] = useState<string | null>(null)
   const [isBusy, setIsBusy] = useState(false)
@@ -38,7 +40,7 @@ export default function App() {
           address={account.address.toString()}
           isBusy={isBusy}
           onLeave={() => void run(disconnect)}
-          onWrite={() => undefined}
+          onWrite={() => router.push('/write')}
         />
       ) : (
         <WelcomeScreen error={error} isBusy={isBusy} onConnect={() => void run(connect)} />

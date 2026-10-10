@@ -9,7 +9,7 @@ import { Mukta_600SemiBold } from '@expo-google-fonts/mukta/600SemiBold'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AppIdentity, createSolanaDevnet, createSolanaMainnet, MobileWalletProvider } from '@wallet-ui/react-native-kit'
 import { useFonts } from 'expo-font'
-import { Slot } from 'expo-router'
+import { Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { useEffect } from 'react'
 import { copy } from '../copy'
@@ -54,7 +54,7 @@ export default function Layout() {
         networks={networks}
         render={({ selectedNetwork }) => (
           <MobileWalletProvider cluster={selectedNetwork} identity={identity}>
-            <Slot />
+            <Stack screenOptions={{ animation: 'slide_from_bottom', headerShown: false }} />
           </MobileWalletProvider>
         )}
       />
