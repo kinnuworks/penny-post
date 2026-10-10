@@ -10,7 +10,7 @@ Every figure in square brackets is a blank. Fill it with the real number on the 
 
 - The program is deployed to mainnet and the post office is open.
 - Both phones have the release APK, a wallet with a little SOL, and the writer's phone has at least 40 SKR.
-- The reader's phone has a letterbox. If the writer's wallet has a `.skr` name, set it as the main name so it shows on the card.
+- The reader's phone has a letterbox, with the price you want on camera. Set it with "Change it" under the heading. If the writer's wallet has a `.skr` name, set it as the main name so it shows on the card.
 - Do one full practice run, so the reader's token account exists and nothing on camera is a first-time prompt you have not seen.
 - Record the phones with a camera on a tripod, hands in shot. A screen recording alone looks like a simulator.
 - Upload your own captions to YouTube from this script. The platform prefers published captions over automatic ones, and automatic ones will not spell `.skr`.
@@ -57,7 +57,7 @@ On screen: the doormat with a paid card on it.
 
 On screen: the repository's test output, then the program on the explorer.
 
-> The program has [22] unit tests and [30] end-to-end tests, run against real SKR and a real Seeker Genesis Token. It is live on mainnet. [N] cards have been posted so far. Penny Post. The post comes once a day.
+> The program has [22] unit tests and [36] end-to-end tests, run against real SKR and a real Seeker Genesis Token. It is live on mainnet. [N] cards have been posted so far. Penny Post. The post comes once a day.
 
 ## After recording
 
