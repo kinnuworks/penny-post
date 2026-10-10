@@ -28,6 +28,7 @@ import {
   type PostedCard,
 } from './chain'
 import { deviceUtcOffsetMinutes } from './delivery'
+import { drawPenPal, flushExchange, noteForExchange } from './exchange'
 import { flushOutbox, forget, keepForUpload } from './outbox'
 import { isDeclined } from '../../utils/describe-wallet-error'
 import { useSend } from './use-send'
@@ -40,6 +41,7 @@ export class PostProblem extends Error {
   constructor(
     public reason:
       | 'no-such-reader'
+      | 'nobody-waiting'
       | 'to-yourself'
       | 'no-free-stamp'
       | 'no-genesis-token'
@@ -105,7 +107,34 @@ export function useDoormat() {
 
 /** Delivers anything left in the outbox from an earlier session. */
 export function useFlushOutbox() {
-  return useQuery({ queryKey: ['outbox'], queryFn: () => flushOutbox(), staleTime: 60_000 })
+  return useQuery({
+    queryKey: ['outbox'],
+    queryFn: async () => {
+      const waiting = await flushOutbox()
+      await flushExchange()
+      return waiting
+    },
+    staleTime: 60_000,
+  })
+}
+
+/** Draws a stranger to write to from the pen-pal exchange. */
+export function useDrawPenPal() {
+  const { account, chain } = useMobileWallet()
+
+  return useMutation({
+    mutationFn: async (): Promise<string> => {
+      if (!account) {
+        throw new PostProblem('office-closed')
+      }
+      const stranger = await drawPenPal(account.address, clusterOf(chain))
+      if (!stranger) {
+        throw new PostProblem('nobody-waiting')
+      }
+      // Show their name if they have one. The address works either way.
+      return (await primarySkrName(mainnetRpc, stranger).catch(() => null)) ?? stranger
+    },
+  })
 }
 
 export function useOpenLetterbox() {
@@ -243,6 +272,9 @@ export function usePostCard() {
         // The card is in the post. Its contents stay in the outbox and go out later.
         delivered = false
       }
+      // If this card answers a draw from the exchange, the writer joins the line.
+      await noteForExchange(address, cluster)
+      void flushExchange()
       return { card: address, delivered, express, readerName: reader.name, sealed: isSealed(bytes) }
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['letterbox', chain, account?.address] }),

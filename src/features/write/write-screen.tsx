@@ -5,6 +5,7 @@ import { InkButton } from '../../components/ink-button'
 import { StampArt } from '../../components/stamp-art'
 import { copy } from '../../copy'
 import { usePalette } from '../../theme'
+import { describeProblem } from '../../utils/describe-problem'
 import { useNow } from '../../utils/use-now'
 import { emptyCard, isBlank, MAX_MESSAGE_LENGTH, type CardContent } from '../card/card'
 import { FlipCard } from '../card/flip-card'
@@ -27,11 +28,14 @@ export function WriteScreen({
   error,
   isPosting,
   onBack,
+  onDrawStranger,
   onPost,
 }: {
   error: string | null
   isPosting: boolean
   onBack: () => void
+  /** Draws a stranger from the pen-pal exchange and returns their name or address. */
+  onDrawStranger: () => Promise<string>
   onPost: (draft: Draft) => void
 }) {
   const palette = usePalette()
@@ -42,6 +46,8 @@ export function WriteScreen({
   const [side, setSide] = useState<'front' | 'back'>('back')
   const [complaint, setComplaint] = useState<string | null>(null)
   const [isBusyWithPhoto, setIsBusyWithPhoto] = useState(false)
+  const [isDrawing, setIsDrawing] = useState(false)
+  const [isForStranger, setIsForStranger] = useState(false)
 
   const stamp = stampById(card.stampId)
   const express = card.stampId === EXPRESS_STAMP_ID
@@ -72,6 +78,22 @@ export function WriteScreen({
       setComplaint(copy.errors.generic)
     } finally {
       setIsBusyWithPhoto(false)
+    }
+  }
+
+  async function drawStranger() {
+    if (isDrawing) {
+      return
+    }
+    setIsDrawing(true)
+    setComplaint(null)
+    try {
+      setTo(await onDrawStranger())
+      setIsForStranger(true)
+    } catch (problem) {
+      setComplaint(describeProblem(problem))
+    } finally {
+      setIsDrawing(false)
     }
   }
 
@@ -116,12 +138,27 @@ export function WriteScreen({
         className="rounded-card border border-rule bg-paper-raised px-4 py-3 font-body text-body text-ink"
         onChangeText={(value) => {
           setComplaint(null)
+          setIsForStranger(false)
           setTo(value)
         }}
         placeholder={copy.write.toPlaceholder}
         placeholderTextColor={palette.inkFaint}
         value={to}
       />
+      {isForStranger ? (
+        <Text className="mt-2 font-body text-body text-ink-soft">{copy.write.strangerNote}</Text>
+      ) : (
+        <Pressable
+          accessibilityRole="button"
+          className="mt-2 self-start"
+          hitSlop={8}
+          onPress={() => void drawStranger()}
+        >
+          <Text className="font-label text-label text-accent-ink underline">
+            {isDrawing ? copy.write.drawing : copy.write.stranger}
+          </Text>
+        </Pressable>
+      )}
 
       <Label>{copy.write.pictureLabel}</Label>
       <View className="flex-row gap-3">

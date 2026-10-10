@@ -39,7 +39,8 @@
         }
       ],
       "expo-secure-store",
-      "expo-notifications"
+      "expo-notifications",
+      "./plugins/with-release-signing"
     ],
     "icon": "./assets/icon.png"
   }

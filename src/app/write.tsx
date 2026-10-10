@@ -4,7 +4,7 @@ import { Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { InkButton } from '../components/ink-button'
 import { copy } from '../copy'
-import { usePostCard, type PostedReceipt } from '../features/post/use-post'
+import { useDrawPenPal, usePostCard, type PostedReceipt } from '../features/post/use-post'
 import { WriteScreen } from '../features/write/write-screen'
 import { describeProblem } from '../utils/describe-problem'
 
@@ -12,6 +12,7 @@ export default function Write() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const postCard = usePostCard()
+  const drawPenPal = useDrawPenPal()
   const [receipt, setReceipt] = useState<PostedReceipt | null>(null)
   // A new key gives the counter a clean card after "write another".
   const [round, setRound] = useState(0)
@@ -33,6 +34,7 @@ export default function Write() {
           isPosting={postCard.isPending}
           key={round}
           onBack={() => router.back()}
+          onDrawStranger={() => drawPenPal.mutateAsync()}
           onPost={(draft) => postCard.mutate(draft, { onSuccess: setReceipt })}
         />
       )}

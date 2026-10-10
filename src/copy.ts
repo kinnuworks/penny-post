@@ -69,6 +69,8 @@ export const copy = {
 
   problems: {
     'no-such-reader': 'Nobody goes by that name. Check the spelling, or use their wallet address.',
+    'nobody-waiting':
+      'Nobody is waiting for a card just now. Write to someone you know, and you can be first in the line.',
     'to-yourself': 'That is your own address. Writing to yourself costs a stamp and proves very little.',
     'no-free-stamp': 'There is no free stamp on the counter today. Pick another one.',
     'no-genesis-token':
@@ -94,6 +96,10 @@ export const copy = {
     turnHint: 'Tap the card to turn it over.',
     toLabel: 'Who is it for?',
     toPlaceholder: 'asha.skr, or a wallet address',
+    stranger: 'Nobody in mind? Write to a stranger.',
+    drawing: 'Finding someone',
+    strangerNote:
+      'Send one, get one. This card goes to whoever has waited longest, and you join the line for the next.',
     pictureLabel: 'The picture side',
     takePhoto: 'Take a photo',
     choosePhoto: 'Choose one',
