@@ -1,9 +1,17 @@
 /** 12500000 with six decimals becomes "12.5". Trailing zeros are dropped. */
 export function formatTokens(amount: bigint, decimals: number): string {
   const unit = 10n ** BigInt(decimals)
-  const whole = (amount / unit).toLocaleString('en-US')
+  const whole = groupThousands(amount / unit)
   const fraction = (amount % unit).toString().padStart(decimals, '0').replace(/0+$/, '')
   return fraction ? `${whole}.${fraction}` : whole
+}
+
+/**
+ * 1234567 becomes "1,234,567". Done by hand because the phone's JavaScript
+ * engine prints a bigint without separators whatever locale it is given.
+ */
+export function groupThousands(whole: bigint | number): string {
+  return whole.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 }
 
 /**

@@ -7,7 +7,7 @@ import { copy } from '../../copy'
 import { usePalette } from '../../theme'
 import { describeProblem } from '../../utils/describe-problem'
 import { ellipsify } from '../../utils/ellipsify'
-import { formatTokens } from '../../utils/format-tokens'
+import { formatTokens, groupThousands } from '../../utils/format-tokens'
 import { useNow } from '../../utils/use-now'
 import { stampById } from '../card/stamps'
 import { hasFreeStamp, type PostedCard } from '../post/chain'
@@ -75,7 +75,7 @@ export function LetterboxScreen({
       <View>
         <Text className="font-caption text-caption uppercase tracking-widest text-ink-faint">
           {copy.wallet.address(ellipsify(address))}
-          {seal ? `  ·  ${copy.letterbox.seeker(seal.memberNumber.toLocaleString('en-US'))}` : ''}
+          {seal ? `  ·  ${copy.letterbox.seeker(groupThousands(seal.memberNumber))}` : ''}
         </Text>
         <Text className="mb-1 mt-1 font-title text-title text-ink">{copy.letterbox.heading}</Text>
         {letterbox && office.data && isPricing ? (

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatTokens, parseTokens } from './format-tokens'
+import { formatTokens, groupThousands, parseTokens } from './format-tokens'
 
 describe('formatTokens', () => {
   it('drops trailing zeros', () => {
@@ -46,5 +46,14 @@ describe('parseTokens', () => {
   it('refuses more decimal places than the token has', () => {
     expect(parseTokens('1.0000001', 6)).toBeNull()
     expect(parseTokens('1.5', 0)).toBeNull()
+  })
+})
+
+describe('groupThousands', () => {
+  it('puts a comma every three digits', () => {
+    expect(groupThousands(0)).toBe('0')
+    expect(groupThousands(999)).toBe('999')
+    expect(groupThousands(1_000)).toBe('1,000')
+    expect(groupThousands(123_456_789n)).toBe('123,456,789')
   })
 })
