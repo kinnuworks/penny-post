@@ -12,7 +12,6 @@ import { TabBar } from '../../components/tab-bar'
 import { copy } from '../../copy'
 import { usePalette } from '../../theme'
 import { describeProblem } from '../../utils/describe-problem'
-import { ellipsify } from '../../utils/ellipsify'
 import { formatTokens, formatTokensRoughly } from '../../utils/format-tokens'
 import { useNow } from '../../utils/use-now'
 import { stampById } from '../card/stamps'
@@ -33,6 +32,28 @@ import {
   useSkrName,
   useTestKit,
 } from '../post/use-post'
+
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+const MONTHS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+]
+
+/** The date as it would head a letter, for a reader with no .skr name to greet by. */
+function dateLine(now: number): string {
+  const date = new Date(now * 1000)
+  return `${WEEKDAYS[date.getDay()]}, ${date.getDate()} ${MONTHS[date.getMonth()]}`
+}
 
 // The doormat: the day's question in its envelope, then whatever people sent.
 export function LetterboxScreen({ address }: { address: Address }) {
@@ -88,7 +109,7 @@ export function LetterboxScreen({ address }: { address: Address }) {
               {copy.home.greeting(new Date(now * 1000).getHours())}
             </Text>
             <Text className="font-display text-display text-ink" numberOfLines={1}>
-              {myName.data ?? ellipsify(address)}
+              {myName.data ?? dateLine(now)}
             </Text>
           </View>
           <View className="pt-1">
