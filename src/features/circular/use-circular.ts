@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect } from 'react'
 import { useMobileWallet } from '@wallet-ui/react-native-kit'
 import type { Instruction } from '@solana/kit'
 import { findGenesisToken } from '../letterbox/genesis-token'
 import { PostProblem } from '../post/problem'
 import { useMyLetterbox, usePostOffice } from '../post/use-post'
 import { useSend } from '../post/use-send'
+import { loadAnswerLog, recordAnswer, streakOf } from './answer-log'
 import {
   buildAnswerCircular,
   buildCollectCircular,
@@ -93,6 +95,13 @@ export function useAnswerCircular() {
         return instructions
       })
     },
+    // Remembered on the phone, for the run of mornings shown on the doormat.
+    onSuccess: async (_signature, { day }) => {
+      if (account) {
+        await recordAnswer(account.address, day)
+        await queryClient.invalidateQueries({ queryKey: ['answer-log', account.address] })
+      }
+    },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['circular', chain] }),
   })
 }
@@ -154,4 +163,29 @@ export function usePostCircular() {
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['circular', chain] }),
   })
+}
+
+/** The days this phone has answered, and the run of mornings that ends today. */
+export function useAnswerLog(today: number) {
+  const { account } = useMobileWallet()
+  const owner = account?.address
+  return useQuery({
+    enabled: !!owner,
+    queryKey: ['answer-log', owner],
+    queryFn: async () => (owner ? loadAnswerLog(owner) : []),
+    select: (days) => ({ days, streak: streakOf(days, today) }),
+  })
+}
+
+/** Makes sure an answer the chain knows about is in the phone's log too, after a reinstall for instance. */
+export function useRememberAnswer(day: number, hasAnswered: boolean) {
+  const { account } = useMobileWallet()
+  const queryClient = useQueryClient()
+  const owner = account?.address
+  useEffect(() => {
+    if (!owner || !hasAnswered) {
+      return
+    }
+    void recordAnswer(owner, day).then(() => queryClient.invalidateQueries({ queryKey: ['answer-log', owner] }))
+  }, [owner, day, hasAnswered, queryClient])
 }

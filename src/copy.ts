@@ -31,6 +31,8 @@ export const copy = {
     answered: (amount: string, token: string) => `You're in. About ${amount} ${token} so far.`,
     notAnswered: 'One tap, and you share it.',
     postcard: 'A postcard',
+    streak: (mornings: number) =>
+      mornings === 1 ? 'One morning answered. Come back tomorrow.' : `${mornings} mornings running.`,
     noCards: 'No cards today. The postman did look.',
   },
 
@@ -61,6 +63,7 @@ export const copy = {
     stamp: "Today's free stamp",
     stampReady: 'On the counter',
     stampUsed: 'Used',
+    week: 'This week',
     seeker: 'Seeker',
     ask: "Ask tomorrow's question",
     network: 'Network',
@@ -134,6 +137,10 @@ export const copy = {
     seekersOnly: 'Only a Seeker can answer. One phone, one answer.',
     waiting: (amount: string, token: string) =>
       `Yesterday's question has closed. About ${amount} ${token} is waiting for you.`,
+    yesterday: "Yesterday's question",
+    won: (answer: string, count: number, total: number) => `${answer} won, with ${count} of ${total}.`,
+    tied: (one: string, other: string, count: number) => `${one} and ${other} tied, ${count} each.`,
+    yourShare: (amount: string, token: string) => `About ${amount} ${token} of it is yours.`,
     collect: 'Collect it',
     collecting: 'Collecting',
     none: 'No question today.',
@@ -195,6 +202,7 @@ export const copy = {
     free: 'No postage on this one. It came on a free stamp.',
     receipt: (signature: string) => `Signed for. Receipt ${signature}`,
     done: 'Back to the letterbox',
+    writeBack: 'Write back',
     returned: 'Sent back. The postage went home with it.',
     gone: 'This card is no longer in the post.',
   },

@@ -33,11 +33,14 @@ export interface Draft {
 // message, the stamp. The card at the top is the real thing, updated as you go.
 export function WriteScreen({
   error,
+  initialTo = '',
   isPosting,
   onDrawStranger,
   onPost,
 }: {
   error: string | null
+  /** Who the card is for, when the writer came here by answering a card. */
+  initialTo?: string
   isPosting: boolean
   /** Draws a stranger from the pen-pal exchange and returns their name or address. */
   onDrawStranger: () => Promise<string>
@@ -46,7 +49,7 @@ export function WriteScreen({
   const palette = usePalette()
   const now = useNow()
   const [card, setCard] = useState<CardContent>(() => emptyCard(stamps[1].id))
-  const [to, setTo] = useState('')
+  const [to, setTo] = useState(initialTo)
   const [mode, setMode] = useState<Mode>('hand')
   const [side, setSide] = useState<'front' | 'back'>('back')
   const [complaint, setComplaint] = useState<string | null>(null)

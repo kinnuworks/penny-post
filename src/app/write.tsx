@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useState } from 'react'
 import { Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -14,6 +14,7 @@ import { ellipsify } from '../utils/ellipsify'
 export default function Write() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
+  const { to } = useLocalSearchParams<{ to?: string }>()
   const postCard = usePostCard()
   const drawPenPal = useDrawPenPal()
   const [receipt, setReceipt] = useState<PostedReceipt | null>(null)
@@ -34,6 +35,7 @@ export default function Write() {
       ) : (
         <WriteScreen
           error={postCard.error ? describeProblem(postCard.error) : null}
+          initialTo={typeof to === 'string' ? to : ''}
           isPosting={postCard.isPending}
           key={round}
           onDrawStranger={() => drawPenPal.mutateAsync()}

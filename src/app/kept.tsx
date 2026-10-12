@@ -9,9 +9,9 @@ import { copy } from '../copy'
 import { FlipCard } from '../features/card/flip-card'
 import { PostcardBack, PostcardFront } from '../features/card/postcard'
 import { listKept, loadKept, type KeptEntry } from '../features/kept/kept-store'
+import { nameOf } from '../features/post/test-kit'
 import { tokenName } from '../features/post/token-name'
 import { usePostOffice } from '../features/post/use-post'
-import { ellipsify } from '../utils/ellipsify'
 import { formatTokens } from '../utils/format-tokens'
 import { paperShadow } from '../theme'
 import { postmarkDate } from '../utils/postmark-date'
@@ -91,7 +91,7 @@ function KeptCardView({ entry, owner, tilt }: { entry: KeptEntry; owner: Address
         />
       </View>
       <Text className="mt-4 font-body text-body text-ink-soft">
-        {copy.letterbox.from(content.data.fromName ?? ellipsify(entry.from))}
+        {copy.letterbox.from(nameOf(entry.from, content.data.fromName))}
         {paid > 0n && office.data
           ? `. ${copy.kept.paid(formatTokens(paid, office.data.decimals), tokenName(office.data.postageMint))}.`
           : ''}

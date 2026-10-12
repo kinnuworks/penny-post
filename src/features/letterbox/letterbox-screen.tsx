@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { ScrollView, Text, useColorScheme, View } from 'react-native'
 import { Envelope, ENVELOPE_TONE } from '../../components/envelope'
 import { InkButton } from '../../components/ink-button'
-import { Rise } from '../../components/motion'
+import { Drop, Rise } from '../../components/motion'
 import { Paper } from '../../components/paper'
 import { StampArt } from '../../components/stamp-art'
 import { SunDoodle, SunStamp } from '../../components/sun'
@@ -17,14 +17,16 @@ import { formatTokens, formatTokensRoughly } from '../../utils/format-tokens'
 import { useNow } from '../../utils/use-now'
 import { stampById } from '../card/stamps'
 import { shareAfterBurn, utcDay } from '../circular/circular-chain'
-import { useCircular, useCollectCircular } from '../circular/use-circular'
+import { useAnswerLog, useCircular, useCollectCircular, useRememberAnswer } from '../circular/use-circular'
 import type { PostedCard } from '../post/chain'
 import { describeDelivery, deviceUtcOffsetMinutes, nextDelivery } from '../post/delivery'
 import { askToRing, setMorningBells } from '../post/morning-bell'
+import { nameOf } from '../post/test-kit'
 import { tokenName } from '../post/token-name'
 import {
   useDoormat,
   useFlushOutbox,
+  useHasTestKit,
   useMyLetterbox,
   useOpenLetterbox,
   usePostOffice,
@@ -41,6 +43,7 @@ export function LetterboxScreen({ address }: { address: Address }) {
   const doormat = useDoormat()
   const openLetterbox = useOpenLetterbox()
   const testKit = useTestKit()
+  const hasKit = useHasTestKit()
   const myName = useSkrName(address)
   useFlushOutbox()
 
@@ -53,6 +56,9 @@ export function LetterboxScreen({ address }: { address: Address }) {
   const today = utcDay(now)
   const question = useCircular(today)
   const arrived = cards.filter((card) => Number(card.deliverAt) <= now).length
+  const answerLog = useAnswerLog(today)
+  const streak = answerLog.data?.streak ?? 0
+  useRememberAnswer(today, question.data?.myChoice != null)
 
   // Once there is a letterbox, ask whether the morning bell may ring, and keep
   // the coming week's bells in step with what is known to be in the post.
@@ -89,9 +95,13 @@ export function LetterboxScreen({ address }: { address: Address }) {
             <SunDoodle size={68} />
           </View>
         </View>
-        <Text className="mb-6 mt-2 font-body text-body text-ink-soft">
+        <Text className="mt-2 font-body text-body text-ink-soft">
           {arrived > 0 ? copy.home.arrived : question.data ? copy.home.questionOnly : copy.home.nothing}
         </Text>
+        {streak > 0 ? (
+          <Text className="mt-1 font-label text-label text-accent-ink">{copy.home.streak(streak)}</Text>
+        ) : null}
+        <View className="h-6" />
 
         {isLoading ? null : !office.data ? (
           <Paper className="px-6 py-6">
@@ -100,7 +110,7 @@ export function LetterboxScreen({ address }: { address: Address }) {
         ) : (
           <View className="gap-5">
             {/* Off mainnet there is no SKR and no Seeker, so the counter lends a visitor both. */}
-            {token !== 'SKR' && !seal ? (
+            {token !== 'SKR' && !seal && (testKit.isSuccess || !hasKit.data) ? (
               <View className="rounded-card border border-dashed border-ink-faint px-5 py-5">
                 <Text className="font-title text-heading text-ink">{copy.testKit.title}</Text>
                 {testKit.isSuccess ? (
@@ -144,7 +154,7 @@ export function LetterboxScreen({ address }: { address: Address }) {
                 <Yesterday decimals={decimals} token={token} today={today} />
 
                 {question.data ? (
-                  <Rise>
+                  <Drop>
                     <Envelope
                       accessibilityLabel={`${copy.home.question}. ${formatTokens(question.data.circular.pot, decimals)} ${token} ${copy.home.toShare}.`}
                       onPress={() => router.push('/question')}
@@ -164,7 +174,7 @@ export function LetterboxScreen({ address }: { address: Address }) {
                           : copy.home.notAnswered}
                       </Text>
                     </Envelope>
-                  </Rise>
+                  </Drop>
                 ) : question.isLoading ? null : (
                   <Paper className="px-6 py-5">
                     <Text className="font-body text-body text-ink-soft">{copy.circular.none}</Text>
@@ -175,7 +185,7 @@ export function LetterboxScreen({ address }: { address: Address }) {
                 )}
 
                 {cards.map((card, index) => (
-                  <Rise delay={120 + index * 110} key={card.address}>
+                  <Drop delay={220 + index * 190} key={card.address}>
                     <CardEnvelope
                       card={card}
                       decimals={decimals}
@@ -185,7 +195,7 @@ export function LetterboxScreen({ address }: { address: Address }) {
                       tilt={index % 2 === 0 ? -0.6 : 0.6}
                       token={token}
                     />
-                  </Rise>
+                  </Drop>
                 ))}
 
                 {cards.length === 0 ? (
@@ -208,31 +218,48 @@ export function LetterboxScreen({ address }: { address: Address }) {
   )
 }
 
-// A share from a question that has closed, waiting to be collected.
+// Yesterday's question, now closed: how it came out, and a share to collect if one is waiting.
 function Yesterday({ decimals, token, today }: { decimals: number; token: string; today: number }) {
   const previous = useCircular(today - 1)
   const collect = useCollectCircular()
-  // An answer that still exists for a closed day is a share nobody has collected.
-  const waiting = previous.data && previous.data.myChoice !== null ? previous.data.circular : null
-  if (!waiting) {
+  const closed = previous.data?.circular
+  if (!closed || closed.answers === 0) {
     return null
   }
+  // An answer that still exists for a closed day is a share nobody has collected.
+  const waiting = previous.data && previous.data.myChoice !== null ? closed : null
+  const counts = closed.options.map((option, index) => ({ count: closed.tallies[index] ?? 0, option }))
+  const [first, second] = [...counts].sort((a, b) => b.count - a.count)
+
   return (
-    <Paper className="px-6 py-5">
-      <Text className="font-body text-body text-ink">
-        {copy.circular.waiting(formatTokensRoughly(shareAfterBurn(waiting), decimals), token)}
-      </Text>
-      <View className="mt-4">
-        <InkButton
-          disabled={collect.isPending}
-          label={collect.isPending ? copy.circular.collecting : copy.circular.collect}
-          onPress={() => collect.mutate(waiting)}
-        />
-      </View>
-      {collect.error ? (
-        <Text className="mt-3 font-body text-body text-accent-ink">{describeProblem(collect.error)}</Text>
-      ) : null}
-    </Paper>
+    <Rise>
+      <Paper className="px-6 py-5">
+        <Text className="font-caption text-caption text-ink-soft">{copy.circular.yesterday}</Text>
+        <Text className="mt-1 font-title text-[19px] leading-[25px] text-ink">{closed.question}</Text>
+        <Text className="mt-2 font-hand text-hand text-ink">
+          {second && first.count === second.count
+            ? copy.circular.tied(first.option, second.option, first.count)
+            : copy.circular.won(first.option, first.count, closed.answers)}
+        </Text>
+        {waiting ? (
+          <>
+            <Text className="mt-3 font-body text-body text-ink">
+              {copy.circular.yourShare(formatTokensRoughly(shareAfterBurn(waiting), decimals), token)}
+            </Text>
+            <View className="mt-4">
+              <InkButton
+                disabled={collect.isPending}
+                label={collect.isPending ? copy.circular.collecting : copy.circular.collect}
+                onPress={() => collect.mutate(waiting)}
+              />
+            </View>
+            {collect.error ? (
+              <Text className="mt-3 font-body text-body text-accent-ink">{describeProblem(collect.error)}</Text>
+            ) : null}
+          </>
+        ) : null}
+      </Paper>
+    </Rise>
   )
 }
 
@@ -257,7 +284,7 @@ function CardEnvelope({
   const isDark = useColorScheme() === 'dark'
   const palette = usePalette()
   const name = useSkrName(card.sender)
-  const from = copy.letterbox.from(name.data ?? ellipsify(card.sender))
+  const from = copy.letterbox.from(nameOf(card.sender, name.data))
   const stamp = stampById(card.stamp)
   const hasArrived = Number(card.deliverAt) <= now
   const inside =

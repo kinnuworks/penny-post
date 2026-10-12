@@ -6,6 +6,7 @@ import { Image, Pressable, ScrollView, Text, View } from 'react-native'
 import Svg, { Path } from 'react-native-svg'
 import { InkButton } from '../../components/ink-button'
 import { Paper } from '../../components/paper'
+import { SunStamp } from '../../components/sun'
 import { TabBar } from '../../components/tab-bar'
 import { copy } from '../../copy'
 import { usePalette } from '../../theme'
@@ -14,6 +15,8 @@ import { describeWalletError } from '../../utils/describe-wallet-error'
 import { ellipsify } from '../../utils/ellipsify'
 import { formatTokens, groupThousands } from '../../utils/format-tokens'
 import { useNow } from '../../utils/use-now'
+import { utcDay } from '../circular/circular-chain'
+import { useAnswerLog } from '../circular/use-circular'
 import { listKept } from '../kept/kept-store'
 import { PriceDesk } from '../letterbox/price-desk'
 import { hasFreeStamp } from '../post/chain'
@@ -21,6 +24,7 @@ import { tokenName } from '../post/token-name'
 import { useMyLetterbox, usePostOffice, useSkrName, useVerifyLetterbox } from '../post/use-post'
 
 const badge = require('../../../assets/avatar.jpg')
+const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
 // Who this letterbox belongs to, what it has earned, and its few settings.
 export function ProfileScreen() {
@@ -45,6 +49,10 @@ export function ProfileScreen() {
   const letterbox = mine.data?.letterbox ?? null
   const seal = mine.data?.seal ?? null
   const earned = (kept.data ?? []).reduce((total, entry) => total + BigInt(entry.paid), 0n)
+  const today = utcDay(now)
+  const answerLog = useAnswerLog(today)
+  const answered = new Set(answerLog.data?.days ?? [])
+  const streak = answerLog.data?.streak ?? 0
 
   async function leave() {
     setLeaveError(null)
@@ -80,6 +88,30 @@ export function ProfileScreen() {
           <Figure label={copy.profile.kept} value={String(kept.data?.length ?? 0)} />
           <Figure label={copy.profile.earned} value={`${formatTokens(earned, decimals)} ${token}`} />
         </View>
+
+        {/* The last seven mornings: a stamp for each one answered. */}
+        <Paper className="mb-5 px-5 py-4">
+          <View className="flex-row items-baseline justify-between">
+            <Text className="font-caption text-caption text-ink-soft">{copy.profile.week}</Text>
+            {streak > 0 ? (
+              <Text className="font-caption text-caption text-accent-ink">{copy.home.streak(streak)}</Text>
+            ) : null}
+          </View>
+          <View className="mt-3 flex-row justify-between">
+            {Array.from({ length: 7 }, (_, index) => today - 6 + index).map((day) => (
+              <View className="items-center gap-1" key={day}>
+                {answered.has(day) ? (
+                  <SunStamp size={34} />
+                ) : (
+                  <View className="h-[34px] w-[34px] rounded-[4px] border border-dashed border-ink-faint" />
+                )}
+                <Text className={`font-caption text-[11px] ${day === today ? 'text-ink' : 'text-ink-faint'}`}>
+                  {WEEKDAYS[new Date(day * 86_400_000).getUTCDay()]}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </Paper>
 
         {letterbox && office.data && isPricing ? (
           <Paper className="mb-5 px-5 py-5">

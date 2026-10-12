@@ -1,10 +1,13 @@
 // The devnet counter. It hands a tester what a Seeker owner already has.
 //
-// POST /counter/kit  { wallet }  ->  { given, signature }
+// POST /counter/kit      { wallet }  ->  { given, signature }
+// POST /counter/welcome  { wallet }  ->  { card, signature }
 //
 // Devnet has no SKR and no Seeker Genesis Token, so somebody trying the app
-// there can look and do nothing. One call gives a wallet a little devnet SOL,
-// some stand-in postage and one stand-in Genesis Token, once.
+// there can look and do nothing. `kit` gives a wallet a little devnet SOL,
+// some stand-in postage and one stand-in Genesis Token, once. `welcome` posts
+// one card to a wallet that has put up a letterbox, once, so its first
+// morning is not an empty doormat.
 //
 // This is the only part of Penny Post that holds a key, and the key is only
 // good on devnet: it is a wallet stocked with test SOL, stand-in postage and a
@@ -33,6 +36,21 @@ const POSTAGE_DECIMALS = 6
 const KIT_LAMPORTS = 25_000_000n
 const KIT_POSTAGE = 300n * 10n ** BigInt(POSTAGE_DECIMALS)
 
+/** The post office program, and what the welcome card costs to send by express. */
+const PENNY_POST_PROGRAM = 'D5LZ7kUmpXhE2hsKHnse9itthWHX6j8o4EkGcfz2MLAD'
+const POST_CARD_DISCRIMINATOR = [0x9c, 0x22, 0x50, 0xf9, 0x7d, 0x62, 0xdf, 0x2b]
+const EXPRESS_STAMP = 4
+const MOST_EXPRESS_FEE = 40n * 10n ** BigInt(POSTAGE_DECIMALS)
+const MOST_POSTAGE = 50n * 10n ** BigInt(POSTAGE_DECIMALS)
+/** Where a letterbox keeps its price: after the account tag, the owner and the reading key. */
+const LETTERBOX_PRICE_OFFSET = 8 + 32 + 32
+/**
+ * The welcome card's contents are the same for everyone, stored once in the
+ * card store. This is their SHA-256, which is all a card records on-chain.
+ */
+const WELCOME_CONTENT_HASH =
+  Deno.env.get('WELCOME_CONTENT_HASH') ?? '18f57cb84ed0ce22cf0eea2503e91b28967fa8870d1f0ef3c4f9e288670d0a61'
+
 const ADDRESS_PATTERN = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/
 const ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 
@@ -40,8 +58,9 @@ Deno.serve(async (request: Request) => {
   if (request.method !== 'POST') {
     return reply(405, { error: 'The counter takes POST.' })
   }
-  if (new URL(request.url).pathname.split('/').filter(Boolean).at(-1) !== 'kit') {
-    return reply(404, { error: 'The counter only hands out kits.' })
+  const action = new URL(request.url).pathname.split('/').filter(Boolean).at(-1)
+  if (action !== 'kit' && action !== 'welcome') {
+    return reply(404, { error: 'The counter knows kit and welcome.' })
   }
 
   let body: Record<string, unknown>
@@ -56,22 +75,161 @@ Deno.serve(async (request: Request) => {
   }
 
   try {
-    return await handOver(wallet)
+    return action === 'kit' ? await handOver(wallet) : await welcome(wallet)
   } catch (error) {
     console.error(error)
     return reply(503, { error: 'The counter is not answering. Try again.' })
   }
 })
 
-async function handOver(wallet: string): Promise<Response> {
-  const database = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
-  const { data: secretKey, error } = await database.rpc('counter_key', { for_cluster: 'devnet' })
+type Database = ReturnType<typeof createClient>
+
+function database(): Database {
+  return createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+}
+
+/** The counter's wallet: its 32-byte seed and its address. Null if the till is locked. */
+async function counterWallet(db: Database): Promise<{ address: string; seed: Uint8Array } | null> {
+  const { data: secretKey, error } = await db.rpc('counter_key', { for_cluster: 'devnet' })
   if (error || !Array.isArray(secretKey) || secretKey.length !== 64) {
-    return reply(503, { error: 'The counter is shut.' })
+    return null
   }
   // A Solana key file is the 32-byte seed followed by the public key.
-  const seed = new Uint8Array(secretKey.slice(0, 32) as number[])
-  const counter = toBase58(new Uint8Array(secretKey.slice(32) as number[]))
+  return {
+    address: toBase58(new Uint8Array(secretKey.slice(32) as number[])),
+    seed: new Uint8Array(secretKey.slice(0, 32) as number[]),
+  }
+}
+
+/** Signs and sends, then waits to hear that it landed. Returns the signature, or null if it failed. */
+async function sendAndConfirm(
+  wallet: { address: string; seed: Uint8Array },
+  instructions: Instruction[],
+): Promise<{ landed: boolean | null; signature: string }> {
+  const { value: latest } = await rpc<{ value: { blockhash: string } }>('getLatestBlockhash', [
+    { commitment: 'confirmed' },
+  ])
+  const message = compileMessage(wallet.address, latest.blockhash, instructions)
+  const signatureBytes = ed25519.sign(message, wallet.seed)
+  const signature = toBase58(signatureBytes)
+  const wire = new Uint8Array(1 + 64 + message.length)
+  wire[0] = 1
+  wire.set(signatureBytes, 1)
+  wire.set(message, 65)
+  await rpc('sendTransaction', [toBase64(wire), { encoding: 'base64', preflightCommitment: 'confirmed' }])
+
+  for (let attempt = 0; attempt < 25; attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, 800))
+    const status = await rpc<{ value: ({ confirmationStatus?: string; err: unknown } | null)[] }>(
+      'getSignatureStatuses',
+      [[signature]],
+    )
+      .then(({ value }) => value[0])
+      .catch(() => null)
+    if (status?.err) {
+      return { landed: false, signature }
+    }
+    if (status?.confirmationStatus === 'confirmed' || status?.confirmationStatus === 'finalized') {
+      return { landed: true, signature }
+    }
+  }
+  // No word either way.
+  return { landed: null, signature }
+}
+
+/**
+ * Posts the welcome card to a wallet with a letterbox, by express, paying that
+ * letterbox's own price. The reader keeps the postage when they open it.
+ */
+async function welcome(wallet: string): Promise<Response> {
+  const db = database()
+  const counter = await counterWallet(db)
+  if (!counter) {
+    return reply(503, { error: 'The counter is shut.' })
+  }
+  if (wallet === counter.address) {
+    return reply(400, { error: 'The counter does not write to itself.' })
+  }
+
+  const letterbox = await findAddress([text('letterbox'), fromBase58(wallet)])
+  const held = await rpc<{ value: { data: [string, string] } | null }>('getAccountInfo', [
+    letterbox,
+    { encoding: 'base64' },
+  ])
+  if (!held.value) {
+    return reply(404, { error: 'That wallet has no letterbox yet.' })
+  }
+  const bytes = fromBase64(held.value.data[0])
+  const postage = new DataView(bytes.buffer, bytes.byteOffset).getBigUint64(LETTERBOX_PRICE_OFFSET, true)
+  if (postage > MOST_POSTAGE) {
+    return reply(409, { error: 'That letterbox charges more than the counter spends on a welcome.' })
+  }
+
+  // One welcome per wallet. The row goes in first, so two calls at once cannot both post.
+  const { error: taken } = await db.from('counter_welcomes').insert({ wallet })
+  if (taken) {
+    return reply(409, { error: 'This wallet has had its welcome card.' })
+  }
+
+  const cardId = crypto.getRandomValues(new BigUint64Array(1))[0]
+  const cardIdBytes = new Uint8Array(8)
+  new DataView(cardIdBytes.buffer).setBigUint64(0, cardId, true)
+  const card = await findAddress([text('card'), fromBase58(counter.address), cardIdBytes])
+  const vault = await findAddress([text('vault'), fromBase58(card)])
+  const postOffice = await findAddress([text('post_office')])
+
+  const data = new Uint8Array(8 + 8 + 8 + 32 + 2 + 1 + 8)
+  const view = new DataView(data.buffer)
+  data.set(POST_CARD_DISCRIMINATOR, 0)
+  view.setBigUint64(8, cardId, true)
+  view.setBigUint64(16, postage, true)
+  data.set(fromHex(WELCOME_CONTENT_HASH), 24)
+  view.setUint16(56, EXPRESS_STAMP, true)
+  data[58] = 1
+  view.setBigUint64(59, MOST_EXPRESS_FEE, true)
+
+  const post: Instruction = {
+    accounts: [
+      { address: counter.address, signer: true, writable: true },
+      { address: wallet },
+      { address: card, writable: true },
+      { address: vault, writable: true },
+      { address: letterbox, writable: true },
+      { address: await tokenAccount(counter.address, POSTAGE_MINT, TOKEN_PROGRAM), writable: true },
+      // Two optional accounts the counter does not have. The program's own address stands for "none".
+      { address: PENNY_POST_PROGRAM },
+      { address: PENNY_POST_PROGRAM },
+      { address: postOffice },
+      { address: POSTAGE_MINT, writable: true },
+      { address: TOKEN_PROGRAM },
+      { address: SYSTEM_PROGRAM },
+    ],
+    data,
+    program: PENNY_POST_PROGRAM,
+  }
+
+  let sent: { landed: boolean | null; signature: string }
+  try {
+    sent = await sendAndConfirm(counter, [post])
+  } catch (error) {
+    // Nothing was posted, so the wallet may ask again.
+    await db.from('counter_welcomes').delete().eq('wallet', wallet)
+    throw error
+  }
+  if (sent.landed === false) {
+    await db.from('counter_welcomes').delete().eq('wallet', wallet)
+    return reply(503, { error: 'The counter dropped it. Try again.' })
+  }
+  await db.from('counter_welcomes').update({ card }).eq('wallet', wallet)
+  return reply(200, { card, signature: sent.signature })
+}
+
+async function handOver(wallet: string): Promise<Response> {
+  const counterKeys = await counterWallet(database())
+  if (!counterKeys) {
+    return reply(503, { error: 'The counter is shut.' })
+  }
+  const counter = counterKeys.address
 
   // A wallet that already has a postage account has been here before.
   const postageTo = await tokenAccount(wallet, POSTAGE_MINT, TOKEN_PROGRAM)
@@ -118,35 +276,16 @@ async function handOver(wallet: string): Promise<Response> {
     )
   }
 
-  const { value: latest } = await rpc<{ value: { blockhash: string } }>('getLatestBlockhash', [
-    { commitment: 'confirmed' },
-  ])
-  const message = compileMessage(counter, latest.blockhash, instructions)
-  const signatureBytes = ed25519.sign(message, seed)
-  const signature = toBase58(signatureBytes)
-  const wire = new Uint8Array(1 + 64 + message.length)
-  wire[0] = 1
-  wire.set(signatureBytes, 1)
-  wire.set(message, 65)
-  await rpc('sendTransaction', [toBase64(wire), { encoding: 'base64', preflightCommitment: 'confirmed' }])
-
-  for (let attempt = 0; attempt < 25; attempt++) {
-    await new Promise((resolve) => setTimeout(resolve, 800))
-    const status = await rpc<{ value: ({ confirmationStatus?: string; err: unknown } | null)[] }>(
-      'getSignatureStatuses',
-      [[signature]],
-    )
-      .then(({ value }) => value[0])
-      .catch(() => null)
-    if (status?.err) {
-      return reply(503, { error: 'The counter dropped it. Try again.' })
-    }
-    if (status?.confirmationStatus === 'confirmed' || status?.confirmationStatus === 'finalized') {
-      return reply(200, {
-        given: { lamports: KIT_LAMPORTS.toString(), postage: KIT_POSTAGE.toString(), seeker },
-        signature,
-      })
-    }
+  const sent = await sendAndConfirm(counterKeys, instructions)
+  if (sent.landed === false) {
+    return reply(503, { error: 'The counter dropped it. Try again.' })
+  }
+  const signature = sent.signature
+  if (sent.landed) {
+    return reply(200, {
+      given: { lamports: KIT_LAMPORTS.toString(), postage: KIT_POSTAGE.toString(), seeker },
+      signature,
+    })
   }
   // No word on the transaction. The postage account being there says it landed.
   const landed = await rpc<{ value: unknown }>('getAccountInfo', [postageTo, { encoding: 'base64' }]).catch(() => null)
@@ -191,10 +330,9 @@ async function oneOfAKindTokens(owner: string): Promise<string[]> {
 type Account = { address: string; signer?: boolean; writable?: boolean }
 type Instruction = { accounts: Account[]; data: Uint8Array; program: string }
 
-/** The owner's associated token account: the first bump that lands off the curve. */
-async function tokenAccount(owner: string, mint: string, tokenProgram: string): Promise<string> {
-  const seeds = [fromBase58(owner), fromBase58(tokenProgram), fromBase58(mint)]
-  const tail = [fromBase58(ASSOCIATED_TOKEN_PROGRAM), new TextEncoder().encode('ProgramDerivedAddress')]
+/** A program's derived address for some seeds: the first bump that lands off the curve. */
+async function findAddress(seeds: Uint8Array[], program: string = PENNY_POST_PROGRAM): Promise<string> {
+  const tail = [fromBase58(program), text('ProgramDerivedAddress')]
   for (let bump = 255; bump >= 0; bump--) {
     const candidate = new Uint8Array(
       await crypto.subtle.digest('SHA-256', concat([...seeds, new Uint8Array([bump]), ...tail])),
@@ -203,7 +341,28 @@ async function tokenAccount(owner: string, mint: string, tokenProgram: string): 
       return toBase58(candidate)
     }
   }
-  throw new Error('No address for that token account.')
+  throw new Error('No address for those seeds.')
+}
+
+/** The owner's associated token account. */
+function tokenAccount(owner: string, mint: string, tokenProgram: string): Promise<string> {
+  return findAddress([fromBase58(owner), fromBase58(tokenProgram), fromBase58(mint)], ASSOCIATED_TOKEN_PROGRAM)
+}
+
+function text(value: string): Uint8Array {
+  return new TextEncoder().encode(value)
+}
+
+function fromHex(hex: string): Uint8Array {
+  const bytes = new Uint8Array(hex.length / 2)
+  for (let index = 0; index < bytes.length; index++) {
+    bytes[index] = Number.parseInt(hex.slice(index * 2, index * 2 + 2), 16)
+  }
+  return bytes
+}
+
+function fromBase64(encoded: string): Uint8Array {
+  return Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0))
 }
 
 function isOnCurve(bytes: Uint8Array): boolean {

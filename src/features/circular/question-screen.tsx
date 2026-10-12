@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { Animated, Easing, Pressable, ScrollView, Text, View } from 'react-native'
 import { InkButton } from '../../components/ink-button'
-import { Rise } from '../../components/motion'
+import { OutOfEnvelope } from '../../components/motion'
 import { Paper } from '../../components/paper'
 import { ScreenHeader } from '../../components/screen-header'
 import { SunDoodle, SunStamp } from '../../components/sun'
@@ -75,9 +75,9 @@ export function QuestionScreen() {
         )
       ) : (
         <>
-          <Rise>
+          <OutOfEnvelope>
             <Ballot circular={view.circular} disabled={answer.isPending} onPick={setPicked} picked={picked} />
-          </Rise>
+          </OutOfEnvelope>
 
           <View className="mt-6 gap-3">
             {hasSeal ? (

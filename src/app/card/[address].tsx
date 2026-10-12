@@ -3,12 +3,14 @@ import { useState } from 'react'
 import { ScrollView, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { InkButton } from '../../components/ink-button'
+import { OutOfEnvelope } from '../../components/motion'
 import { ScreenHeader } from '../../components/screen-header'
 import { paperShadow } from '../../theme'
 import { copy } from '../../copy'
 import { emptyCard, type CardContent } from '../../features/card/card'
 import { FlipCard } from '../../features/card/flip-card'
 import { PostcardBack, PostcardFront } from '../../features/card/postcard'
+import { nameOf } from '../../features/post/test-kit'
 import { tokenName } from '../../features/post/token-name'
 import { useDoormat, useOpenCard, usePostOffice, useReturnCard, useSkrName } from '../../features/post/use-post'
 import { describeProblem } from '../../utils/describe-problem'
@@ -82,22 +84,24 @@ export default function CardScreen() {
           ) : (
             <>
               {/* Face down: the stamp and the address show, the message does not. */}
-              <View>
-                {/* Another card underneath, so this one reads as the top of a small pile. */}
-                <View
-                  className="absolute bottom-0 left-0 right-0 top-0 rounded-[8px] border border-rule bg-paper-sunk"
-                  style={{ transform: [{ rotate: '2.5deg' }] }}
-                />
-                <View style={[paperShadow, { borderRadius: 8, transform: [{ rotate: '-1.5deg' }] }]}>
-                  <PostcardBack
-                    card={emptyCard(card.stamp)}
-                    postmark={{ date: postmarkDate(Number(card.postedAt)), place: 'Penny Post' }}
-                    to="You"
+              <OutOfEnvelope>
+                <View>
+                  {/* Another card underneath, so this one reads as the top of a small pile. */}
+                  <View
+                    className="absolute bottom-0 left-0 right-0 top-0 rounded-[8px] border border-rule bg-paper-sunk"
+                    style={{ transform: [{ rotate: '2.5deg' }] }}
                   />
+                  <View style={[paperShadow, { borderRadius: 8, transform: [{ rotate: '-1.5deg' }] }]}>
+                    <PostcardBack
+                      card={emptyCard(card.stamp)}
+                      postmark={{ date: postmarkDate(Number(card.postedAt)), place: 'Penny Post' }}
+                      to="You"
+                    />
+                  </View>
                 </View>
-              </View>
+              </OutOfEnvelope>
               <Text className="mt-8 text-center font-script text-[36px] leading-[42px] text-ink">
-                {copy.letterbox.from(senderName.data ?? ellipsify(card.sender))}
+                {copy.letterbox.from(nameOf(card.sender, senderName.data))}
               </Text>
               <Text className="mt-1 text-center font-body text-body text-ink-soft">
                 {card.postage > 0n
@@ -140,7 +144,16 @@ export default function CardScreen() {
               />
             </>
           ) : (
-            <InkButton label={copy.open.done} onPress={goHome} tone={opened ? 'accent' : 'plain'} />
+            <>
+              {opened && card ? (
+                <InkButton
+                  arrow
+                  label={copy.open.writeBack}
+                  onPress={() => router.replace({ pathname: '/write', params: { to: card.sender } })}
+                />
+              ) : null}
+              <InkButton label={copy.open.done} onPress={goHome} tone="plain" />
+            </>
           )}
         </View>
       </ScrollView>

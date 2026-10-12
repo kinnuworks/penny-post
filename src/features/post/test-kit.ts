@@ -26,3 +26,28 @@ export async function askForTestKit(wallet: Address): Promise<'given' | 'had' | 
   }
   return 'given'
 }
+
+/**
+ * Asks the counter to post this wallet its welcome card, so a new letterbox
+ * has something in it. True if a card is on its way. The counter sends one
+ * per wallet and only where a letterbox exists.
+ */
+export async function askForWelcomeCard(wallet: Address): Promise<boolean> {
+  const response = await fetch(`${CARD_STORE_URL}/functions/v1/counter/welcome`, {
+    body: JSON.stringify({ wallet }),
+    headers: { 'content-type': 'application/json' },
+    method: 'POST',
+  })
+  return response.ok
+}
+
+/** Names for the two wallets that write to every newcomer on devnet. */
+const AT_THE_COUNTER: Record<string, string> = {
+  CMNefAXQ6rsnkRpfjeSEa5t6U74hvb5TxtCNJdxjHfXs: 'the pen pal',
+  GXzvBgPbGLR9FZYRCaExn2aZQ4ktyERWY4YbXBs7GzVq: 'the postmaster',
+}
+
+/** What to call a sender: their .skr name, a name the post office knows them by, or their address shortened. */
+export function nameOf(sender: string, skrName: string | null | undefined): string {
+  return skrName ?? AT_THE_COUNTER[sender] ?? `${sender.slice(0, 4)}..${sender.slice(-4)}`
+}

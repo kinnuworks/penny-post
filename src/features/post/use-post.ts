@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { findCardPda } from '@project/anchor'
 import { fetchMint } from '@solana-program/token'
 import { createSolanaRpc, fetchEncodedAccount, type Address, type Signature } from '@solana/kit'
@@ -30,7 +31,8 @@ import {
 } from './chain'
 import { deviceUtcOffsetMinutes } from './delivery'
 import { drawPenPal, flushExchange, noteForExchange } from './exchange'
-import { askForTestKit } from './test-kit'
+import { askForTestKit, askForWelcomeCard } from './test-kit'
+import { tokenName } from './token-name'
 import { flushOutbox, forget, keepForUpload } from './outbox'
 import { PostProblem } from './problem'
 import { isDeclined } from '../../utils/describe-wallet-error'
@@ -170,6 +172,19 @@ export function useDrawPenPal() {
   })
 }
 
+const kitTakenKey = (owner: string) => `penny-post/kit-taken/v1/${owner}`
+
+/** Whether this wallet has already been handed a test kit, as far as this phone remembers. */
+export function useHasTestKit() {
+  const { account } = useMobileWallet()
+  const owner = account?.address
+  return useQuery({
+    enabled: !!owner,
+    queryKey: ['kit-taken', owner],
+    queryFn: async () => (owner ? (await AsyncStorage.getItem(kitTakenKey(owner)).catch(() => null)) === '1' : false),
+  })
+}
+
 /** Asks the devnet counter for a test kit: a little SOL, test SKR and a test Genesis Token. */
 export function useTestKit() {
   const { account, chain } = useMobileWallet()
@@ -186,6 +201,7 @@ export function useTestKit() {
       if (outcome === 'none-left') {
         throw new PostProblem('kits-all-gone')
       }
+      await AsyncStorage.setItem(kitTakenKey(account.address), '1').catch(() => undefined)
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['letterbox', chain, account?.address] }),
   })
@@ -213,6 +229,17 @@ export function useOpenLetterbox() {
           utcOffsetMinutes: deviceUtcOffsetMinutes(),
         }),
       )
+    },
+    // Where the post office runs on a stand-in token, the counter posts a
+    // newcomer one card, so the first doormat is not an empty one.
+    onSuccess: () => {
+      const office = postOffice.data
+      if (!account || !office || tokenName(office.postageMint) === 'SKR') {
+        return
+      }
+      void askForWelcomeCard(account.address)
+        .catch(() => false)
+        .then(() => queryClient.invalidateQueries({ queryKey: ['doormat', chain, account.address] }))
     },
     // Refresh even after a failure: the wallet may have submitted the
     // transaction after the app stopped waiting for it.
