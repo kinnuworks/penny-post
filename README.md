@@ -6,6 +6,16 @@ Every Seeker came with an address. Penny Post lets people write to it. The post 
 
 In 1840 the Penny Post made the sender pay for a letter instead of the person receiving it. Here the sender still pays, and the reader keeps the postage. This is an entry for [Clock In](https://solanamobile.radiant.nexus/), the third Solana Mobile hackathon.
 
+<p>
+  <img src="docs/screens/letterbox.png" width="190" alt="The letterbox: the day's question for every Seeker, answered, with a paid card waiting on the doormat.">
+  <img src="docs/screens/card-face-down.png" width="190" alt="A card face down. It shows who sent it and that 10 SKR is inside, with a button to sign for it.">
+  <img src="docs/screens/card-picture.png" width="190" alt="The same card after signing, picture side up. 9 SKR has been paid to the reader.">
+  <img src="docs/screens/card-message.png" width="190" alt="The card turned over to its message, with a postmark and a stamp.">
+  <img src="docs/screens/writing.png" width="190" alt="Writing a card by hand, with the stamp book and the postage quote underneath.">
+</p>
+
+These are from the signed release build, running on an Android emulator against a local fork of mainnet.
+
 ## How it works
 
 1. You open a letterbox with one signature. It records your wallet, a key for sealed letters, and your price.
@@ -31,10 +41,10 @@ A letterbox takes three paid cards a day at most, and the reader sets the price.
 | The circular: one question a day for every Seeker                                                     | Asked, answered by nine phones and tallied on the emulator. Collecting, outbidding and refunds are tested end to end.                                                       |
 | `supabase/functions/cards`: the card store                                                            | Deployed. Its refusals are tested. Accepting a card is not, because that needs the program on a network.                                                                    |
 | `supabase/functions/exchange`: the pen-pal exchange                                                   | Deployed. Its refusals are tested. Matching two writers is not, for the same reason.                                                                                        |
-| The 08:00 bell                                                                                        | Written. The planning is unit tested. Not run on a phone yet.                                                                                                               |
-| Changing your price from the letterbox                                                                | Written. The amount parsing is unit tested and the instruction is tested end to end. Not run on a phone yet.                                                                |
-| A dry run before the wallet opens                                                                     | Every transaction is simulated first, and a refusal is shown as a plain sentence. Tested end to end for six refusals. Not run on a phone yet.                               |
-| Release build, signed from a keystore in the environment                                              | Builds for arm64, about 58 MB, signed with the release key. Not installed on a phone yet.                                                                                   |
+| The 08:00 bell                                                                                        | Written. The planning is unit tested, and the app asks for notification permission on a device. A bell has not been seen ringing yet.                                       |
+| Changing your price from the letterbox                                                                | Changed on the emulator from 10 to 25 SKR, and the next card paid the new price.                                                                                            |
+| A dry run before the wallet opens                                                                     | Every transaction is simulated first, and a refusal is shown as a plain sentence. Tested end to end for six refusals, and it runs ahead of every prompt on the emulator.    |
+| Release build, signed from a keystore in the environment                                              | Builds for arm64, about 58 MB, signed with the release key. Every flow in this table was run from that build on an Android emulator. Not installed on a physical phone yet. |
 | Home-screen widget                                                                                    | Not started.                                                                                                                                                                |
 | Devnet and mainnet deployment                                                                         | Not started.                                                                                                                                                                |
 
