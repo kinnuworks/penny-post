@@ -41,7 +41,14 @@
       "expo-secure-store",
       "expo-notifications",
       "./plugins/with-release-signing",
-      "./plugins/with-localhost-cleartext"
+      "./plugins/with-localhost-cleartext",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ]
     ],
     "icon": "./assets/icon.png"
   }

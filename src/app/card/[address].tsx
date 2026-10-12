@@ -1,3 +1,4 @@
+import * as Haptics from 'expo-haptics'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useState } from 'react'
 import { Pressable, ScrollView, Text, View } from 'react-native'
@@ -8,6 +9,7 @@ import { Paper } from '../../components/paper'
 import { ScreenHeader } from '../../components/screen-header'
 import { paperShadow } from '../../theme'
 import { copy } from '../../copy'
+import { play } from '../../sound'
 import { emptyCard, type CardContent } from '../../features/card/card'
 import { FlipCard } from '../../features/card/flip-card'
 import { PostcardBack, PostcardFront } from '../../features/card/postcard'
@@ -144,6 +146,9 @@ export default function CardScreen() {
                 onPress={() =>
                   openCard.mutate(card, {
                     onSuccess: (result) => {
+                      play('paper')
+                      play('chime', 450)
+                      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined)
                       setOpened(result)
                       // Start on the picture if there is one, then let them turn it.
                       setSide(result.content.photo ? 'front' : 'back')

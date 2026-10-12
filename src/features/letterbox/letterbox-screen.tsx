@@ -35,6 +35,13 @@ import {
 } from '../post/use-post'
 import { useWallet } from '../wallet/use-wallet'
 
+/**
+ * The screen's clock ticks once a minute and a phone's clock is never quite the
+ * chain's, so a card due within this many seconds counts as here. The program
+ * still refuses to open one that is truly early.
+ */
+const CLOCK_SLACK = 90
+
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 const MONTHS = [
   'January',
@@ -83,7 +90,7 @@ export function LetterboxScreen({ address }: { address: Address }) {
   const offset = deviceUtcOffsetMinutes()
   const today = utcDay(now)
   const question = useCircular(today)
-  const arrived = cards.filter((card) => Number(card.deliverAt) <= now).length
+  const arrived = cards.filter((card) => Number(card.deliverAt) <= now + CLOCK_SLACK).length
   const answerLog = useAnswerLog(today)
   const streak = answerLog.data?.streak ?? 0
   useRememberAnswer(today, question.data?.myChoice != null)
@@ -134,7 +141,12 @@ export function LetterboxScreen({ address }: { address: Address }) {
             <Text className="font-script text-script text-ink">
               {copy.home.greeting(new Date(now * 1000).getHours())}
             </Text>
-            <Text className="font-display text-display text-ink" numberOfLines={1}>
+            <Text
+              adjustsFontSizeToFit
+              className="font-display text-display text-ink"
+              minimumFontScale={0.6}
+              numberOfLines={1}
+            >
               {myName.data ?? dateLine(now)}
             </Text>
           </View>
@@ -363,7 +375,7 @@ function CardEnvelope({
   const name = useSkrName(card.sender)
   const from = copy.letterbox.from(nameOf(card.sender, name.data))
   const stamp = stampById(card.stamp)
-  const hasArrived = Number(card.deliverAt) <= now
+  const hasArrived = Number(card.deliverAt) <= now + CLOCK_SLACK
   const inside =
     card.postage > 0n
       ? copy.letterbox.paidInside(formatTokens(card.postage, decimals), token)

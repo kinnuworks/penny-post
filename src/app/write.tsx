@@ -1,3 +1,4 @@
+import * as Haptics from 'expo-haptics'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useState } from 'react'
 import { Text, View } from 'react-native'
@@ -6,6 +7,7 @@ import { InkButton } from '../components/ink-button'
 import { SunStamp } from '../components/sun'
 import { TabBar } from '../components/tab-bar'
 import { copy } from '../copy'
+import { play } from '../sound'
 import { useDrawPenPal, usePostCard, type PostedReceipt } from '../features/post/use-post'
 import { WriteScreen } from '../features/write/write-screen'
 import { describeProblem } from '../utils/describe-problem'
@@ -39,7 +41,15 @@ export default function Write() {
           isPosting={postCard.isPending}
           key={round}
           onDrawStranger={() => drawPenPal.mutateAsync()}
-          onPost={(draft) => postCard.mutate(draft, { onSuccess: setReceipt })}
+          onPost={(draft) =>
+            postCard.mutate(draft, {
+              onSuccess: (posted) => {
+                play('thump')
+                void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined)
+                setReceipt(posted)
+              },
+            })
+          }
         />
       )}
       <TabBar current="send" />

@@ -9,6 +9,7 @@ import { Paper } from '../../components/paper'
 import { SunStamp } from '../../components/sun'
 import { TabBar } from '../../components/tab-bar'
 import { copy } from '../../copy'
+import { setSounds, soundsAreOn } from '../../sound'
 import { usePalette } from '../../theme'
 import { describeProblem } from '../../utils/describe-problem'
 import { describeWalletError } from '../../utils/describe-wallet-error'
@@ -42,6 +43,7 @@ export function ProfileScreen() {
     queryFn: () => (owner ? listKept(owner) : []),
   })
   const [isPricing, setIsPricing] = useState(false)
+  const [soundsOn, setSoundsOn] = useState(soundsAreOn)
   const [leaveError, setLeaveError] = useState<string | null>(null)
 
   const token = office.data ? tokenName(office.data.postageMint) : ''
@@ -158,6 +160,14 @@ export function ProfileScreen() {
           <Row
             label={copy.profile.network}
             value={`${chain.replace('solana:', '')}${isPractice ? `, ${copy.letterbox.practiceWallet.toLowerCase()}` : ''}`}
+          />
+          <Row
+            label={copy.profile.sounds}
+            onPress={() => {
+              setSounds(!soundsOn)
+              setSoundsOn(!soundsOn)
+            }}
+            value={soundsOn ? copy.profile.on : copy.profile.off}
           />
           <Row label={copy.profile.ask} onPress={() => router.push('/ask')} />
           <Row isLast label={copy.wallet.leave} onPress={() => void leave()} />

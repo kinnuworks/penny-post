@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import * as Haptics from 'expo-haptics'
+import { play } from '../sound'
 import {
   Animated,
   Easing,
@@ -88,7 +89,10 @@ export function Drop({ children, delay = 0 }: { children: ReactNode; delay?: num
   useEffect(() => {
     const landing = setTimeout(() => {
       Animated.spring(fall, { friction: 6.5, tension: 62, toValue: 1, useNativeDriver: true }).start()
-      setTimeout(() => void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined), 240)
+      setTimeout(() => {
+        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined)
+        play('drop')
+      }, 240)
     }, delay)
     return () => clearTimeout(landing)
   }, [delay, fall])
@@ -133,7 +137,10 @@ export function OutOfEnvelope({ children }: { children: ReactNode }) {
       toValue: 1,
       useNativeDriver: true,
     }).start()
-    const tick = setTimeout(() => void Haptics.selectionAsync().catch(() => undefined), 420)
+    const tick = setTimeout(() => {
+      void Haptics.selectionAsync().catch(() => undefined)
+      play('paper')
+    }, 300)
     return () => clearTimeout(tick)
   }, [out, width])
 

@@ -1,3 +1,4 @@
+import * as Haptics from 'expo-haptics'
 import { useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { Animated, Easing, Pressable, ScrollView, Text, View } from 'react-native'
@@ -7,6 +8,7 @@ import { Paper } from '../../components/paper'
 import { ScreenHeader } from '../../components/screen-header'
 import { SunDoodle, SunStamp } from '../../components/sun'
 import { copy } from '../../copy'
+import { play } from '../../sound'
 import { usePalette } from '../../theme'
 import { describeProblem } from '../../utils/describe-problem'
 import { ellipsify } from '../../utils/ellipsify'
@@ -167,7 +169,11 @@ function Ballot({
               className={`min-h-[58px] flex-row items-center justify-between rounded-[12px] border bg-paper px-5 ${isPicked ? 'border-ink' : 'border-rule'}`}
               disabled={disabled}
               key={option}
-              onPress={() => onPick(index)}
+              onPress={() => {
+                void Haptics.selectionAsync().catch(() => undefined)
+                play('tick')
+                onPick(index)
+              }}
             >
               <Text className="flex-1 font-caption text-[17px] text-ink">{option}</Text>
               <View
@@ -204,6 +210,10 @@ function YoureIn({
   const [turning] = useState(() => new Animated.Value(0))
   useEffect(() => {
     Animated.spring(landing, { friction: 5, tension: 70, toValue: 1, useNativeDriver: true }).start()
+    // The stamp comes down, then the bell.
+    play('thump', 180)
+    play('chime', 520)
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined)
     const turn = Animated.loop(
       Animated.timing(turning, { duration: 50_000, easing: Easing.linear, toValue: 1, useNativeDriver: true }),
     )
