@@ -1,3 +1,5 @@
+// The crypto polyfill has to be in place before any wallet code loads.
+import '../../polyfill'
 import '../global.css'
 
 import { Besley_600SemiBold } from '@expo-google-fonts/besley/600SemiBold'
@@ -7,12 +9,17 @@ import { Mukta_400Regular } from '@expo-google-fonts/mukta/400Regular'
 import { Mukta_500Medium } from '@expo-google-fonts/mukta/500Medium'
 import { Mukta_600SemiBold } from '@expo-google-fonts/mukta/600SemiBold'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { AppIdentity, createSolanaDevnet, createSolanaMainnet, MobileWalletProvider } from '@wallet-ui/react-native-kit'
+import {
+  AppIdentity,
+  createSolanaDevnet,
+  createSolanaLocalnet,
+  createSolanaMainnet,
+  MobileWalletProvider,
+} from '@wallet-ui/react-native-kit'
 import { useFonts } from 'expo-font'
 import { Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { useEffect } from 'react'
-import { copy } from '../copy'
 import { NetworkProvider } from '../features/network/network-provider'
 
 void SplashScreen.preventAutoHideAsync()
@@ -20,11 +27,17 @@ void SplashScreen.preventAutoHideAsync()
 // Devnet comes first while the program is only deployed there. SKR and .skr
 // names live on mainnet, so the release build puts mainnet first.
 const mainnetUrl = process.env.EXPO_PUBLIC_MAINNET_RPC_URL ?? 'https://api.mainnet-beta.solana.com'
-const networks = [createSolanaDevnet(), createSolanaMainnet({ url: mainnetUrl })]
+// A validator on the developer's own machine goes first when its address is
+// set. It is reached from the phone with `adb reverse tcp:8899 tcp:8899`.
+const localnetUrl = process.env.EXPO_PUBLIC_LOCALNET_RPC_URL
+const networks = [
+  ...(localnetUrl ? [createSolanaLocalnet(localnetUrl)] : []),
+  createSolanaDevnet(),
+  createSolanaMainnet({ url: mainnetUrl }),
+]
 
-// The wallet shows this name when it asks the reader to sign. A site address
-// and icon get added here once the landing page is live.
-const identity: AppIdentity = { name: copy.appName }
+// The wallet shows this name and address when it asks the reader to sign.
+const identity: AppIdentity = { name: 'Penny Post', uri: 'https://github.com/kinnuworks/penny-post' }
 const queryClient = new QueryClient()
 
 export default function Layout() {

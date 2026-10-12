@@ -9,6 +9,14 @@
  *   pnpm post-office give  --cluster devnet --to <wallet> [--amount 500]
  *
  * `give` only works for the devnet stand-in token, which this wallet can mint.
+ *
+ * For a validator on this machine that forks mainnet (`pnpm anchor:localnet`):
+ *
+ *   pnpm post-office open  --cluster localnet          (uses the forked SKR)
+ *   pnpm post-office give  --cluster localnet --to <wallet> [--amount 500] [--sol 5] [--seeker]
+ *
+ * There `give` writes balances straight into the fork, and `--seeker` also
+ * puts a real Seeker Genesis Token in the wallet. Nothing leaves this machine.
  */
 
 import { getCreateAccountInstruction } from '@solana-program/system'
@@ -59,8 +67,12 @@ const TERMS = { burnBps: 1_000, expressFee: 20n * ONE, floorPrice: 5n * ONE }
 
 const RPC_URLS = {
   devnet: process.env.DEVNET_RPC_URL ?? 'https://api.devnet.solana.com',
+  localnet: 'http://127.0.0.1:8899',
   mainnet: process.env.MAINNET_RPC_URL ?? 'https://api.mainnet-beta.solana.com',
 }
+/** A real Genesis Token mint, member number 20 of the group. The fork can place it in any wallet. */
+const SGT_MINT = address('5mXbkqKz883aufhAsx3p5Z1NcvD2ppZbdTTznM6oUKLj')
+const TOKEN_2022_PROGRAM_ADDRESS = address('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb')
 
 type Cluster = keyof typeof RPC_URLS
 
@@ -78,12 +90,27 @@ async function main() {
   const command = process.argv[2]
   const cluster = option('cluster') as Cluster | undefined
   if (!cluster || !(cluster in RPC_URLS)) {
-    fail('Say which network: --cluster devnet or --cluster mainnet')
+    fail('Say which network: --cluster devnet, --cluster mainnet or --cluster localnet')
   }
 
   const rpcUrl = RPC_URLS[cluster]
   const rpc = createSolanaRpc(rpcUrl)
-  const rpcSubscriptions = createSolanaRpcSubscriptions(rpcUrl.replace('https://', 'wss://'))
+  const rpcSubscriptions = createSolanaRpcSubscriptions(
+    cluster === 'localnet' ? 'ws://127.0.0.1:8900' : rpcUrl.replace('https://', 'wss://'),
+  )
+
+  /** A Surfpool cheatcode, which only a local fork answers. */
+  async function cheat(method: string, params: unknown[]) {
+    const response = await fetch(rpcUrl, {
+      body: JSON.stringify({ id: 1, jsonrpc: '2.0', method, params }),
+      headers: { 'content-type': 'application/json' },
+      method: 'POST',
+    })
+    const body = (await response.json()) as { error?: { message: string } }
+    if (body.error) {
+      fail(`${method}: ${body.error.message}`)
+    }
+  }
   const sendAndConfirm = sendAndConfirmTransactionFactory({ rpc, rpcSubscriptions })
 
   async function send(payer: KeyPairSigner, instructions: Instruction[]) {
@@ -165,8 +192,8 @@ async function main() {
   }
 
   if (command === 'give') {
-    if (cluster !== 'devnet') {
-      fail('Only the devnet stand-in token can be handed out. Real SKR has to be bought.')
+    if (cluster === 'mainnet') {
+      fail('Only stand-in and forked tokens can be handed out. Real SKR has to be bought.')
     }
     const to = option('to')
     const postOffice = await fetchPostOffice(rpc)
@@ -175,6 +202,23 @@ async function main() {
     }
     const owner = address(to)
     const amount = BigInt(option('amount') ?? '500') * ONE
+
+    if (cluster === 'localnet') {
+      const sol = Number(option('sol') ?? '5')
+      await cheat('surfnet_setAccount', [owner, { lamports: sol * 1_000_000_000 }])
+      await cheat('surfnet_setTokenAccount', [
+        owner,
+        postOffice.postageMint,
+        { amount: Number(amount) },
+        TOKEN_PROGRAM_ADDRESS,
+      ])
+      console.log(`Gave ${sol} SOL and ${formatTokens(amount, DECIMALS)} SKR to ${owner} on the local fork.`)
+      if (process.argv.includes('--seeker')) {
+        await cheat('surfnet_setTokenAccount', [owner, SGT_MINT, { amount: 1 }, TOKEN_2022_PROGRAM_ADDRESS])
+        console.log(`Put Seeker Genesis Token ${SGT_MINT} in that wallet.`)
+      }
+      return
+    }
     const [token] = await findAssociatedTokenPda({
       mint: postOffice.postageMint,
       owner,

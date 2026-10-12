@@ -10,7 +10,13 @@ export function Postmark({ date, place, tilt = -8 }: { date: string; place: stri
       style={{ transform: [{ rotate: `${tilt}deg` }] }}
     >
       <View className="h-[84px] w-[84px] items-center justify-center rounded-full border border-ink-soft">
-        <Text className="font-postmark text-postmark uppercase tracking-widest text-ink-soft" numberOfLines={1}>
+        {/* A long place name shrinks to fit the ring instead of being cut off. */}
+        <Text
+          adjustsFontSizeToFit
+          className="px-1.5 font-postmark text-postmark uppercase tracking-wide text-ink-soft"
+          minimumFontScale={0.6}
+          numberOfLines={1}
+        >
           {place}
         </Text>
         <View className="my-1 h-px w-14 bg-ink-soft" />

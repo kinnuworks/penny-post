@@ -1,6 +1,6 @@
 import { findCardPda } from '@project/anchor'
 import { fetchMint } from '@solana-program/token'
-import { createSolanaRpc, type Address } from '@solana/kit'
+import { createSolanaRpc, type Address, type Signature } from '@solana/kit'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMobileWallet } from '@wallet-ui/react-native-kit'
 import { DEFAULT_PRICE_TOKENS, MAINNET_RPC_URL } from '../../config'
@@ -179,7 +179,7 @@ export function useOpenLetterbox() {
       }
       const readingKey = await loadOrCreateReadingKey(account.address)
       const price = DEFAULT_PRICE_TOKENS * 10n ** BigInt(office.decimals)
-      await send((owner) =>
+      return send((owner) =>
         buildOpenLetterbox({
           owner,
           price: price > office.floorPrice ? price : office.floorPrice,
@@ -207,7 +207,7 @@ export function useSetPrice() {
       }
       // The instruction rewrites the whole letterbox, so the key and the clock go along unchanged.
       const readingKey = await loadOrCreateReadingKey(account.address)
-      await send((owner) =>
+      return send((owner) =>
         buildSetLetterbox({
           owner,
           price,
@@ -235,13 +235,15 @@ export function useVerifyLetterbox() {
       if (!token) {
         throw new PostProblem('no-genesis-token')
       }
-      await send((owner) => buildVerifyLetterbox({ owner, sgtMint: token.mint, sgtToken: token.tokenAccount }))
+      return send((owner) => buildVerifyLetterbox({ owner, sgtMint: token.mint, sgtToken: token.tokenAccount }))
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['letterbox', chain, account?.address] }),
   })
 }
 
 export interface PostedReceipt {
+  /** The transaction that posted the card. */
+  signature: Signature
   card: Address
   express: boolean
   /** False if the card is on-chain but its contents are still waiting in the outbox. */
@@ -298,8 +300,9 @@ export function usePostCard() {
 
       // Saved before the wallet is asked, so the contents survive whatever happens next.
       await keepForUpload(address, bytes, cluster)
+      let posted: Signature
       try {
-        await send(async (sender) => {
+        posted = await send(async (sender) => {
           const { instructions } = await buildPostCard({
             cardId,
             contentHash: hashCard(bytes),
@@ -337,7 +340,7 @@ export function usePostCard() {
       // If this card answers a draw from the exchange, the writer joins the line.
       await noteForExchange(address, cluster)
       void flushExchange()
-      return { card: address, delivered, express, readerName: reader.name, sealed: isSealed(bytes) }
+      return { card: address, delivered, express, readerName: reader.name, sealed: isSealed(bytes), signature: posted }
     },
     onSettled: (_receipt, error) => {
       void queryClient.invalidateQueries({ queryKey: ['letterbox', chain, account?.address] })
@@ -357,7 +360,7 @@ export function useOpenCard() {
   const postOffice = usePostOffice()
 
   return useMutation({
-    mutationFn: async (card: PostedCard): Promise<{ content: CardContent; paid: bigint }> => {
+    mutationFn: async (card: PostedCard): Promise<{ content: CardContent; paid: bigint; signature: Signature }> => {
       const office = postOffice.data
       if (!account || !office) {
         throw new PostProblem('office-closed')
@@ -380,9 +383,10 @@ export function useOpenCard() {
       // name is only kept if it really does point at the wallet that posted it.
       content = { ...content, fromName: await confirmedName(content.fromName, card.sender) }
 
-      await send((recipient) => buildOpenCard({ card, postageMint: office.postageMint, recipient }))
+      const signedFor = await send((recipient) => buildOpenCard({ card, postageMint: office.postageMint, recipient }))
 
-      const burned = (card.postage * BigInt(office.burnBps)) / 10_000n
+      // The card carries the burn share it was posted under.
+      const burned = (card.postage * BigInt(card.burnBps)) / 10_000n
       const paid = card.postage - burned
       await keep(account.address, {
         card: card.address,
@@ -391,7 +395,7 @@ export function useOpenCard() {
         openedAt: Math.floor(Date.now() / 1000),
         paid: paid.toString(),
       })
-      return { content, paid }
+      return { content, paid, signature: signedFor }
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ['doormat', chain, account?.address] })
@@ -431,7 +435,7 @@ export function useReturnCard() {
       if (!account || !office) {
         throw new PostProblem('office-closed')
       }
-      await send((caller) => buildReturnCard({ caller, card, postageMint: office.postageMint }))
+      return send((caller) => buildReturnCard({ caller, card, postageMint: office.postageMint }))
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['doormat', chain, account?.address] }),
   })

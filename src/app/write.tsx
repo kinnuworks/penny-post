@@ -7,6 +7,7 @@ import { copy } from '../copy'
 import { useDrawPenPal, usePostCard, type PostedReceipt } from '../features/post/use-post'
 import { WriteScreen } from '../features/write/write-screen'
 import { describeProblem } from '../utils/describe-problem'
+import { ellipsify } from '../utils/ellipsify'
 
 export default function Write() {
   const insets = useSafeAreaInsets()
@@ -57,6 +58,9 @@ function Posted({ onAnother, onHome, receipt }: { onAnother: () => void; onHome:
         {receipt.delivered ? null : (
           <Text className="mt-4 font-body text-body text-accent-ink">{copy.posted.waiting}</Text>
         )}
+        <Text className="mt-6 font-caption text-caption text-ink-faint" selectable>
+          {copy.posted.receipt(ellipsify(receipt.signature, 6))}
+        </Text>
       </View>
       <View className="gap-3">
         <InkButton label={copy.posted.another} onPress={onAnother} />

@@ -52,8 +52,15 @@ export function useSend() {
     )
     assertIsTransactionMessageWithSingleSendingSigner(message)
 
-    const signatureBytes = await signAndSendTransactionMessageWithSigners(message)
-    const sent = signature(getBase58Decoder().decode(signatureBytes))
+    let sent: Signature
+    try {
+      const signatureBytes = await signAndSendTransactionMessageWithSigners(message)
+      sent = signature(getBase58Decoder().decode(signatureBytes))
+    } catch (error) {
+      // The wallet said no, was closed, or was never there. Nothing was sent.
+      // The rejection goes to the caller, whose pending state ends with it.
+      throw error instanceof Error ? error : new Error(String(error))
+    }
     await waitForConfirmation(client.rpc, sent)
     return sent
   }

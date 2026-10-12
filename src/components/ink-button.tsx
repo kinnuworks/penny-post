@@ -31,7 +31,11 @@ export function InkButton({
       }}
       className={`min-h-[52px] items-center justify-center rounded-card px-6 ${surface} ${disabled ? 'opacity-50' : ''}`}
     >
-      <Text className={`font-label text-label ${text}`}>{label}</Text>
+      {/* Full width and centred. Sized to its own text, Android can measure a
+          label one pixel short and drop its last word onto a line nobody sees. */}
+      <Text className={`w-full text-center font-label text-label ${text}`} textBreakStrategy="simple">
+        {label}
+      </Text>
     </Pressable>
   )
 }
