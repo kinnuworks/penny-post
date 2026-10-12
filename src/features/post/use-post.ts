@@ -35,6 +35,10 @@ import { PostProblem } from './problem'
 import { isDeclined } from '../../utils/describe-wallet-error'
 import { useSend } from './use-send'
 
+/** How long to wait before each try at handing a new card's contents to the store. */
+const UPLOAD_PAUSES_MS = [0, 1_200, 2_500, 4_000]
+const OUTBOX_RETRY_MS = 15_000
+
 // .skr names live on mainnet whichever network the app is pointed at.
 const mainnetRpc = createSolanaRpc(MAINNET_RPC_URL)
 
@@ -331,21 +335,33 @@ export function usePostCard() {
         throw error
       }
 
-      let delivered = true
-      try {
-        await uploadCard(address, bytes, cluster)
-        await forget(address)
-      } catch {
-        // The card is in the post. Its contents stay in the outbox and go out later.
-        delivered = false
+      // The store checks the card on-chain before it files the contents, and it
+      // can be a moment behind the node that confirmed the transaction. So a
+      // refusal straight after posting is asked again a few times. If it still
+      // will not take them, the contents stay in the outbox and go out later.
+      let delivered = false
+      for (const pause of UPLOAD_PAUSES_MS) {
+        await new Promise((resolve) => setTimeout(resolve, pause))
+        try {
+          await uploadCard(address, bytes, cluster)
+          await forget(address)
+          delivered = true
+          break
+        } catch {
+          // Try again after the next pause.
+        }
       }
       // If this card answers a draw from the exchange, the writer joins the line.
       await noteForExchange(address, cluster)
       void flushExchange()
       return { card: address, delivered, express, readerName: reader.name, sealed: isSealed(bytes), signature: posted }
     },
-    onSettled: (_receipt, error) => {
+    onSettled: (receipt, error) => {
       void queryClient.invalidateQueries({ queryKey: ['letterbox', chain, account?.address] })
+      if (receipt && !receipt.delivered) {
+        // Empty the outbox again shortly, without waiting for the next launch.
+        setTimeout(() => void queryClient.invalidateQueries({ queryKey: ['outbox'] }), OUTBOX_RETRY_MS)
+      }
       if (error) {
         // A refusal can mean the terms or the reader's price moved. Read them again before the next try.
         void queryClient.invalidateQueries({ queryKey: ['post-office', chain] })

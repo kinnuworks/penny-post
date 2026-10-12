@@ -1,5 +1,6 @@
-import { useRef, useState } from 'react'
-import { View, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { View, type LayoutChangeEvent } from 'react-native'
+import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Svg, { Path } from 'react-native-svg'
 import { MAX_STROKES, WRITING_BOX } from '../card/card'
 import { cardStock } from '../../theme'
@@ -12,84 +13,89 @@ export function HandwritingPad({ onChange, strokes }: { onChange: (strokes: stri
   const [live, setLive] = useState<string | null>(null)
   const points = useRef<Point[]>([])
   const scale = useRef(1)
+  // The pen below is made once, so it reads the latest strokes from here.
+  const latest = useRef({ onChange, strokes })
+  useEffect(() => {
+    latest.current = { onChange, strokes }
+  }, [onChange, strokes])
 
   function measure(event: LayoutChangeEvent) {
     scale.current = WRITING_BOX.width / event.nativeEvent.layout.width
   }
 
-  function pointFrom(event: GestureResponderEvent): Point {
-    const { locationX, locationY } = event.nativeEvent
-    return {
-      x: clamp(locationX * scale.current, 0, WRITING_BOX.width),
-      y: clamp(locationY * scale.current, 0, WRITING_BOX.height),
-    }
-  }
-
-  function begin(event: GestureResponderEvent) {
-    points.current = [pointFrom(event)]
-    setLive(toPath(points.current))
-  }
-
-  function move(event: GestureResponderEvent) {
-    points.current.push(pointFrom(event))
-    setLive(toPath(points.current))
-  }
-
-  function end() {
-    if (points.current.length > 0 && strokes.length < MAX_STROKES) {
-      onChange([...strokes, toPath(points.current)])
-    }
-    points.current = []
-    setLive(null)
-  }
+  // The pen is a native gesture, and it takes the touch as soon as it lands.
+  // A plain touch handler loses a downward stroke to the page's scrolling.
+  //
+  // The handlers below read refs, but only when a finger touches the pad and
+  // never while rendering, which is what the lint rule is there to prevent.
+  /* eslint-disable react-hooks/refs */
+  const pen = useMemo(() => {
+    const pointFrom = (x: number, y: number): Point => ({
+      x: clamp(x * scale.current, 0, WRITING_BOX.width),
+      y: clamp(y * scale.current, 0, WRITING_BOX.height),
+    })
+    return Gesture.Pan()
+      .runOnJS(true)
+      .maxPointers(1)
+      .minDistance(0)
+      .shouldCancelWhenOutside(false)
+      .onBegin((event) => {
+        points.current = [pointFrom(event.x, event.y)]
+        setLive(toPath(points.current))
+      })
+      .onUpdate((event) => {
+        points.current.push(pointFrom(event.x, event.y))
+        setLive(toPath(points.current))
+      })
+      .onFinalize(() => {
+        const { onChange: commit, strokes: sofar } = latest.current
+        if (points.current.length > 0 && sofar.length < MAX_STROKES) {
+          commit([...sofar, toPath(points.current)])
+        }
+        points.current = []
+        setLive(null)
+      })
+  }, [])
+  /* eslint-enable react-hooks/refs */
 
   return (
-    <View
-      accessibilityLabel="Writing area. Write your message with a finger."
-      onLayout={measure}
-      onMoveShouldSetResponder={() => true}
-      onResponderGrant={(event) => {
-        begin(event)
-        // Returning true stops the page from scrolling under the pen on Android.
-        return true
-      }}
-      onResponderMove={move}
-      onResponderRelease={end}
-      onResponderTerminate={end}
-      onResponderTerminationRequest={() => false}
-      onStartShouldSetResponder={() => true}
-      style={{
-        aspectRatio: WRITING_BOX.width / WRITING_BOX.height,
-        backgroundColor: cardStock.face,
-        borderColor: cardStock.rule,
-        borderRadius: 6,
-        borderWidth: 1,
-        width: '100%',
-      }}
-    >
-      <Svg height="100%" pointerEvents="none" viewBox={`0 0 ${WRITING_BOX.width} ${WRITING_BOX.height}`} width="100%">
-        {/* Faint rules to write along, like the lines on an air letter. */}
-        {[1, 2, 3, 4, 5, 6].map((line) => (
-          <Path
-            d={`M14 ${line * 44} L${WRITING_BOX.width - 14} ${line * 44}`}
-            key={line}
-            stroke={cardStock.rule}
-            strokeWidth={1}
-          />
-        ))}
-        {[...strokes, ...(live ? [live] : [])].map((stroke, index) => (
-          <Path
-            d={stroke}
-            fill="none"
-            key={index}
-            stroke={cardStock.ink}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2.4}
-          />
-        ))}
-      </Svg>
-    </View>
+    <GestureDetector gesture={pen}>
+      <View
+        accessibilityLabel="Writing area. Write your message with a finger."
+        onLayout={measure}
+        style={{
+          aspectRatio: WRITING_BOX.width / WRITING_BOX.height,
+          backgroundColor: cardStock.face,
+          borderColor: cardStock.rule,
+          borderRadius: 6,
+          borderWidth: 1,
+          width: '100%',
+        }}
+      >
+        <Svg height="100%" pointerEvents="none" viewBox={`0 0 ${WRITING_BOX.width} ${WRITING_BOX.height}`} width="100%">
+          {/* Faint rules to write along, like the lines on an air letter. */}
+          {[1, 2, 3, 4, 5, 6].map((line) => (
+            <Path
+              d={`M14 ${line * 44} L${WRITING_BOX.width - 14} ${line * 44}`}
+              key={line}
+              stroke={cardStock.rule}
+              strokeWidth={1}
+            />
+          ))}
+          {[...strokes, ...(live ? [live] : [])].map((stroke, index) => (
+            <Path
+              d={stroke}
+              fill="none"
+              key={index}
+              stroke={cardStock.ink}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2.4}
+            />
+          ))}
+        </Svg>
+      </View>
+    </GestureDetector>
   )
 }
 

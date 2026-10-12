@@ -100,6 +100,7 @@ const RPC_URL = NETWORKS[cluster].rpc
 const CARD_STORE_URL = NETWORKS[cluster].cardStore
 const KEY_FILE = join(tmpdir(), 'penny-post-local-pen-pal.key')
 const PILLAR_BOX = 2
+const CLOCK_SYSVAR = address('SysvarC1ock11111111111111111111111111111111')
 const TOKEN_2022_PROGRAM_ADDRESS = address('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb')
 // Real Genesis Token mints, read from mainnet on 2026-10-12. The fork can place any of them in a wallet.
 const GENESIS_TOKENS = [
@@ -124,6 +125,20 @@ const sendAndConfirm = sendAndConfirmTransactionFactory({
   rpc,
   rpcSubscriptions: createSolanaRpcSubscriptions(NETWORKS[cluster].ws),
 })
+
+/**
+ * The time by the chain's own clock, in Unix seconds. Days are counted by it
+ * and not by this machine's clock, which matters on a local fork whose clock
+ * has been moved.
+ */
+async function chainTime(): Promise<number> {
+  const { value } = await rpc.getAccountInfo(CLOCK_SYSVAR, { encoding: 'base64' }).send()
+  if (!value) {
+    fail('The validator has no clock.')
+  }
+  // Clock: slot (8), epoch start (8), epoch (8), leader schedule epoch (8), then the timestamp.
+  return Number(Buffer.from(value.data[0], 'base64').readBigInt64LE(32))
+}
 
 async function cheat(method: string, params: unknown[]) {
   const response = await fetch(RPC_URL, {
@@ -215,7 +230,7 @@ async function main() {
       strokes: [],
       stampId: express ? EXPRESS_STAMP_ID : PILLAR_BOX,
       fromName: null,
-      writtenAt: Math.floor(Date.now() / 1000),
+      writtenAt: await chainTime(),
     }
 
     const letterbox = await fetchLetterbox(rpc, recipient)
@@ -252,7 +267,7 @@ async function main() {
     await send(
       wallet,
       await buildPostCircular({
-        day: utcDay(Date.now() / 1000) + (process.argv.includes('--tomorrow') ? 1 : 0),
+        day: utcDay(await chainTime()) + (process.argv.includes('--tomorrow') ? 1 : 0),
         options: (option('options') ?? 'Tea,Coffee').split(',').map((text) => text.trim()),
         postageMint: postOffice.postageMint,
         pot: pot ? BigInt(pot) * 1_000_000n : smallestPot(postOffice),
@@ -265,7 +280,7 @@ async function main() {
   }
 
   if (command === 'crowd') {
-    const circular = await fetchCircular(rpc, utcDay(Date.now() / 1000))
+    const circular = await fetchCircular(rpc, utcDay(await chainTime()))
     if (!circular) {
       fail(`Nobody has asked anything today. Run: pnpm pen-pal ask --cluster ${cluster}`)
     }

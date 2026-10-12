@@ -10,11 +10,12 @@ export function Postmark({ date, place, tilt = -8 }: { date: string; place: stri
       style={{ transform: [{ rotate: `${tilt}deg` }] }}
     >
       <View className="h-[84px] w-[84px] items-center justify-center rounded-full border border-ink-soft">
-        {/* A long place name shrinks to fit the ring instead of being cut off. */}
+        {/* A fixed width, so a long place name shrinks to fit the ring. Sized to
+            its own text, Android can drop the last word instead. */}
         <Text
           adjustsFontSizeToFit
-          className="px-1.5 font-postmark text-postmark uppercase tracking-wide text-ink-soft"
-          minimumFontScale={0.6}
+          className="w-[74px] text-center font-postmark text-postmark uppercase tracking-wide text-ink-soft"
+          minimumFontScale={0.5}
           numberOfLines={1}
         >
           {place}

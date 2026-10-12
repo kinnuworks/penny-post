@@ -6,6 +6,7 @@ import { StampArt } from '../../components/stamp-art'
 import { copy } from '../../copy'
 import { usePalette } from '../../theme'
 import { describeProblem } from '../../utils/describe-problem'
+import { ellipsify } from '../../utils/ellipsify'
 import { formatTokens } from '../../utils/format-tokens'
 import { useDebounced } from '../../utils/use-debounced'
 import { useNow } from '../../utils/use-now'
@@ -136,7 +137,7 @@ export function WriteScreen({
       <Text className="mb-5 mt-1 font-title text-title text-ink">{copy.write.title}</Text>
 
       <FlipCard
-        back={<PostcardBack card={card} to={to.trim()} />}
+        back={<PostcardBack card={card} to={asWrittenOnACard(to)} />}
         front={<PostcardFront photo={card.photo} />}
         onTurn={setSide}
         showing={side}
@@ -287,6 +288,12 @@ export function WriteScreen({
       <InkButton disabled={isPosting} label={isPosting ? copy.write.posting : copy.write.post} onPress={post} />
     </ScrollView>
   )
+}
+
+/** A name goes on the card as typed. A bare wallet address is shortened, the way you would write it by hand. */
+function asWrittenOnACard(to: string): string {
+  const typed = to.trim()
+  return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(typed) ? ellipsify(typed, 4) : typed
 }
 
 function Label({ children }: { children: string }) {

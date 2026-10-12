@@ -20,6 +20,7 @@ import { useFonts } from 'expo-font'
 import { Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { useEffect } from 'react'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { NetworkProvider } from '../features/network/network-provider'
 
 void SplashScreen.preventAutoHideAsync()
@@ -62,15 +63,18 @@ export default function Layout() {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <NetworkProvider
-        networks={networks}
-        render={({ selectedNetwork }) => (
-          <MobileWalletProvider cluster={selectedNetwork} identity={identity}>
-            <Stack screenOptions={{ animation: 'slide_from_bottom', headerShown: false }} />
-          </MobileWalletProvider>
-        )}
-      />
-    </QueryClientProvider>
+    // The handwriting pad's pen is a native gesture, which needs this at the root.
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryClientProvider client={queryClient}>
+        <NetworkProvider
+          networks={networks}
+          render={({ selectedNetwork }) => (
+            <MobileWalletProvider cluster={selectedNetwork} identity={identity}>
+              <Stack screenOptions={{ animation: 'slide_from_bottom', headerShown: false }} />
+            </MobileWalletProvider>
+          )}
+        />
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   )
 }
