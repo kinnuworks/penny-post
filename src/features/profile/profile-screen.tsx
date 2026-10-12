@@ -91,12 +91,7 @@ export function ProfileScreen() {
 
         {/* The last seven mornings: a stamp for each one answered. */}
         <Paper className="mb-5 px-5 py-4">
-          <View className="flex-row items-baseline justify-between">
-            <Text className="flex-1 font-caption text-caption text-ink-soft">{copy.profile.week}</Text>
-            {streak > 0 ? (
-              <Text className="font-caption text-caption text-accent-ink">{copy.home.streak(streak)}</Text>
-            ) : null}
-          </View>
+          <Text className="font-caption text-caption text-ink-soft">{copy.profile.week}</Text>
           <View className="mt-3 flex-row justify-between">
             {Array.from({ length: 7 }, (_, index) => today - 6 + index).map((day) => (
               <View className="items-center gap-1" key={day}>
@@ -111,6 +106,9 @@ export function ProfileScreen() {
               </View>
             ))}
           </View>
+          {streak > 0 ? (
+            <Text className="mt-3 font-caption text-caption text-accent-ink">{copy.home.streak(streak)}</Text>
+          ) : null}
         </Paper>
 
         {letterbox && office.data && isPricing ? (

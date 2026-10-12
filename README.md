@@ -1,5 +1,7 @@
 # Penny Post
 
+<img src="docs/banner.jpg" alt="Penny Post: a letterbox for your wallet. Three phones show today's question, the home screen with two envelopes, and an opened postcard." width="100%">
+
 A letterbox for every `.skr` name.
 
 Every Seeker came with an address. Penny Post lets people write to it. The post comes once a day, at eight in the morning where the reader lives. Friends write for free. Anyone else pays postage in SKR, and the postage goes to the reader when they turn the card over. And every day there is one card for everyone: a question that any Seeker can answer once, with a pot that the phones who answered share.
