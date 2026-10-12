@@ -22,7 +22,7 @@ A letterbox takes three paid cards a day at most, and the reader sets the price.
 
 | Part                                                                                                  | State                                                                                                                                                                       |
 | ----------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `anchor/programs/penny_post`: the program, twelve instructions                                        | Builds for Solana. 30 unit tests and 54 end-to-end tests pass on a fork of mainnet, against the real SKR mint and six real Genesis Tokens. Not deployed to any network yet. |
+| `anchor/programs/penny_post`: the program, twelve instructions                                        | Builds for Solana. 31 unit tests and 54 end-to-end tests pass on a fork of mainnet, against the real SKR mint and six real Genesis Tokens. Not deployed to any network yet. |
 | Genesis Token check inside the program                                                                | Tested on a real mint and on real holdings, one full and one emptied.                                                                                                       |
 | App: wallet connect, letterbox, writing a card, posting, signing for a card, sending back, kept cards | Run end to end on an Android emulator with Solana Mobile's reference wallet, against a local fork of mainnet. Not run on a physical phone yet.                              |
 | Sealed letters                                                                                        | A sealed card was posted, fetched and opened on the emulator. Unit tested.                                                                                                  |
@@ -82,7 +82,7 @@ To open the post office on a network once the program is deployed there:
 pnpm post-office open --cluster devnet
 ```
 
-To run everything on one machine, with an emulator or a phone on USB and no real network: start a validator that forks mainnet, open the post office on it, start the stand-in card store, and point a development build at them. `local-demo` plays a pen pal, asks the day's question and has other phones answer it.
+To run everything on one machine, with an emulator or a phone on USB and no real network: start a validator that forks mainnet, open the post office on it, start the stand-in card store, and point a development build at them. `pnpm pen-pal` plays the other side: it writes to the phone, asks the day's question and has other phones answer it. It takes `--cluster localnet`, `devnet` or `mainnet`.
 
 ```bash
 pnpm run anchor:localnet

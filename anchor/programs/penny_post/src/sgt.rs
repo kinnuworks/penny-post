@@ -261,6 +261,26 @@ mod tests {
         assert_eq!(token.member_number, 20);
     }
 
+    /// A member mint made with the stock `spl-token` tool, the way the devnet
+    /// stand-in for the Genesis Token is made. It carries a member pointer
+    /// ahead of the member entry, which the real one does not.
+    #[test]
+    fn reads_a_member_mint_made_with_the_stock_token_tool() {
+        let data = decode_hex(include_str!("../tests/fixtures/standin_member_mint.hex"));
+        let token = read_genesis_token(&data).unwrap();
+        let mint = Pubkey::from_str("CeHmPhe9fyqH3cFbGJmRtV4cFctG5fbrCUhzdYApMZhJ").unwrap();
+        assert_eq!(token.member_mint, mint);
+        assert_eq!(
+            token.group,
+            Pubkey::from_str("AKwJKaLo3G6qCsb3V318mwLJoqSqYT3WZgy7Go94uQax").unwrap()
+        );
+        assert_eq!(
+            token.mint_authority,
+            Pubkey::from_str("CMNefAXQ6rsnkRpfjeSEa5t6U74hvb5TxtCNJdxjHfXs").unwrap()
+        );
+        assert_eq!(token.member_number, 1);
+    }
+
     #[test]
     fn rejects_a_plain_mint_with_no_extensions() {
         let plain = &real_mint()[..BASE_MINT_LEN];

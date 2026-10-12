@@ -7,7 +7,7 @@ import { getAddressDecoder, getBase64Encoder, type Address, type createSolanaRpc
 type Rpc = ReturnType<typeof createSolanaRpc>
 
 export const TOKEN_2022_PROGRAM = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb' as Address
-/** Token-2022 group every Seeker Genesis Token is a member of. */
+/** Token-2022 group every Seeker Genesis Token is a member of, on mainnet. */
 export const SGT_GROUP = 'GT22s89nU4iWFkNXj1Bw6uYhJJWDRPpShHt4Bk8f99Te' as Address
 
 const BASE_ACCOUNT_LEN = 165
@@ -61,8 +61,12 @@ export interface GenesisToken {
   tokenAccount: Address
 }
 
-/** The Genesis Token this wallet holds right now, or null. */
-export async function findGenesisToken(rpc: Rpc, owner: Address): Promise<GenesisToken | null> {
+/**
+ * The Genesis Token this wallet holds right now, or null. `group` is the one
+ * the post office on this network was opened with: the real Seeker group on
+ * mainnet, a stand-in on devnet.
+ */
+export async function findGenesisToken(rpc: Rpc, owner: Address, group: Address): Promise<GenesisToken | null> {
   const { value: holdings } = await rpc
     .getTokenAccountsByOwner(owner, { programId: TOKEN_2022_PROGRAM }, { encoding: 'jsonParsed' })
     .send()
@@ -80,7 +84,7 @@ export async function findGenesisToken(rpc: Rpc, owner: Address): Promise<Genesi
       continue
     }
     const member = readGroupMember(new Uint8Array(getBase64Encoder().encode(mintAccount.data[0])))
-    if (member && member.group === SGT_GROUP && member.mint === info.mint) {
+    if (member && member.group === group && member.mint === info.mint) {
       return { memberNumber: member.memberNumber, mint: info.mint, tokenAccount }
     }
   }

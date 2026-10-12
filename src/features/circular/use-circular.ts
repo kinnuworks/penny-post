@@ -63,7 +63,7 @@ export function useAnswerCircular() {
         throw new PostProblem('office-closed')
       }
       // The program checks that the Genesis Token is in this wallet right now, so it is shown where.
-      const genesisToken = seal ? await findGenesisToken(client.rpc, account.address) : null
+      const genesisToken = seal ? await findGenesisToken(client.rpc, account.address, office.sgtGroup) : null
       if (!seal || genesisToken?.mint !== seal.sgtMint) {
         throw new PostProblem('no-genesis-token')
       }

@@ -4,11 +4,13 @@
  * to open the post office.
  *
  *   pnpm post-office show  --cluster devnet
- *   pnpm post-office open  --cluster devnet            (makes a stand-in token with no value)
- *   pnpm post-office open  --cluster mainnet           (uses SKR)
- *   pnpm post-office give  --cluster devnet --to <wallet> [--amount 500]
+ *   pnpm post-office open  --cluster devnet            (makes stand-ins for SKR and the Genesis Token)
+ *   pnpm post-office open  --cluster mainnet           (uses SKR and the real Genesis Token group)
+ *   pnpm post-office give  --cluster devnet --to <wallet> [--amount 500] [--seeker]
  *
- * `give` only works for the devnet stand-in token, which this wallet can mint.
+ * `give` only works for the devnet stand-in tokens, which this wallet can mint.
+ * `--seeker` also puts a stand-in Genesis Token in the wallet, so it gets the
+ * free daily stamp and can answer the day's question.
  *
  * For a validator on this machine that forks mainnet (`pnpm anchor:localnet`):
  *
@@ -54,6 +56,7 @@ import { homedir } from 'node:os'
 import { getOpenPostOfficeInstructionAsync, PENNY_POST_PROGRAM_ADDRESS } from '../anchor/src'
 import { fetchPostOffice } from '../src/features/post/chain'
 import { formatTokens } from '../src/utils/format-tokens'
+import { giveStandInSeeker, makeStandInGroup } from './standin-seeker'
 
 const SKR_MINT = address('SKRbvo6Gf7GondiT3BbTfuRDPqLWei4j2Qy2NPGZhW3')
 const SGT_GROUP = address('GT22s89nU4iWFkNXj1Bw6uYhJJWDRPpShHt4Bk8f99Te')
@@ -173,6 +176,15 @@ async function main() {
       console.log(`Made a stand-in postage token: ${postageMint}`)
     }
 
+    // Devnet has no Genesis Tokens either, so a group of stand-ins is made, with this wallet as its authority.
+    let sgtGroup: Address = SGT_GROUP
+    let sgtMintAuthority: Address = SGT_MINT_AUTHORITY
+    if (cluster === 'devnet') {
+      sgtGroup = makeStandInGroup(rpcUrl)
+      sgtMintAuthority = admin.address
+      console.log(`Made a stand-in Genesis Token group: ${sgtGroup}`)
+    }
+
     const [programData] = await getProgramDerivedAddress({
       programAddress: UPGRADEABLE_LOADER,
       seeds: [getAddressEncoder().encode(PENNY_POST_PROGRAM_ADDRESS)],
@@ -182,8 +194,8 @@ async function main() {
         admin,
         postageMint,
         programData,
-        sgtGroup: SGT_GROUP,
-        sgtMintAuthority: SGT_MINT_AUTHORITY,
+        sgtGroup,
+        sgtMintAuthority,
         terms: TERMS,
       }),
     ])
@@ -229,6 +241,10 @@ async function main() {
       getMintToInstruction({ amount, mint: postOffice.postageMint, mintAuthority: admin, token }),
     ])
     console.log(`Gave ${formatTokens(amount, DECIMALS)} stand-in tokens to ${owner}. ${signature}`)
+    if (process.argv.includes('--seeker')) {
+      const mint = giveStandInSeeker(rpcUrl, postOffice.sgtGroup, owner)
+      console.log(`Put stand-in Genesis Token ${mint} in that wallet.`)
+    }
     return
   }
 

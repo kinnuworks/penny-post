@@ -11,6 +11,15 @@ function fixture(name: string): Uint8Array {
 }
 
 describe('readGroupMember', () => {
+  it('reads a stand-in member mint made with the stock token tool, as used on devnet', () => {
+    const member = readGroupMember(fixture('standin_member_mint.hex'))
+    expect(member).toEqual({
+      group: 'AKwJKaLo3G6qCsb3V318mwLJoqSqYT3WZgy7Go94uQax',
+      memberNumber: 1n,
+      mint: 'CeHmPhe9fyqH3cFbGJmRtV4cFctG5fbrCUhzdYApMZhJ',
+    })
+  })
+
   it('reads a real Genesis Token mint the way the program does', () => {
     const member = readGroupMember(fixture('sgt_mint_5mXbkqKz.hex'))
     expect(member).toEqual({

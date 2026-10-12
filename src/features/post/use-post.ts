@@ -225,13 +225,15 @@ export function useVerifyLetterbox() {
   const { account, chain, client } = useMobileWallet()
   const send = useSend()
   const queryClient = useQueryClient()
+  const postOffice = usePostOffice()
 
   return useMutation({
     mutationFn: async () => {
-      if (!account) {
+      const office = postOffice.data
+      if (!account || !office) {
         throw new PostProblem('office-closed')
       }
-      const token = await findGenesisToken(client.rpc, account.address)
+      const token = await findGenesisToken(client.rpc, account.address, office.sgtGroup)
       if (!token) {
         throw new PostProblem('no-genesis-token')
       }
@@ -281,7 +283,7 @@ export function usePostCard() {
         throw new PostProblem('no-free-stamp')
       }
       // The program checks that the Genesis Token is still in this wallet, so it needs to be shown where.
-      const genesisToken = free ? await findGenesisToken(client.rpc, account.address) : null
+      const genesisToken = free ? await findGenesisToken(client.rpc, account.address, office.sgtGroup) : null
       if (free && genesisToken?.mint !== seal?.sgtMint) {
         throw new PostProblem('no-genesis-token')
       }

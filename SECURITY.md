@@ -4,7 +4,7 @@ Penny Post holds other people's postage for up to a week, so this file says plai
 
 ## Status
 
-The program has 30 unit tests and 54 end-to-end tests, which run on a local fork of mainnet against the real SKR mint and six real Seeker Genesis Tokens. It has not been deployed. The app has run on an Android emulator against that fork, and not yet on a physical phone. Nobody outside the project has reviewed any of it. Do not send it funds you would mind losing.
+The program has 31 unit tests and 54 end-to-end tests, which run on a local fork of mainnet against the real SKR mint and six real Seeker Genesis Tokens. It has not been deployed. The app has run on an Android emulator against that fork, and not yet on a physical phone. Nobody outside the project has reviewed any of it. Do not send it funds you would mind losing.
 
 On 10 October 2026 the program was read a second time with one aim, to break it. That pass found no way to take postage, a refund or rent. It did find six smaller faults. All six are fixed and each has a test. They are listed under "Found and fixed" below.
 

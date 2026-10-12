@@ -1,28 +1,33 @@
 /**
- * A pen pal for the local fork, so one phone can try both sides of the post.
+ * A pen pal, so one phone can try both sides of the post.
  *
- *   pnpm local-demo reader
- *       Makes the pen pal a wallet with a letterbox and prints its address.
- *       Write to that address from the phone.
+ *   pnpm pen-pal reader --cluster <net>
+ *       Gives the pen pal a letterbox and prints its address. Write to that
+ *       address from the phone.
  *
- *   pnpm local-demo send --to <wallet> [--message "..."] [--photo card.jpg] [--express]
+ *   pnpm pen-pal send --cluster <net> --to <wallet> [--message "..."] [--photo card.jpg] [--express]
  *       Posts a card from the pen pal to a wallet, paying that reader's price,
- *       and files its contents with the local card store.
+ *       and files its contents with the card store.
  *
- *   pnpm local-demo ask [--question "..."] [--options "Tea,Coffee"] [--pot 300]
- *       The pen pal puts today's question to every Seeker.
+ *   pnpm pen-pal ask --cluster <net> [--question "..."] [--options "Tea,Coffee"] [--pot 300] [--tomorrow]
+ *       The pen pal puts a question to every Seeker.
  *
- *   pnpm local-demo crowd [--count 9]
- *       That many other phones, each holding a real Genesis Token, answer it.
+ *   pnpm pen-pal crowd --cluster <net> [--count 8]
+ *       That many other phones, each holding a Genesis Token, answer today's question.
  *
- * Needs `pnpm anchor:localnet`, `pnpm post-office open --cluster localnet` and
- * `pnpm local-card-store` running. Nothing here touches a real network.
+ * On `localnet` (a fork of mainnet on this machine) the pen pal is a throwaway
+ * wallet, balances are written straight into the fork, and the crowd holds
+ * real Genesis Tokens. On `devnet` the pen pal is the deploy wallet at
+ * ~/.config/solana/id.json, which must hold SOL and stand-in postage, and the
+ * crowd holds stand-in Genesis Tokens. On `mainnet` the pen pal is the deploy
+ * wallet spending real SKR, and there is no crowd: real Seekers are the crowd.
  */
 
 import {
   address,
   appendTransactionMessageInstructions,
   assertIsTransactionWithBlockhashLifetime,
+  createKeyPairSignerFromBytes,
   createKeyPairSignerFromPrivateKeyBytes,
   createSolanaRpc,
   createSolanaRpcSubscriptions,
@@ -32,14 +37,16 @@ import {
   setTransactionMessageFeePayerSigner,
   setTransactionMessageLifetimeUsingBlockhash,
   signTransactionMessageWithSigners,
+  type Address,
   type Instruction,
   type KeyPairSigner,
 } from '@solana/kit'
 import { findAssociatedTokenPda, TOKEN_PROGRAM_ADDRESS } from '@solana-program/token'
 import { findSealPda, getVerifyLetterboxInstructionAsync } from '../anchor/src'
+import { getTransferSolInstruction } from '@solana-program/system'
 import { randomBytes } from 'node:crypto'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { hashCard, type CardContent } from '../src/features/card/card'
 import {
@@ -51,6 +58,7 @@ import {
 } from '../src/features/circular/circular-chain'
 import { newReadingKey, packCard } from '../src/features/card/envelope'
 import { EXPRESS_STAMP_ID } from '../src/features/card/stamps'
+import { CARD_STORE_URL as DEPLOYED_CARD_STORE } from '../src/config'
 import {
   buildOpenLetterbox,
   buildPostCard,
@@ -59,9 +67,37 @@ import {
   newCardId,
   priceToReach,
 } from '../src/features/post/chain'
+import { giveStandInSeeker } from './standin-seeker'
 
-const RPC_URL = 'http://127.0.0.1:8899'
-const CARD_STORE_URL = 'http://127.0.0.1:8787'
+type Cluster = 'devnet' | 'localnet' | 'mainnet'
+
+const NETWORKS: Record<Cluster, { cardStore: string; rpc: string; ws: string }> = {
+  devnet: { cardStore: DEPLOYED_CARD_STORE, rpc: 'https://api.devnet.solana.com', ws: 'wss://api.devnet.solana.com' },
+  localnet: { cardStore: 'http://127.0.0.1:8787', rpc: 'http://127.0.0.1:8899', ws: 'ws://127.0.0.1:8900' },
+  mainnet: {
+    cardStore: DEPLOYED_CARD_STORE,
+    rpc: process.env.MAINNET_RPC_URL ?? 'https://api.mainnet-beta.solana.com',
+    ws: (process.env.MAINNET_RPC_URL ?? 'https://api.mainnet-beta.solana.com').replace('https://', 'wss://'),
+  },
+}
+
+function option(name: string): string | undefined {
+  const index = process.argv.indexOf(`--${name}`)
+  return index === -1 ? undefined : process.argv[index + 1]
+}
+
+function fail(message: string): never {
+  console.error(message)
+  process.exit(1)
+}
+
+const cluster = option('cluster') as Cluster | undefined
+if (!cluster || !(cluster in NETWORKS)) {
+  fail('Say which network: --cluster localnet, --cluster devnet or --cluster mainnet')
+}
+const isLocal = cluster === 'localnet'
+const RPC_URL = NETWORKS[cluster].rpc
+const CARD_STORE_URL = NETWORKS[cluster].cardStore
 const KEY_FILE = join(tmpdir(), 'penny-post-local-pen-pal.key')
 const PILLAR_BOX = 2
 const TOKEN_2022_PROGRAM_ADDRESS = address('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb')
@@ -86,18 +122,8 @@ const GENESIS_TOKENS = [
 const rpc = createSolanaRpc(RPC_URL)
 const sendAndConfirm = sendAndConfirmTransactionFactory({
   rpc,
-  rpcSubscriptions: createSolanaRpcSubscriptions('ws://127.0.0.1:8900'),
+  rpcSubscriptions: createSolanaRpcSubscriptions(NETWORKS[cluster].ws),
 })
-
-function option(name: string): string | undefined {
-  const index = process.argv.indexOf(`--${name}`)
-  return index === -1 ? undefined : process.argv[index + 1]
-}
-
-function fail(message: string): never {
-  console.error(message)
-  process.exit(1)
-}
 
 async function cheat(method: string, params: unknown[]) {
   const response = await fetch(RPC_URL, {
@@ -124,16 +150,24 @@ async function send(payer: KeyPairSigner, instructions: Instruction[]) {
   await sendAndConfirm(transaction, { commitment: 'confirmed' })
 }
 
-/** The pen pal's wallet. Its key lives in the temp folder and is worth nothing anywhere else. */
+/**
+ * The pen pal's wallet. On the local fork it is a throwaway whose key lives in
+ * the temp folder and whose balances are written in. Anywhere else it is the
+ * deploy wallet, spending what that wallet really holds.
+ */
 async function penPal(): Promise<KeyPairSigner> {
+  const postOffice = await fetchPostOffice(rpc)
+  if (!postOffice) {
+    fail(`Open the post office first: pnpm post-office open --cluster ${cluster}`)
+  }
+  if (!isLocal) {
+    const bytes = JSON.parse(readFileSync(`${homedir()}/.config/solana/id.json`, 'utf8')) as number[]
+    return createKeyPairSignerFromBytes(new Uint8Array(bytes))
+  }
   if (!existsSync(KEY_FILE)) {
     writeFileSync(KEY_FILE, randomBytes(32).toString('hex'), { mode: 0o600 })
   }
   const signer = await createKeyPairSignerFromPrivateKeyBytes(Buffer.from(readFileSync(KEY_FILE, 'utf8'), 'hex'))
-  const postOffice = await fetchPostOffice(rpc)
-  if (!postOffice) {
-    fail('Open the post office first: pnpm post-office open --cluster localnet')
-  }
   await cheat('surfnet_setAccount', [signer.address, { lamports: 5_000_000_000 }])
   await cheat('surfnet_setTokenAccount', [
     signer.address,
@@ -199,12 +233,16 @@ async function main() {
     })
     await send(wallet, instructions)
 
-    const stored = await fetch(`${CARD_STORE_URL}/functions/v1/cards/${cardAddress}?cluster=devnet`, {
-      // A copy as a plain buffer, which every fetch accepts as a body.
-      body: bytes.slice().buffer,
-      headers: { 'content-type': 'application/octet-stream' },
-      method: 'PUT',
-    })
+    // The stand-in store on this machine ignores the cluster. The deployed one checks the card on that network.
+    const stored = await fetch(
+      `${CARD_STORE_URL}/functions/v1/cards/${cardAddress}?cluster=${cluster === 'mainnet' ? 'mainnet' : 'devnet'}`,
+      {
+        // A copy as a plain buffer, which every fetch accepts as a body.
+        body: bytes.slice().buffer,
+        headers: { 'content-type': 'application/octet-stream' },
+        method: 'PUT',
+      },
+    )
     console.log(`Posted ${cardAddress} to ${recipient}${express ? ', express' : ''}. Card store said ${stored.status}.`)
     return
   }
@@ -214,7 +252,7 @@ async function main() {
     await send(
       wallet,
       await buildPostCircular({
-        day: utcDay(Date.now() / 1000),
+        day: utcDay(Date.now() / 1000) + (process.argv.includes('--tomorrow') ? 1 : 0),
         options: (option('options') ?? 'Tea,Coffee').split(',').map((text) => text.trim()),
         postageMint: postOffice.postageMint,
         pot: pot ? BigInt(pot) * 1_000_000n : smallestPot(postOffice),
@@ -222,21 +260,33 @@ async function main() {
         sponsor: wallet,
       }),
     )
-    console.log("Today's question is in every letterbox.")
+    console.log('The question is in every letterbox.')
     return
   }
 
   if (command === 'crowd') {
     const circular = await fetchCircular(rpc, utcDay(Date.now() / 1000))
     if (!circular) {
-      fail('Nobody has asked anything today. Run: pnpm local-demo ask')
+      fail(`Nobody has asked anything today. Run: pnpm pen-pal ask --cluster ${cluster}`)
     }
-    const count = Math.min(Number(option('count') ?? '9'), GENESIS_TOKENS.length)
-    for (const [index, sgtMint] of GENESIS_TOKENS.slice(0, count).entries()) {
+    if (cluster === 'mainnet') {
+      fail('There is no crowd to conjure on mainnet. Real Seekers answer there.')
+    }
+    const count = Math.min(Number(option('count') ?? '8'), isLocal ? GENESIS_TOKENS.length : 20)
+    for (let index = 0; index < count; index++) {
       // A phone: a new wallet with a letterbox, holding one Genesis Token it has shown to the program.
       const phone = await createKeyPairSignerFromPrivateKeyBytes(randomBytes(32))
-      await cheat('surfnet_setAccount', [phone.address, { lamports: 1_000_000_000 }])
-      await cheat('surfnet_setTokenAccount', [phone.address, sgtMint, { amount: 1 }, TOKEN_2022_PROGRAM_ADDRESS])
+      let sgtMint: Address
+      if (isLocal) {
+        sgtMint = GENESIS_TOKENS[index]
+        await cheat('surfnet_setAccount', [phone.address, { lamports: 1_000_000_000 }])
+        await cheat('surfnet_setTokenAccount', [phone.address, sgtMint, { amount: 1 }, TOKEN_2022_PROGRAM_ADDRESS])
+      } else {
+        await send(wallet, [
+          getTransferSolInstruction({ amount: 20_000_000n, destination: phone.address, source: wallet }),
+        ])
+        sgtMint = giveStandInSeeker(RPC_URL, postOffice.sgtGroup, phone.address)
+      }
       const [sgtToken] = await findAssociatedTokenPda({
         mint: sgtMint,
         owner: phone.address,
