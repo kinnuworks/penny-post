@@ -92,7 +92,7 @@ export function ProfileScreen() {
         {/* The last seven mornings: a stamp for each one answered. */}
         <Paper className="mb-5 px-5 py-4">
           <View className="flex-row items-baseline justify-between">
-            <Text className="font-caption text-caption text-ink-soft">{copy.profile.week}</Text>
+            <Text className="flex-1 font-caption text-caption text-ink-soft">{copy.profile.week}</Text>
             {streak > 0 ? (
               <Text className="font-caption text-caption text-accent-ink">{copy.home.streak(streak)}</Text>
             ) : null}
