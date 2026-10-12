@@ -61,6 +61,15 @@ The pen-pal exchange is a second small function, `supabase/functions/exchange`, 
 - It takes no API key and does not ask for a signature, so anyone can draw on behalf of any wallet. The worst that does is use up that wallet's one draw for the day.
 - It does not check a reader's price. A reader in the exchange could set a high one. The app shows the price before anything is signed, and the writer can walk away.
 
+## The devnet counter
+
+Devnet has no SKR and no Seeker Genesis Token, so somebody trying the app there could look and do nothing. A third function, `supabase/functions/counter`, hands a devnet wallet a test kit once: 0.025 devnet SOL, 300 stand-in SKR and one stand-in Genesis Token.
+
+- It is the only part of Penny Post that holds a key. The key is for a devnet wallet stocked with test SOL, stand-in postage and stand-in Genesis Tokens minted ahead of time. It cannot mint either token, and it has no authority over the program.
+- The key sits in a database schema the API does not serve, readable only by the function.
+- It takes no API key. Someone with many wallets can empty the pile, and then the counter says it has run out. Nothing of value is lost.
+- There is no counter on mainnet, and the app only offers it when the post office is running on a stand-in token.
+
 ## Known limits
 
 - An open postcard is stored unencrypted under its hash. The app does not show a card until the reader has signed for it, but a modified app could fetch and read one without opening it, which would leave the sender's postage unclaimed and returnable. A sealed letter can only be read by the reader's phone, and the same holds for it: that reader could read it without signing.

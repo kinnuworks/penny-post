@@ -70,7 +70,7 @@ On screen: the "Ask every Seeker" screen.
 
 On screen: the test run in a terminal, then the program on the explorer.
 
-> The program has [31] unit tests and [54] end-to-end tests, run on a fork of mainnet against real SKR and real Seeker Genesis Tokens. I went through it a second time trying to break it and found six faults. All six are fixed and listed in the repository. No server holds a key. It is live on [devnet], at the address on screen. Penny Post. The post comes once a day.
+> The program has [31] unit tests and [54] end-to-end tests, run on a fork of mainnet against real SKR and real Seeker Genesis Tokens. I went through it a second time trying to break it and found six faults. All six are fixed and listed in the repository. No server holds a key to anything of value. It is live on [devnet], at the address on screen. Penny Post. The post comes once a day.
 
 ## Showing the next morning without waiting a day
 

@@ -36,6 +36,16 @@ export const copy = {
     claimingStamp: 'Looking for your Seeker',
   },
 
+  testKit: {
+    title: 'Trying this on devnet?',
+    body: 'There is no SKR here and no Seeker to show. The counter keeps a kit for visitors: a little SOL, 300 test SKR and a test Genesis Token.',
+    ask: 'Hand me a test kit',
+    asking: 'Fetching one from the back',
+    given: 'It is in your wallet.',
+    nextLetterbox: 'Put up a letterbox next.',
+    nextSeeker: 'Now tap "I have a Seeker" at the foot of this page.',
+  },
+
   circular: {
     caption: 'To every Seeker',
     from: (who: string) => `Asked by ${who}`,
@@ -134,6 +144,8 @@ export const copy = {
     'already-answered': 'This phone has answered already. One phone, one answer.',
     'bid-too-low': 'Somebody has that day, and taking it over needs a pot a tenth larger than theirs.',
     'day-taken': 'That question is already open and phones are answering it. Pick another day.',
+    'kit-counter-shut': 'The counter is not answering. Try again in a minute.',
+    'kits-all-gone': 'The counter has handed out its last test kit. Sorry about that.',
     'pot-too-low': 'That pot is too small to go to every Seeker. Put a little more in.',
     'question-closed': 'That question has closed. There is a new one each day.',
     'question-open': 'The question is still open. Shares are paid once the day closes.',

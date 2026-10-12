@@ -22,6 +22,7 @@ import {
   useOpenLetterbox,
   usePostOffice,
   useSkrName,
+  useTestKit,
   useVerifyLetterbox,
 } from '../post/use-post'
 import { PriceDesk } from './price-desk'
@@ -44,6 +45,7 @@ export function LetterboxScreen({
   const doormat = useDoormat()
   const openLetterbox = useOpenLetterbox()
   const verify = useVerifyLetterbox()
+  const testKit = useTestKit()
   useFlushOutbox()
   const [isPricing, setIsPricing] = useState(false)
 
@@ -101,6 +103,31 @@ export function LetterboxScreen({
 
         {/* The day's question for every Seeker sits above the post addressed to this one. */}
         {letterbox ? <CircularCard /> : null}
+
+        {/* Off mainnet there is no SKR and no Seeker, so the counter lends a visitor both. */}
+        {office.data && token !== 'SKR' && !mine.isLoading && !seal ? (
+          <View className="mb-4 rounded-card border border-dashed border-ink-faint px-5 py-5">
+            <Text className="font-title text-heading text-ink">{copy.testKit.title}</Text>
+            {testKit.isSuccess ? (
+              <Text className="mt-2 font-body text-body text-ink-soft">
+                {copy.testKit.given} {letterbox ? copy.testKit.nextSeeker : copy.testKit.nextLetterbox}
+              </Text>
+            ) : (
+              <>
+                <Text className="mb-4 mt-2 font-body text-body text-ink-soft">{copy.testKit.body}</Text>
+                <InkButton
+                  disabled={testKit.isPending}
+                  label={testKit.isPending ? copy.testKit.asking : copy.testKit.ask}
+                  onPress={() => testKit.mutate()}
+                  tone="plain"
+                />
+                {testKit.error ? (
+                  <Text className="mt-3 font-body text-body text-accent-ink">{describeProblem(testKit.error)}</Text>
+                ) : null}
+              </>
+            )}
+          </View>
+        ) : null}
 
         {office.isLoading || mine.isLoading ? null : !office.data ? (
           <Notice>{copy.letterbox.closedHere}</Notice>

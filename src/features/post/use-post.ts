@@ -30,6 +30,7 @@ import {
 } from './chain'
 import { deviceUtcOffsetMinutes } from './delivery'
 import { drawPenPal, flushExchange, noteForExchange } from './exchange'
+import { askForTestKit } from './test-kit'
 import { flushOutbox, forget, keepForUpload } from './outbox'
 import { PostProblem } from './problem'
 import { isDeclined } from '../../utils/describe-wallet-error'
@@ -166,6 +167,27 @@ export function useDrawPenPal() {
       // Show their name if they have one. The address works either way.
       return (await primarySkrName(mainnetRpc, stranger).catch(() => null)) ?? stranger
     },
+  })
+}
+
+/** Asks the devnet counter for a test kit: a little SOL, test SKR and a test Genesis Token. */
+export function useTestKit() {
+  const { account, chain } = useMobileWallet()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!account) {
+        throw new PostProblem('office-closed')
+      }
+      const outcome = await askForTestKit(account.address).catch(() => {
+        throw new PostProblem('kit-counter-shut')
+      })
+      if (outcome === 'none-left') {
+        throw new PostProblem('kits-all-gone')
+      }
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['letterbox', chain, account?.address] }),
   })
 }
 
@@ -391,7 +413,9 @@ export function useOpenCard() {
   const postOffice = usePostOffice()
 
   return useMutation({
-    mutationFn: async (card: PostedCard): Promise<{ content: CardContent; paid: bigint; signature: Signature | null }> => {
+    mutationFn: async (
+      card: PostedCard,
+    ): Promise<{ content: CardContent; paid: bigint; signature: Signature | null }> => {
       const office = postOffice.data
       if (!account || !office) {
         throw new PostProblem('office-closed')

@@ -5,6 +5,8 @@ export class PostProblem extends Error {
       | 'already-answered'
       | 'bid-too-low'
       | 'day-taken'
+      | 'kit-counter-shut'
+      | 'kits-all-gone'
       | 'letterbox-full'
       | 'no-such-reader'
       | 'nobody-waiting'
