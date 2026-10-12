@@ -39,9 +39,11 @@ The rest of the post is from people. You write a card with a photo on the front 
 - Letterboxes are addressed by `.skr` name, looked up on mainnet in both directions.
 - Letters to someone with a letterbox are sealed to a key made on their phone and kept in its secure storage. The camera and touch handwriting make the card.
 
-**What is real today.** The program has 31 unit tests and 54 end-to-end tests, run on a fork of mainnet against the real SKR mint and six real Genesis Tokens. Every flow has been run on Android with Solana Mobile's reference wallet. [It is deployed to [devnet / mainnet] at `D5LZ7kUmpXhE2hsKHnse9itthWHX6j8o4EkGcfz2MLAD`, and the post office opened on [date].] [[N] cards have been posted and [N] questions answered.] [The app was run on [phone models].]
+**What is real today.** The program has 31 unit tests and 54 end-to-end tests, run on a fork of mainnet against the real SKR mint and six real Genesis Tokens. It is deployed to devnet at `D5LZ7kUmpXhE2hsKHnse9itthWHX6j8o4EkGcfz2MLAD`, and the post office opened there on 12 October 2026. A question is scheduled for every day of the next three weeks. Every flow has been run from the signed release build on Android with Solana Mobile's reference wallet, against that deployment. [The app was run on [phone models].]
 
-**What it is not.** Nobody outside the project has reviewed the code. An open postcard to someone without a letterbox is stored unencrypted. A question's answers are public on-chain, even though the app hides the count until you have answered. [On devnet, SKR and the Genesis Token are stand-ins, and the builder does not own a Seeker.] All of this is written up in SECURITY.md, along with six faults we found in our own program and fixed.
+**Try it.** Install the APK with a wallet set to devnet. The letterbox offers a test kit (a little SOL, 300 test SKR and a test Genesis Token), because devnet has neither SKR nor Seekers. Take it, put up a letterbox, tap "I have a Seeker" and answer today's question.
+
+**What it is not.** Nobody outside the project has reviewed the code. It is on devnet, where SKR and the Genesis Token are stand-ins, and the builder does not own a Seeker. An open postcard to someone without a letterbox is stored unencrypted. A question's answers are public on-chain, even though the app hides the count until you have answered. On devnet one server function holds a wallet of test tokens to hand to visitors; on mainnet no server would hold a key. All of this is written up in SECURITY.md, along with six faults we found in our own program and fixed.
 
 **Next.** The Solana dApp Store, within thirty days of the results.
 
