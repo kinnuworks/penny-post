@@ -12,7 +12,7 @@ const prints = require('../../../assets/polaroids.webp')
 
 // Three pages shown once, before the wallet is asked for anything: what comes
 // in the post, and why it is worth opening.
-export function IntroScreen({ onDone }: { onDone: () => void }) {
+export function IntroScreen({ isPractice = false, onDone }: { isPractice?: boolean; onDone: () => void }) {
   const insets = useSafeAreaInsets()
   const palette = usePalette()
   const { width } = useWindowDimensions()
@@ -81,7 +81,7 @@ export function IntroScreen({ onDone }: { onDone: () => void }) {
       <View className="px-7">
         <InkButton
           arrow
-          label={isLast ? copy.intro.connect : copy.intro.next}
+          label={isLast ? (isPractice ? copy.intro.practice : copy.intro.connect) : copy.intro.next}
           onPress={() => {
             if (isLast) {
               onDone()

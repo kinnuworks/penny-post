@@ -242,9 +242,18 @@ function YoureIn({
       >
         {copy.question.youreIn}
       </Text>
-      <Text className="mt-3 text-center font-body text-body text-ink-soft">
-        {copy.question.inBody} {copy.circular.shareNow(formatTokensRoughly(shareAfterBurn(circular), decimals), token)}{' '}
-        {copy.circular.paidWhen(untilClose(now, closesAt(circular.day)))}
+      <Text className="mt-4 w-full text-center font-caption text-caption text-ink-soft">
+        {copy.question.shareSoFar}
+      </Text>
+      <Text
+        adjustsFontSizeToFit
+        className="mt-1 w-full text-center font-display text-[44px] leading-[52px] text-ink"
+        numberOfLines={1}
+      >
+        {formatTokensRoughly(shareAfterBurn(circular), decimals)} {token}
+      </Text>
+      <Text className="mt-2 w-full text-center font-body text-body text-ink-soft">
+        {copy.question.paidLater(untilClose(now, closesAt(circular.day)))}
       </Text>
 
       <View className="mt-7 w-full gap-3">

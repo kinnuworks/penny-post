@@ -1,7 +1,8 @@
 import type { Address } from '@solana/kit'
+import { useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'expo-router'
-import { useEffect } from 'react'
-import { ScrollView, Text, useColorScheme, View } from 'react-native'
+import { useEffect, useState } from 'react'
+import { RefreshControl, ScrollView, Text, useColorScheme, View } from 'react-native'
 import { Envelope, ENVELOPE_TONE } from '../../components/envelope'
 import { InkButton } from '../../components/ink-button'
 import { Drop, Rise } from '../../components/motion'
@@ -21,7 +22,7 @@ import type { PostedCard } from '../post/chain'
 import { describeDelivery, deviceUtcOffsetMinutes, nextDelivery } from '../post/delivery'
 import { askToRing, setMorningBells } from '../post/morning-bell'
 import { nameOf } from '../post/test-kit'
-import { tokenName } from '../post/token-name'
+import { isStandIn, tokenName } from '../post/token-name'
 import {
   useDoormat,
   useFlushOutbox,
@@ -32,6 +33,7 @@ import {
   useSkrName,
   useTestKit,
 } from '../post/use-post'
+import { useWallet } from '../wallet/use-wallet'
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 const MONTHS = [
@@ -69,6 +71,11 @@ export function LetterboxScreen({ address }: { address: Address }) {
   useFlushOutbox()
 
   const token = office.data ? tokenName(office.data.postageMint) : ''
+  const isTest = office.data ? isStandIn(office.data.postageMint) : false
+  const { isPractice } = useWallet()
+  const palette = usePalette()
+  const queryClient = useQueryClient()
+  const [isChecking, setIsChecking] = useState(false)
   const decimals = office.data?.decimals ?? 0
   const letterbox = mine.data?.letterbox ?? null
   const seal = mine.data?.seal ?? null
@@ -102,7 +109,26 @@ export function LetterboxScreen({ address }: { address: Address }) {
 
   return (
     <View className="flex-1">
-      <ScrollView className="flex-1" contentContainerClassName="px-6 pb-10 pt-8">
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="px-6 pb-10 pt-8"
+        refreshControl={
+          <RefreshControl
+            colors={[palette.accent]}
+            onRefresh={() => {
+              setIsChecking(true)
+              void Promise.all([
+                queryClient.invalidateQueries({ queryKey: ['letterbox'] }),
+                queryClient.invalidateQueries({ queryKey: ['doormat'] }),
+                queryClient.invalidateQueries({ queryKey: ['circular'] }),
+              ]).finally(() => setIsChecking(false))
+            }}
+            progressBackgroundColor={palette.paperRaised}
+            refreshing={isChecking}
+            tintColor={palette.accent}
+          />
+        }
+      >
         <View className="flex-row items-start justify-between">
           <View className="flex-1">
             <Text className="font-script text-script text-ink">
@@ -122,16 +148,35 @@ export function LetterboxScreen({ address }: { address: Address }) {
         {streak > 0 ? (
           <Text className="mt-1 font-label text-label text-accent-ink">{copy.home.streak(streak)}</Text>
         ) : null}
-        <View className="h-6" />
+        {isTest ? (
+          <View className="mt-3 flex-row">
+            <View className="rounded-full border border-rule bg-paper-raised px-3 py-1">
+              <Text className="font-caption text-[12px] text-ink-soft">
+                {copy.letterbox.devnet}
+                {isPractice ? `  ·  ${copy.letterbox.practiceWallet.toLowerCase()}` : ''}
+              </Text>
+            </View>
+          </View>
+        ) : null}
+        <View className="h-5" />
 
-        {isLoading ? null : !office.data ? (
+        {isLoading ? (
+          <View accessibilityLabel={copy.letterbox.loading} className="gap-5" style={{ opacity: 0.42 }}>
+            <Envelope accessibilityLabel={copy.letterbox.loading}>
+              <View className="h-[62px]" />
+            </Envelope>
+            <Envelope accessibilityLabel={copy.letterbox.loading}>
+              <View className="h-[62px]" />
+            </Envelope>
+          </View>
+        ) : !office.data ? (
           <Paper className="px-6 py-6">
             <Text className="font-body text-body text-ink-soft">{copy.letterbox.closedHere}</Text>
           </Paper>
         ) : (
           <View className="gap-5">
             {/* Off mainnet there is no SKR and no Seeker, so the counter lends a visitor both. */}
-            {token !== 'SKR' && !seal && (testKit.isSuccess || !hasKit.data) ? (
+            {isTest && letterbox && !seal && (testKit.isSuccess || !hasKit.data) ? (
               <View className="rounded-card border border-dashed border-ink-faint px-5 py-5">
                 <Text className="font-title text-heading text-ink">{copy.testKit.title}</Text>
                 {testKit.isSuccess ? (
@@ -158,10 +203,21 @@ export function LetterboxScreen({ address }: { address: Address }) {
             {!letterbox ? (
               <Paper className="px-6 py-6">
                 <Text className="font-title text-heading text-ink">{copy.letterbox.noBoxTitle}</Text>
-                <Text className="mb-5 mt-2 font-body text-body text-ink-soft">{copy.letterbox.noBoxBody}</Text>
+                <Text className="mb-5 mt-2 font-body text-body text-ink-soft">
+                  {isTest ? copy.letterbox.testBody : copy.letterbox.noBoxBody}
+                </Text>
                 <InkButton
+                  arrow={!openLetterbox.isPending}
                   disabled={openLetterbox.isPending}
-                  label={openLetterbox.isPending ? copy.letterbox.puttingUp : copy.letterbox.putUp}
+                  label={
+                    openLetterbox.isPending
+                      ? isTest
+                        ? copy.letterbox.settingUp
+                        : copy.letterbox.puttingUp
+                      : isTest
+                        ? copy.letterbox.setUp
+                        : copy.letterbox.putUp
+                  }
                   onPress={() => openLetterbox.mutate()}
                 />
                 {openLetterbox.error ? (

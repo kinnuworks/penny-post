@@ -1,6 +1,6 @@
 import type { Address } from '@solana/kit'
 import { useQuery } from '@tanstack/react-query'
-import { useMobileWallet } from '@wallet-ui/react-native-kit'
+import { useWallet } from '../features/wallet/use-wallet'
 import { useState } from 'react'
 import { Image, ScrollView, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -21,7 +21,7 @@ const tray = require('../../assets/empty-archive.webp')
 // Every card the reader has opened. They live on this phone only.
 export default function Kept() {
   const insets = useSafeAreaInsets()
-  const { account } = useMobileWallet()
+  const { account } = useWallet()
   const owner = account?.address
   const kept = useQuery({
     enabled: !!owner,

@@ -68,7 +68,11 @@ export interface GenesisToken {
  */
 export async function findGenesisToken(rpc: Rpc, owner: Address, group: Address): Promise<GenesisToken | null> {
   const { value: holdings } = await rpc
-    .getTokenAccountsByOwner(owner, { programId: TOKEN_2022_PROGRAM }, { encoding: 'jsonParsed' })
+    .getTokenAccountsByOwner(
+      owner,
+      { programId: TOKEN_2022_PROGRAM },
+      { commitment: 'confirmed', encoding: 'jsonParsed' },
+    )
     .send()
 
   // A Genesis Token is a single, indivisible token. Moving one leaves an empty
@@ -79,7 +83,9 @@ export async function findGenesisToken(rpc: Rpc, owner: Address, group: Address)
     .slice(0, 25)
 
   for (const { info, tokenAccount } of candidates) {
-    const { value: mintAccount } = await rpc.getAccountInfo(info.mint, { encoding: 'base64' }).send()
+    const { value: mintAccount } = await rpc
+      .getAccountInfo(info.mint, { commitment: 'confirmed', encoding: 'base64' })
+      .send()
     if (!mintAccount || mintAccount.owner !== TOKEN_2022_PROGRAM) {
       continue
     }

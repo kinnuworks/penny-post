@@ -12,6 +12,7 @@ export const copy = {
     foot: 'One post a day. A question for everyone, and cards from people.',
     connect: 'Show me my letterbox',
     connecting: 'Finding your wallet',
+    practice: 'No wallet handy? Try it with a practice one.',
   },
 
   tabs: {
@@ -44,6 +45,8 @@ export const copy = {
     toShare: 'To share',
     youreIn: "You're in!",
     inBody: 'You share the pot with every phone that answers.',
+    shareSoFar: 'Your share so far',
+    paidLater: (when: string) => `Paid when the day closes, ${when}. It changes as more phones answer.`,
     tomorrow: 'Come back tomorrow for a new question.',
     alsoCollects: (amount: string, token: string) =>
       `Yesterday's share, about ${amount} ${token}, is collected with this answer.`,
@@ -73,6 +76,7 @@ export const copy = {
     skip: 'Skip',
     next: 'Next',
     connect: 'Connect my wallet',
+    practice: 'Open my letterbox',
     pages: [
       {
         title: 'Post comes once a day',
@@ -100,6 +104,16 @@ export const copy = {
       'Put one up and people can write to you. It takes one signature, and you set what a stranger pays to reach you.',
     putUp: 'Put up a letterbox',
     puttingUp: 'Putting it up',
+    setUp: 'Set me up',
+    settingUp: 'Setting you up',
+    testBody:
+      'Put one up and people can write to you. On devnet the counter also hands you a little SOL, 300 SKR and a Genesis Token to try things with.',
+    devnet: 'devnet',
+    practiceWallet: 'Practice wallet',
+    loading: 'Looking for your post',
+    checking: 'Checking the letterbox',
+    sendBackQuiet: 'or send it back unopened',
+    receipt: 'Receipt',
     onDoormat: 'On the doormat',
     onItsWay: 'On its way',
     from: (who: string) => `From ${who}`,

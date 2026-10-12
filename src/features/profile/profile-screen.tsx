@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { useMobileWallet } from '@wallet-ui/react-native-kit'
+import { useWallet } from '../wallet/use-wallet'
 import { useRouter } from 'expo-router'
 import { useState, type ReactNode } from 'react'
 import { Image, Pressable, ScrollView, Text, View } from 'react-native'
@@ -30,7 +30,7 @@ const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 export function ProfileScreen() {
   const router = useRouter()
   const now = useNow()
-  const { account, chain, disconnect } = useMobileWallet()
+  const { account, chain, disconnect, isPractice } = useWallet()
   const owner = account?.address
   const office = usePostOffice()
   const mine = useMyLetterbox()
@@ -151,8 +151,14 @@ export function ProfileScreen() {
               value={hasFreeStamp(seal, now) ? copy.profile.stampReady : copy.profile.stampUsed}
             />
           ) : null}
-          <Row label={copy.profile.bell} value={copy.profile.bellAt} />
-          <Row label={copy.profile.network} value={chain.replace('solana:', '')} />
+          <Row isLast label={copy.profile.bell} value={copy.profile.bellAt} />
+        </Paper>
+        <View className="h-5" />
+        <Paper>
+          <Row
+            label={copy.profile.network}
+            value={`${chain.replace('solana:', '')}${isPractice ? `, ${copy.letterbox.practiceWallet.toLowerCase()}` : ''}`}
+          />
           <Row label={copy.profile.ask} onPress={() => router.push('/ask')} />
           <Row isLast label={copy.wallet.leave} onPress={() => void leave()} />
         </Paper>

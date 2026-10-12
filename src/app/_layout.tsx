@@ -22,6 +22,7 @@ import * as SplashScreen from 'expo-splash-screen'
 import { useEffect } from 'react'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { NetworkProvider } from '../features/network/network-provider'
+import { PracticeWalletProvider } from '../features/wallet/practice'
 
 void SplashScreen.preventAutoHideAsync()
 
@@ -70,7 +71,9 @@ export default function Layout() {
           networks={networks}
           render={({ selectedNetwork }) => (
             <MobileWalletProvider cluster={selectedNetwork} identity={identity}>
-              <Stack screenOptions={{ animation: 'fade_from_bottom', headerShown: false }} />
+              <PracticeWalletProvider>
+                <Stack screenOptions={{ animation: 'fade_from_bottom', headerShown: false }} />
+              </PracticeWalletProvider>
             </MobileWalletProvider>
           )}
         />

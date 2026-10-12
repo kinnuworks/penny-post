@@ -3,16 +3,19 @@ import {
   assertIsTransactionMessageWithSingleSendingSigner,
   createTransactionMessage,
   getBase58Decoder,
+  getBase64EncodedWireTransaction,
+  getSignatureFromTransaction,
   pipe,
   setTransactionMessageFeePayerSigner,
   setTransactionMessageLifetimeUsingBlockhash,
   signAndSendTransactionMessageWithSigners,
+  signTransactionMessageWithSigners,
   signature,
   type Instruction,
   type Signature,
   type TransactionSigner,
 } from '@solana/kit'
-import { useMobileWallet } from '@wallet-ui/react-native-kit'
+import { useWallet } from '../wallet/use-wallet'
 import { waitForConfirmation } from '../../utils/wait-for-confirmation'
 import { dryRun } from './dry-run'
 
@@ -25,7 +28,7 @@ import { dryRun } from './dry-run'
  * `waitForConfirmation` has seen it land without an error.
  */
 export function useSend() {
-  const { account, client, getTransactionSigner } = useMobileWallet()
+  const { account, client, getTransactionSigner, practiceSigner } = useWallet()
 
   return async function send(build: (signer: TransactionSigner) => Promise<Instruction[]>): Promise<Signature> {
     if (!account) {
@@ -35,6 +38,28 @@ export function useSend() {
       context: { slot: minContextSlot },
       value: latestBlockhash,
     } = await client.rpc.getLatestBlockhash().send()
+
+    // The practice wallet signs here on the phone and the app sends the result itself.
+    if (practiceSigner) {
+      const instructions = await build(practiceSigner)
+      await dryRun(client.rpc, account.address, instructions)
+      const signed = await pipe(
+        createTransactionMessage({ version: 0 }),
+        (m) => setTransactionMessageFeePayerSigner(practiceSigner, m),
+        (m) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, m),
+        (m) => appendTransactionMessageInstructions(instructions, m),
+        (m) => signTransactionMessageWithSigners(m),
+      )
+      const sent = getSignatureFromTransaction(signed)
+      await client.rpc
+        .sendTransaction(getBase64EncodedWireTransaction(signed), {
+          encoding: 'base64',
+          preflightCommitment: 'confirmed',
+        })
+        .send()
+      await waitForConfirmation(client.rpc, sent)
+      return sent
+    }
 
     // The wallet's sending signer must be the only signer in the transaction,
     // so the same instance pays the fee and is handed to the instruction builders.

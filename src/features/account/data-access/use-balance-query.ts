@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
-import { useMobileWallet } from '@wallet-ui/react-native-kit'
+import { useWallet } from '../../wallet/use-wallet'
 
 // The connected wallet's balance in lamports.
 export function useBalanceQuery() {
-  const { account, chain, client } = useMobileWallet()
+  const { account, chain, client } = useWallet()
 
   return useQuery({
     enabled: !!account,

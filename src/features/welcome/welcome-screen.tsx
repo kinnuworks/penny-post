@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics'
 import { useEffect, useState } from 'react'
-import { Animated, Easing, Text, View } from 'react-native'
+import { Animated, Easing, Pressable, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg'
 import { Give, Rise } from '../../components/motion'
@@ -13,10 +13,13 @@ export function WelcomeScreen({
   error,
   isBusy,
   onConnect,
+  onPractice,
 }: {
   error: string | null
   isBusy: boolean
   onConnect: () => void
+  /** Offered on test networks only: try the app with a throwaway wallet kept on this phone. */
+  onPractice?: () => void
 }) {
   const insets = useSafeAreaInsets()
 
@@ -72,7 +75,23 @@ export function WelcomeScreen({
               </Text>
             </View>
           </Give>
-          <Text className="mt-4 w-full text-center font-caption text-caption text-[#f3e3c6]">{copy.welcome.foot}</Text>
+          {onPractice ? (
+            <Pressable
+              accessibilityRole="button"
+              className="mt-4 items-center"
+              disabled={isBusy}
+              hitSlop={12}
+              onPress={onPractice}
+            >
+              <Text className="w-full text-center font-label text-[15px] text-[#fff3dc] underline">
+                {copy.welcome.practice}
+              </Text>
+            </Pressable>
+          ) : (
+            <Text className="mt-4 w-full text-center font-caption text-caption text-[#f3e3c6]">
+              {copy.welcome.foot}
+            </Text>
+          )}
         </Rise>
       </View>
     </View>

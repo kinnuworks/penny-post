@@ -1,9 +1,10 @@
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useState } from 'react'
-import { ScrollView, Text, View } from 'react-native'
+import { Pressable, ScrollView, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { InkButton } from '../../components/ink-button'
-import { OutOfEnvelope } from '../../components/motion'
+import { OutOfEnvelope, Rise } from '../../components/motion'
+import { Paper } from '../../components/paper'
 import { ScreenHeader } from '../../components/screen-header'
 import { paperShadow } from '../../theme'
 import { copy } from '../../copy'
@@ -69,17 +70,31 @@ export default function CardScreen() {
                 />
               </View>
               <Text className="mt-4 text-center font-caption text-caption text-ink-faint">{copy.write.turnHint}</Text>
-              <Text className="mt-6 text-center font-script text-[38px] leading-[44px] text-ink">
-                {opened.paid > 0n ? copy.open.yours(formatTokens(opened.paid, decimals), token) : copy.open.freeShort}
-              </Text>
-              <Text className="mt-1 text-center font-body text-body text-ink-soft">
-                {opened.paid > 0n ? copy.open.inWallet : copy.open.free}
-              </Text>
-              {opened.signature ? (
-                <Text className="mt-3 text-center font-caption text-caption text-ink-faint" selectable>
-                  {copy.open.receipt(ellipsify(opened.signature, 6))}
-                </Text>
-              ) : null}
+              {/* What signing for it came to, on a slip torn from the counter's pad. */}
+              <Rise delay={500} style={{ alignItems: 'center', marginTop: 26 }}>
+                <Paper className="px-7 py-5" style={{ minWidth: 250 }} tilt={-2.5}>
+                  <Text className="w-full text-center font-caption text-[12px] uppercase tracking-widest text-ink-faint">
+                    {copy.letterbox.receipt}
+                  </Text>
+                  <Text
+                    adjustsFontSizeToFit
+                    className="mt-1 w-full text-center font-script text-[38px] leading-[44px] text-ink"
+                    numberOfLines={1}
+                  >
+                    {opened.paid > 0n
+                      ? copy.open.yours(formatTokens(opened.paid, decimals), token)
+                      : copy.open.freeShort}
+                  </Text>
+                  <Text className="mt-1 w-full text-center font-body text-body text-ink-soft">
+                    {opened.paid > 0n ? copy.open.inWallet : copy.open.free}
+                  </Text>
+                  {opened.signature ? (
+                    <Text className="mt-2 w-full text-center font-caption text-[12px] text-ink-faint" selectable>
+                      {copy.open.receipt(ellipsify(opened.signature, 6))}
+                    </Text>
+                  ) : null}
+                </Paper>
+              </Rise>
             </>
           ) : (
             <>
@@ -136,12 +151,17 @@ export default function CardScreen() {
                   })
                 }
               />
-              <InkButton
+              <Pressable
+                accessibilityRole="button"
+                className="items-center py-2"
                 disabled={isBusy}
-                label={returnCard.isPending ? copy.open.sendingBack : copy.open.sendBack}
+                hitSlop={8}
                 onPress={() => returnCard.mutate(card, { onSuccess: () => setWasReturned(true) })}
-                tone="plain"
-              />
+              >
+                <Text className="font-caption text-[15px] text-ink-soft underline">
+                  {returnCard.isPending ? copy.open.sendingBack : copy.letterbox.sendBackQuiet}
+                </Text>
+              </Pressable>
             </>
           ) : (
             <>

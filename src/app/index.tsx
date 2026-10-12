@@ -1,4 +1,5 @@
-import { useMobileWallet } from '@wallet-ui/react-native-kit'
+import { usePracticeWallet } from '../features/wallet/practice'
+import { useWallet } from '../features/wallet/use-wallet'
 import { StatusBar } from 'expo-status-bar'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useEffect, useState } from 'react'
@@ -13,7 +14,11 @@ const INTRO_SEEN_KEY = 'penny-post/intro-seen/v1'
 
 export default function App() {
   const insets = useSafeAreaInsets()
-  const { account, connect } = useMobileWallet()
+  const { account, chain, connect } = useWallet()
+  const practice = usePracticeWallet()
+  // Which wallet the reader chose on the welcome screen: their own, or the practice one.
+  const [wantsPractice, setWantsPractice] = useState(false)
+  const enter = () => (wantsPractice ? void run(practice.start) : void run(connect))
   const [error, setError] = useState<string | null>(null)
   const [isBusy, setIsBusy] = useState(false)
   // Assume it has been seen until storage says otherwise, so a returning reader never sees it flash.
@@ -49,23 +54,34 @@ export default function App() {
       return (
         <>
           <IntroScreen
+            isPractice={wantsPractice}
             onDone={() => {
               setHasSeenIntro(true)
               setIsShowingIntro(false)
               void AsyncStorage.setItem(INTRO_SEEN_KEY, '1').catch(() => undefined)
-              void run(connect)
+              enter()
             }}
           />
           <StatusBar style="auto" />
         </>
       )
     }
+    const begin = (withPractice: boolean) => {
+      setWantsPractice(withPractice)
+      if (hasSeenIntro) {
+        void run(withPractice ? practice.start : connect)
+      } else {
+        setIsShowingIntro(true)
+      }
+    }
     return (
       <View className="flex-1 bg-ink">
         <WelcomeScreen
           error={error}
           isBusy={isBusy}
-          onConnect={() => (hasSeenIntro ? void run(connect) : setIsShowingIntro(true))}
+          onConnect={() => begin(false)}
+          // A practice wallet is only for test networks. It is never offered where the money is real.
+          onPractice={chain === 'solana:mainnet' ? undefined : () => begin(true)}
         />
         <StatusBar style="dark" />
       </View>

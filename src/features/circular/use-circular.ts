@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
-import { useMobileWallet } from '@wallet-ui/react-native-kit'
+import { useWallet } from '../wallet/use-wallet'
 import type { Instruction } from '@solana/kit'
 import { findGenesisToken } from '../letterbox/genesis-token'
 import { PostProblem } from '../post/problem'
@@ -26,7 +26,7 @@ export interface CircularView {
 
 /** The circular for one UTC day, and this phone's answer to it. Null if nobody has asked anything. */
 export function useCircular(day: number) {
-  const { account, chain, client } = useMobileWallet()
+  const { account, chain, client } = useWallet()
   const mine = useMyLetterbox()
   const sgtMint = mine.data?.seal?.sgtMint
 
@@ -51,7 +51,7 @@ export function useCircular(day: number) {
  * signature a day does both.
  */
 export function useAnswerCircular() {
-  const { account, chain, client } = useMobileWallet()
+  const { account, chain, client } = useWallet()
   const send = useSend()
   const queryClient = useQueryClient()
   const postOffice = usePostOffice()
@@ -108,7 +108,7 @@ export function useAnswerCircular() {
 
 /** Collects this phone's share of a circular whose day has closed. */
 export function useCollectCircular() {
-  const { account, chain } = useMobileWallet()
+  const { account, chain } = useWallet()
   const send = useSend()
   const queryClient = useQueryClient()
   const postOffice = usePostOffice()
@@ -139,7 +139,7 @@ export function useCollectCircular() {
 
 /** Puts a question to every Seeker for a day. Naming `outbid` takes the day over from its sponsor. */
 export function usePostCircular() {
-  const { account, chain, client } = useMobileWallet()
+  const { account, chain, client } = useWallet()
   const send = useSend()
   const queryClient = useQueryClient()
   const postOffice = usePostOffice()
@@ -167,7 +167,7 @@ export function usePostCircular() {
 
 /** The days this phone has answered, and the run of mornings that ends today. */
 export function useAnswerLog(today: number) {
-  const { account } = useMobileWallet()
+  const { account } = useWallet()
   const owner = account?.address
   return useQuery({
     enabled: !!owner,
@@ -179,7 +179,7 @@ export function useAnswerLog(today: number) {
 
 /** Makes sure an answer the chain knows about is in the phone's log too, after a reinstall for instance. */
 export function useRememberAnswer(day: number, hasAnswered: boolean) {
-  const { account } = useMobileWallet()
+  const { account } = useWallet()
   const queryClient = useQueryClient()
   const owner = account?.address
   useEffect(() => {

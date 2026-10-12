@@ -3,7 +3,7 @@ import { findCardPda } from '@project/anchor'
 import { fetchMint } from '@solana-program/token'
 import { createSolanaRpc, fetchEncodedAccount, type Address, type Signature } from '@solana/kit'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useMobileWallet } from '@wallet-ui/react-native-kit'
+import { useWallet } from '../wallet/use-wallet'
 import { DEFAULT_PRICE_TOKENS, MAINNET_RPC_URL } from '../../config'
 import { hashCard, type CardContent } from '../card/card'
 import { isSealed, isUsableReadingKey, packCard, unpackCard } from '../card/envelope'
@@ -32,7 +32,7 @@ import {
 import { deviceUtcOffsetMinutes } from './delivery'
 import { drawPenPal, flushExchange, noteForExchange } from './exchange'
 import { askForTestKit, askForWelcomeCard } from './test-kit'
-import { tokenName } from './token-name'
+import { isStandIn } from './token-name'
 import { flushOutbox, forget, keepForUpload } from './outbox'
 import { PostProblem } from './problem'
 import { isDeclined } from '../../utils/describe-wallet-error'
@@ -53,7 +53,7 @@ function clusterOf(chain: string): Cluster {
 
 /** The post office's terms on the current network, with the postage token's decimals. */
 export function usePostOffice() {
-  const { chain, client } = useMobileWallet()
+  const { chain, client } = useWallet()
   return useQuery({
     queryKey: ['post-office', chain],
     queryFn: async () => {
@@ -70,7 +70,7 @@ export function usePostOffice() {
 
 /** The connected wallet's letterbox, and its seal if it still holds the Genesis Token. */
 export function useMyLetterbox() {
-  const { account, chain, client } = useMobileWallet()
+  const { account, chain, client } = useWallet()
   return useQuery({
     enabled: !!account,
     queryKey: ['letterbox', chain, account?.address],
@@ -90,7 +90,7 @@ export function useMyLetterbox() {
 
 /** Cards addressed to the connected wallet that are still in the post. */
 export function useDoormat() {
-  const { account, chain, client } = useMobileWallet()
+  const { account, chain, client } = useWallet()
   return useQuery({
     enabled: !!account,
     queryKey: ['doormat', chain, account?.address],
@@ -113,7 +113,7 @@ export interface Quote {
  * anything is signed. Null while the name does not resolve to anyone.
  */
 export function useQuote(to: string) {
-  const { account, chain, client } = useMobileWallet()
+  const { account, chain, client } = useWallet()
   const postOffice = usePostOffice()
   const office = postOffice.data
   const wanted = to.trim()
@@ -155,7 +155,7 @@ export function useFlushOutbox() {
 
 /** Draws a stranger to write to from the pen-pal exchange. */
 export function useDrawPenPal() {
-  const { account, chain } = useMobileWallet()
+  const { account, chain } = useWallet()
 
   return useMutation({
     mutationFn: async (): Promise<string> => {
@@ -176,7 +176,7 @@ const kitTakenKey = (owner: string) => `penny-post/kit-taken/v1/${owner}`
 
 /** Whether this wallet has already been handed a test kit, as far as this phone remembers. */
 export function useHasTestKit() {
-  const { account } = useMobileWallet()
+  const { account } = useWallet()
   const owner = account?.address
   return useQuery({
     enabled: !!owner,
@@ -187,7 +187,7 @@ export function useHasTestKit() {
 
 /** Asks the devnet counter for a test kit: a little SOL, test SKR and a test Genesis Token. */
 export function useTestKit() {
-  const { account, chain } = useMobileWallet()
+  const { account, chain } = useWallet()
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -207,8 +207,23 @@ export function useTestKit() {
   })
 }
 
+/** Waits, for a few seconds at most, until a wallet that was just handed SOL can be seen to hold it. */
+async function untilFunded(rpc: ReturnType<typeof createSolanaRpc>, owner: Address): Promise<void> {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const balance = await rpc
+      .getBalance(owner, { commitment: 'confirmed' })
+      .send()
+      .then(({ value }) => value)
+      .catch(() => 0n)
+    if (balance > 0n) {
+      return
+    }
+    await new Promise((resolve) => setTimeout(resolve, 900))
+  }
+}
+
 export function useOpenLetterbox() {
-  const { account, chain } = useMobileWallet()
+  const { account, chain, client } = useWallet()
   const send = useSend()
   const queryClient = useQueryClient()
   const postOffice = usePostOffice()
@@ -219,22 +234,41 @@ export function useOpenLetterbox() {
       if (!account || !office) {
         throw new PostProblem('office-closed')
       }
+      // On a test network the counter hands a newcomer what they need first: a
+      // little SOL, stand-in postage and a stand-in Genesis Token. A wallet that
+      // has had its kit, or a counter that is shut, is no reason to stop.
+      if (isStandIn(office.postageMint)) {
+        const outcome = await askForTestKit(account.address).catch(() => null)
+        if (outcome === 'given' || outcome === 'had') {
+          await AsyncStorage.setItem(kitTakenKey(account.address), '1').catch(() => undefined)
+        }
+        if (outcome === 'given') {
+          await untilFunded(client.rpc, account.address)
+        }
+      }
+
       const readingKey = await loadOrCreateReadingKey(account.address)
       const price = DEFAULT_PRICE_TOKENS * 10n ** BigInt(office.decimals)
-      return send((owner) =>
-        buildOpenLetterbox({
+      // A wallet that holds a Genesis Token shows it in the same signature, so
+      // a Seeker's free stamp and daily answer are ready from the first minute.
+      const genesisToken = await findGenesisToken(client.rpc, account.address, office.sgtGroup).catch(() => null)
+      return send(async (owner) => [
+        ...(await buildOpenLetterbox({
           owner,
           price: price > office.floorPrice ? price : office.floorPrice,
           readingKey: readingKey.publicKey,
           utcOffsetMinutes: deviceUtcOffsetMinutes(),
-        }),
-      )
+        })),
+        ...(genesisToken
+          ? await buildVerifyLetterbox({ owner, sgtMint: genesisToken.mint, sgtToken: genesisToken.tokenAccount })
+          : []),
+      ])
     },
     // Where the post office runs on a stand-in token, the counter posts a
     // newcomer one card, so the first doormat is not an empty one.
     onSuccess: () => {
       const office = postOffice.data
-      if (!account || !office || tokenName(office.postageMint) === 'SKR') {
+      if (!account || !office || !isStandIn(office.postageMint)) {
         return
       }
       void askForWelcomeCard(account.address)
@@ -249,7 +283,7 @@ export function useOpenLetterbox() {
 
 /** Changes what a stranger pays to reach this letterbox. Cards already posted keep their postage. */
 export function useSetPrice() {
-  const { account, chain } = useMobileWallet()
+  const { account, chain } = useWallet()
   const send = useSend()
   const queryClient = useQueryClient()
 
@@ -275,7 +309,7 @@ export function useSetPrice() {
 
 /** Finds the Seeker Genesis Token in the wallet and ties its seal to the letterbox. */
 export function useVerifyLetterbox() {
-  const { account, chain, client } = useMobileWallet()
+  const { account, chain, client } = useWallet()
   const send = useSend()
   const queryClient = useQueryClient()
   const postOffice = usePostOffice()
@@ -308,7 +342,7 @@ export interface PostedReceipt {
 }
 
 export function usePostCard() {
-  const { account, chain, client } = useMobileWallet()
+  const { account, chain, client } = useWallet()
   const send = useSend()
   const queryClient = useQueryClient()
   const postOffice = usePostOffice()
@@ -434,7 +468,7 @@ async function hasLeftThePost(rpc: Parameters<typeof fetchEncodedAccount>[0], ca
 }
 
 export function useOpenCard() {
-  const { account, chain, client } = useMobileWallet()
+  const { account, chain, client } = useWallet()
   const send = useSend()
   const queryClient = useQueryClient()
   const postOffice = usePostOffice()
@@ -516,7 +550,7 @@ export function useSkrName(wallet: Address | undefined) {
 }
 
 export function useReturnCard() {
-  const { account, chain } = useMobileWallet()
+  const { account, chain } = useWallet()
   const send = useSend()
   const queryClient = useQueryClient()
   const postOffice = usePostOffice()
