@@ -101,11 +101,11 @@ What is left before mainnet, in order: a review of the program by someone outsid
 
 A letterbox is only worth opening if something is in it. Here is how that holds before there is a crowd.
 
-- **The question needs nobody else.** It goes to every Seeker at once, so a person who knows no one on Penny Post still has post on their first morning, and is paid for answering it.
-- **One sponsor fills every letterbox.** A single pot of SKR is a day of post for everyone. Until builders are bidding for days, the project puts up the pot. At today's price 300 SKR is about five dollars a day.
-- **Write to a stranger.** Posting a card to a stranger puts you in line for the next stranger's card, one for one. Postcrossing has run this exchange with paper since 2005.
-- **A new letterbox gets a welcome card** within seconds, so the first thing a person does is open post.
-- **Scarcity protects the reader.** Three paid cards a day and a price the reader sets, so a busy letterbox earns more and is never flooded.
+- The question needs nobody else. It goes to every Seeker at once, so a person who knows no one on Penny Post still has post on their first morning, and is paid for answering it.
+- One sponsor fills every letterbox. A single pot of SKR is a day of post for everyone. Until builders are bidding for days, the project puts up the pot. At today's price 300 SKR is about five dollars a day.
+- Posting a card to a stranger puts you in line for the next stranger's card, one for one. Postcrossing has run this exchange with paper since 2005.
+- On devnet a new letterbox gets a welcome card within seconds, so the first thing a person does is open post. On mainnet that card would come from the project's own letterbox.
+- A letterbox takes three paid cards a day at a price the reader sets, so a busy one earns more and is never flooded.
 
 There are no users yet, so none of this is proven. What we will count when there are, all of it readable from the chain with no analytics in the app:
 
