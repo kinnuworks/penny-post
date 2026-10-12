@@ -45,11 +45,11 @@ export const copy = {
     answering: 'Sending your answer',
     youSaid: (answer: string) => `You said ${answer}.`,
     tally: (answer: string, count: number) => `${answer} ${count}`,
-    shareNow: (amount: string, token: string) => `At this count your share is ${amount} ${token}.`,
+    shareNow: (amount: string, token: string) => `At this count your share is about ${amount} ${token}.`,
     paidWhen: (when: string) => `It is paid when the day closes, ${when}.`,
     seekersOnly: 'Only a Seeker can answer. One phone, one answer.',
     waiting: (amount: string, token: string) =>
-      `Yesterday's question has closed. ${amount} ${token} is waiting for you.`,
+      `Yesterday's question has closed. About ${amount} ${token} is waiting for you.`,
     collect: 'Collect it',
     collecting: 'Collecting',
     none: 'No question today.',

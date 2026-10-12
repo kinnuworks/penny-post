@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatTokens, groupThousands, parseTokens } from './format-tokens'
+import { formatTokens, formatTokensRoughly, groupThousands, parseTokens } from './format-tokens'
 
 describe('formatTokens', () => {
   it('drops trailing zeros', () => {
@@ -55,5 +55,18 @@ describe('groupThousands', () => {
     expect(groupThousands(999)).toBe('999')
     expect(groupThousands(1_000)).toBe('1,000')
     expect(groupThousands(123_456_789n)).toBe('123,456,789')
+  })
+})
+
+describe('formatTokensRoughly', () => {
+  it('cuts to two decimal places and rounds down', () => {
+    expect(formatTokensRoughly(25_714_286n, 6)).toBe('25.71')
+    expect(formatTokensRoughly(30_000_000n, 6)).toBe('30')
+    expect(formatTokensRoughly(999_999n, 6)).toBe('0.99')
+  })
+
+  it('leaves a token with few decimals alone', () => {
+    expect(formatTokensRoughly(42n, 0)).toBe('42')
+    expect(formatTokensRoughly(125n, 1)).toBe('12.5')
   })
 })

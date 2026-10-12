@@ -3,7 +3,7 @@ import { Pressable, Text, View } from 'react-native'
 import { copy } from '../../copy'
 import { describeProblem } from '../../utils/describe-problem'
 import { ellipsify } from '../../utils/ellipsify'
-import { formatTokens } from '../../utils/format-tokens'
+import { formatTokens, formatTokensRoughly } from '../../utils/format-tokens'
 import { useNow } from '../../utils/use-now'
 import { tokenName } from '../post/token-name'
 import { useMyLetterbox, usePostOffice, useSkrName } from '../post/use-post'
@@ -39,7 +39,7 @@ export function CircularCard() {
       {waiting ? (
         <View className="rounded-card border border-rule bg-paper-raised px-5 py-4">
           <Text className="font-body text-body text-ink">
-            {copy.circular.waiting(formatTokens(shareAfterBurn(waiting), decimals), token)}
+            {copy.circular.waiting(formatTokensRoughly(shareAfterBurn(waiting), decimals), token)}
           </Text>
           <Pressable
             accessibilityRole="button"
@@ -151,7 +151,7 @@ function Question({
       {hasAnswered ? (
         <Text className="mt-2 font-body text-body text-ink">
           {copy.circular.youSaid(circular.options[myChoice] ?? '')}{' '}
-          {copy.circular.shareNow(formatTokens(shareAfterBurn(circular), decimals), token)}{' '}
+          {copy.circular.shareNow(formatTokensRoughly(shareAfterBurn(circular), decimals), token)}{' '}
           {copy.circular.paidWhen(untilClose(now, closesAt(circular.day)))}
         </Text>
       ) : null}

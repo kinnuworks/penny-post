@@ -1,0 +1,96 @@
+1
+00:00:00,000 --> 00:00:06,000
+Every Seeker came with an address, a dot S-K-R name. Nobody writes to it. This is Penny Post, a letterbox for your wallet. The post comes once a day.
+
+2
+00:00:06,000 --> 00:00:07,587
+Every morning there is one card for everyone.
+
+3
+00:00:07,587 --> 00:00:11,500
+Today somebody asked every Seeker a question, tea or coffee, and put up 300 SKR for whoever answers. I tap tea.
+
+4
+00:00:11,500 --> 00:00:14,676
+Mobile Wallet Adapter opens the wallet, I approve, and I am counted.
+
+5
+00:00:14,676 --> 00:00:20,000
+This recording uses Solana Mobile's reference test wallet on an Android emulator, against a local fork of mainnet.
+
+6
+00:00:20,000 --> 00:00:27,886
+One phone gets one answer. The program checks my Seeker Genesis Token on-chain, so ten wallets on one phone still get one answer.
+
+7
+00:00:27,886 --> 00:00:34,000
+When the day closes, every phone that answered gets an equal share. Mine is 30 SKR, for ten seconds.
+
+8
+00:00:34,000 --> 00:00:46,153
+The next morning, yesterday's share is waiting and there is a new question. I tap an answer and approve once.
+
+9
+00:00:46,153 --> 00:01:00,314
+That one signature collects yesterday's 30 SKR and answers today's question. A card has also arrived in the eight o'clock post.
+
+10
+00:01:00,314 --> 00:01:06,000
+For this scene the clocks were moved forward a day.
+
+11
+00:01:06,000 --> 00:01:12,183
+The rest of the post is from people. A stranger has paid my price, 10 SKR, to reach me. The card is face down.
+
+12
+00:01:12,183 --> 00:01:15,500
+I can see who sent it and what is inside, and nothing else.
+
+13
+00:01:15,500 --> 00:01:23,000
+I tap sign for it and approve. The postage was waiting in escrow. If I had ignored the card, their SKR would have gone back to them after a week.
+
+14
+00:01:23,000 --> 00:01:29,008
+The card turns over. 9 SKR is mine and a tenth was burned. It was sealed to a key that never leaves this phone.
+
+15
+00:01:29,008 --> 00:01:33,500
+A letterbox takes three paid cards a day at a price I set, so it cannot be flooded.
+
+16
+00:01:33,500 --> 00:01:53,500
+Writing one. I address it to a dot S-K-R name or a wallet. I can put a photo on the front, and the back I write by hand.
+
+17
+00:01:53,500 --> 00:02:05,871
+Before I sign, the app tells me what it costs and when it arrives: 12 SKR, which is this reader's price, at eight tomorrow morning in their time zone.
+
+18
+00:02:05,871 --> 00:02:09,500
+Seeker owners also get one free stamp a day.
+
+19
+00:02:09,500 --> 00:02:14,786
+One approval and it is in the box, sealed so only their phone can read it.
+
+20
+00:02:14,786 --> 00:02:21,500
+Every transaction is dry-run first, so a card the program would refuse never opens the wallet.
+
+21
+00:02:21,500 --> 00:02:25,904
+For builders, this is a way to reach Seeker owners without an airdrop.
+
+22
+00:02:25,904 --> 00:02:31,000
+Put up SKR, ask every Seeker one question, and it goes to the phones that answer.
+
+23
+00:02:31,000 --> 00:02:35,961
+The program has 31 unit tests and 54 end-to-end tests, run against real SKR and real Seeker Genesis Tokens on a fork of mainnet.
+
+24
+00:02:35,961 --> 00:02:41,000
+We found six faults in our own review, fixed them and wrote them up. No server holds a key. Penny Post. The post comes once a day.
+

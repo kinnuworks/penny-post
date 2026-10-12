@@ -7,6 +7,16 @@ export function formatTokens(amount: bigint, decimals: number): string {
 }
 
 /**
+ * The same, cut down to a couple of decimal places for a sentence where the
+ * exact figure would only get in the way: 25714286 with six decimals reads "25.71".
+ * Rounded down, so it never promises more than there is.
+ */
+export function formatTokensRoughly(amount: bigint, decimals: number, places = 2): string {
+  const step = 10n ** BigInt(Math.max(decimals - places, 0))
+  return formatTokens((amount / step) * step, decimals)
+}
+
+/**
  * 1234567 becomes "1,234,567". Done by hand because the phone's JavaScript
  * engine prints a bigint without separators whatever locale it is given.
  */
