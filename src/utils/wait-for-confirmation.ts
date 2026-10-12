@@ -4,12 +4,18 @@ type SolanaRpc = ReturnType<typeof createSolanaRpc>
 
 // Polls until the cluster confirms the transaction, for flows where someone
 // else (the wallet, the faucet) submitted it.
-export async function waitForConfirmation(rpc: SolanaRpc, transactionSignature: Signature, timeoutMs = 30_000) {
+//
+// A poll that fails to get an answer is not an answer. A public RPC drops and
+// rate-limits requests, and the transaction lands all the same, so a failed
+// poll is tried again until the time runs out.
+export async function waitForConfirmation(rpc: SolanaRpc, transactionSignature: Signature, timeoutMs = 60_000) {
   const startedAt = Date.now()
   while (Date.now() - startedAt < timeoutMs) {
-    const {
-      value: [status],
-    } = await rpc.getSignatureStatuses([transactionSignature]).send()
+    const status = await rpc
+      .getSignatureStatuses([transactionSignature])
+      .send()
+      .then(({ value }) => value[0])
+      .catch(() => null)
     if (status?.err) {
       throw new Error(`Transaction ${transactionSignature} failed: ${JSON.stringify(status.err)}`)
     }

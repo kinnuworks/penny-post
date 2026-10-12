@@ -1,6 +1,6 @@
 import { findCardPda } from '@project/anchor'
 import { fetchMint } from '@solana-program/token'
-import { createSolanaRpc, type Address, type Signature } from '@solana/kit'
+import { createSolanaRpc, fetchEncodedAccount, type Address, type Signature } from '@solana/kit'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMobileWallet } from '@wallet-ui/react-native-kit'
 import { DEFAULT_PRICE_TOKENS, MAINNET_RPC_URL } from '../../config'
@@ -371,14 +371,27 @@ export function usePostCard() {
   })
 }
 
+/** True once a card's account is gone, which only opening or returning it does. */
+async function hasLeftThePost(rpc: Parameters<typeof fetchEncodedAccount>[0], card: Address): Promise<boolean> {
+  for (const pauseMs of [0, 1_500, 3_000]) {
+    await new Promise((resolve) => setTimeout(resolve, pauseMs))
+    try {
+      return !(await fetchEncodedAccount(rpc, card)).exists
+    } catch {
+      // The cluster did not answer. Ask again.
+    }
+  }
+  return false
+}
+
 export function useOpenCard() {
-  const { account, chain } = useMobileWallet()
+  const { account, chain, client } = useMobileWallet()
   const send = useSend()
   const queryClient = useQueryClient()
   const postOffice = usePostOffice()
 
   return useMutation({
-    mutationFn: async (card: PostedCard): Promise<{ content: CardContent; paid: bigint; signature: Signature }> => {
+    mutationFn: async (card: PostedCard): Promise<{ content: CardContent; paid: bigint; signature: Signature | null }> => {
       const office = postOffice.data
       if (!account || !office) {
         throw new PostProblem('office-closed')
@@ -401,7 +414,17 @@ export function useOpenCard() {
       // name is only kept if it really does point at the wallet that posted it.
       content = { ...content, fromName: await confirmedName(content.fromName, card.sender) }
 
-      const signedFor = await send((recipient) => buildOpenCard({ card, postageMint: office.postageMint, recipient }))
+      let signedFor: Signature | null = null
+      try {
+        signedFor = await send((recipient) => buildOpenCard({ card, postageMint: office.postageMint, recipient }))
+      } catch (error) {
+        // Losing track of a transaction is not the same as it failing. If the
+        // card has left the post, it was signed for and paid, and the reader
+        // keeps what they paid attention for.
+        if (!(await hasLeftThePost(client.rpc, card.address))) {
+          throw error
+        }
+      }
 
       // The card carries the burn share it was posted under.
       const burned = (card.postage * BigInt(card.burnBps)) / 10_000n

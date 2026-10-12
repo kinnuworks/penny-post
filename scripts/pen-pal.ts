@@ -9,8 +9,8 @@
  *       Posts a card from the pen pal to a wallet, paying that reader's price,
  *       and files its contents with the card store.
  *
- *   pnpm pen-pal ask --cluster <net> [--question "..."] [--options "Tea,Coffee"] [--pot 300] [--tomorrow]
- *       The pen pal puts a question to every Seeker.
+ *   pnpm pen-pal ask --cluster <net> [--question "..."] [--options "Tea,Coffee"] [--pot 300] [--tomorrow | --in 3]
+ *       The pen pal puts a question to every Seeker, for today or for a day to come.
  *
  *   pnpm pen-pal crowd --cluster <net> [--count 8]
  *       That many other phones, each holding a Genesis Token, answer today's question.
@@ -267,7 +267,7 @@ async function main() {
     await send(
       wallet,
       await buildPostCircular({
-        day: utcDay(await chainTime()) + (process.argv.includes('--tomorrow') ? 1 : 0),
+        day: utcDay(await chainTime()) + (process.argv.includes('--tomorrow') ? 1 : Number(option('in') ?? '0')),
         options: (option('options') ?? 'Tea,Coffee').split(',').map((text) => text.trim()),
         postageMint: postOffice.postageMint,
         pot: pot ? BigInt(pot) * 1_000_000n : smallestPot(postOffice),

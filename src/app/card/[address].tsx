@@ -25,7 +25,7 @@ export default function CardScreen() {
   const openCard = useOpenCard()
   const returnCard = useReturnCard()
 
-  const [opened, setOpened] = useState<{ content: CardContent; paid: bigint; signature: string } | null>(null)
+  const [opened, setOpened] = useState<{ content: CardContent; paid: bigint; signature: string | null } | null>(null)
   const [side, setSide] = useState<'front' | 'back'>('back')
   const [wasReturned, setWasReturned] = useState(false)
 
@@ -68,9 +68,11 @@ export default function CardScreen() {
               <Text className="mt-6 font-body text-body text-ink">
                 {opened.paid > 0n ? copy.open.paid(formatTokens(opened.paid, decimals), token) : copy.open.free}
               </Text>
-              <Text className="mt-2 font-caption text-caption text-ink-faint" selectable>
-                {copy.open.receipt(ellipsify(opened.signature, 6))}
-              </Text>
+              {opened.signature ? (
+                <Text className="mt-2 font-caption text-caption text-ink-faint" selectable>
+                  {copy.open.receipt(ellipsify(opened.signature, 6))}
+                </Text>
+              ) : null}
             </>
           ) : (
             <>
