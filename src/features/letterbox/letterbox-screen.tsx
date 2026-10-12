@@ -1,17 +1,23 @@
+import type { Address } from '@solana/kit'
 import { useRouter } from 'expo-router'
-import { useEffect, useState } from 'react'
-import { Pressable, ScrollView, Text, View } from 'react-native'
+import { useEffect } from 'react'
+import { ScrollView, Text, View } from 'react-native'
+import { Envelope } from '../../components/envelope'
 import { InkButton } from '../../components/ink-button'
+import { Paper } from '../../components/paper'
 import { StampArt } from '../../components/stamp-art'
+import { SunDoodle, SunStamp } from '../../components/sun'
+import { TabBar } from '../../components/tab-bar'
 import { copy } from '../../copy'
 import { usePalette } from '../../theme'
 import { describeProblem } from '../../utils/describe-problem'
 import { ellipsify } from '../../utils/ellipsify'
-import { formatTokens, groupThousands } from '../../utils/format-tokens'
+import { formatTokens, formatTokensRoughly } from '../../utils/format-tokens'
 import { useNow } from '../../utils/use-now'
 import { stampById } from '../card/stamps'
-import { CircularCard } from '../circular/circular-card'
-import { hasFreeStamp, type PostedCard } from '../post/chain'
+import { shareAfterBurn, utcDay } from '../circular/circular-chain'
+import { useCircular, useCollectCircular } from '../circular/use-circular'
+import type { PostedCard } from '../post/chain'
 import { describeDelivery, deviceUtcOffsetMinutes, nextDelivery } from '../post/delivery'
 import { askToRing, setMorningBells } from '../post/morning-bell'
 import { tokenName } from '../post/token-name'
@@ -23,31 +29,20 @@ import {
   usePostOffice,
   useSkrName,
   useTestKit,
-  useVerifyLetterbox,
 } from '../post/use-post'
-import { PriceDesk } from './price-desk'
 
-// The doormat: what has arrived, what is on its way, and the counter where the
-// next card gets written.
-export function LetterboxScreen({
-  address,
-  isBusy,
-  onLeave,
-}: {
-  address: string
-  isBusy: boolean
-  onLeave: () => void
-}) {
+// The doormat: the day's question in its envelope, then whatever people sent.
+export function LetterboxScreen({ address }: { address: Address }) {
   const router = useRouter()
   const now = useNow()
   const office = usePostOffice()
   const mine = useMyLetterbox()
   const doormat = useDoormat()
   const openLetterbox = useOpenLetterbox()
-  const verify = useVerifyLetterbox()
   const testKit = useTestKit()
+  const myName = useSkrName(address)
+  const palette = usePalette()
   useFlushOutbox()
-  const [isPricing, setIsPricing] = useState(false)
 
   const token = office.data ? tokenName(office.data.postageMint) : ''
   const decimals = office.data?.decimals ?? 0
@@ -55,6 +50,9 @@ export function LetterboxScreen({
   const seal = mine.data?.seal ?? null
   const cards = doormat.data ?? []
   const offset = deviceUtcOffsetMinutes()
+  const today = utcDay(now)
+  const question = useCircular(today)
+  const arrived = cards.filter((card) => Number(card.deliverAt) <= now).length
 
   // Once there is a letterbox, ask whether the morning bell may ring, and keep
   // the coming week's bells in step with what is known to be in the post.
@@ -73,136 +71,177 @@ export function LetterboxScreen({
       .catch(() => undefined)
   }, [hasLetterbox, arrivals])
 
+  const isLoading = office.isLoading || mine.isLoading
+
   return (
-    <ScrollView className="flex-1" contentContainerClassName="flex-grow justify-between px-6 pb-8 pt-10">
-      <View>
-        <Text className="font-caption text-caption uppercase tracking-widest text-ink-faint">
-          {copy.wallet.address(ellipsify(address))}
-          {seal ? `  ·  ${copy.letterbox.seeker(groupThousands(seal.memberNumber))}` : ''}
-        </Text>
-        <Text className="mb-1 mt-1 font-title text-title text-ink">{copy.letterbox.heading}</Text>
-        {letterbox && office.data && isPricing ? (
-          <PriceDesk
-            burnBps={office.data.burnBps}
-            current={letterbox.price}
-            decimals={decimals}
-            floor={office.data.floorPrice}
-            onDone={() => setIsPricing(false)}
-            token={token}
-          />
-        ) : letterbox && office.data ? (
-          <View className="mb-5 flex-row flex-wrap items-baseline gap-x-2">
-            <Text className="font-body text-body text-ink-soft">
-              {copy.letterbox.price(formatTokens(letterbox.price, decimals), token)}
+    <View className="flex-1">
+      <ScrollView className="flex-1" contentContainerClassName="px-6 pb-10 pt-8">
+        <View className="flex-row items-start justify-between">
+          <View className="flex-1">
+            <Text className="font-script text-script text-ink">
+              {copy.home.greeting(new Date(now * 1000).getHours())}
             </Text>
-            <TextLink label={copy.price.change} onPress={() => setIsPricing(true)} />
+            <Text className="font-display text-display text-ink" numberOfLines={1}>
+              {myName.data ?? ellipsify(address)}
+            </Text>
           </View>
+          <View className="pt-1">
+            <SunDoodle size={68} />
+          </View>
+        </View>
+        <Text className="mb-6 mt-2 font-body text-body text-ink-soft">
+          {arrived > 0 ? copy.home.arrived : question.data ? copy.home.questionOnly : copy.home.nothing}
+        </Text>
+
+        {isLoading ? null : !office.data ? (
+          <Paper className="px-6 py-6">
+            <Text className="font-body text-body text-ink-soft">{copy.letterbox.closedHere}</Text>
+          </Paper>
         ) : (
-          <View className="mb-5" />
-        )}
+          <View className="gap-5">
+            {/* Off mainnet there is no SKR and no Seeker, so the counter lends a visitor both. */}
+            {token !== 'SKR' && !seal ? (
+              <View className="rounded-card border border-dashed border-ink-faint px-5 py-5">
+                <Text className="font-title text-heading text-ink">{copy.testKit.title}</Text>
+                {testKit.isSuccess ? (
+                  <Text className="mt-2 font-body text-body text-ink-soft">
+                    {copy.testKit.given} {letterbox ? copy.testKit.nextSeeker : copy.testKit.nextLetterbox}
+                  </Text>
+                ) : (
+                  <>
+                    <Text className="mb-4 mt-2 font-body text-body text-ink-soft">{copy.testKit.body}</Text>
+                    <InkButton
+                      disabled={testKit.isPending}
+                      label={testKit.isPending ? copy.testKit.asking : copy.testKit.ask}
+                      onPress={() => testKit.mutate()}
+                      tone="plain"
+                    />
+                    {testKit.error ? (
+                      <Text className="mt-3 font-body text-body text-accent-ink">{describeProblem(testKit.error)}</Text>
+                    ) : null}
+                  </>
+                )}
+              </View>
+            ) : null}
 
-        {/* The day's question for every Seeker sits above the post addressed to this one. */}
-        {letterbox ? <CircularCard /> : null}
-
-        {/* Off mainnet there is no SKR and no Seeker, so the counter lends a visitor both. */}
-        {office.data && token !== 'SKR' && !mine.isLoading && !seal ? (
-          <View className="mb-4 rounded-card border border-dashed border-ink-faint px-5 py-5">
-            <Text className="font-title text-heading text-ink">{copy.testKit.title}</Text>
-            {testKit.isSuccess ? (
-              <Text className="mt-2 font-body text-body text-ink-soft">
-                {copy.testKit.given} {letterbox ? copy.testKit.nextSeeker : copy.testKit.nextLetterbox}
-              </Text>
+            {!letterbox ? (
+              <Paper className="px-6 py-6">
+                <Text className="font-title text-heading text-ink">{copy.letterbox.noBoxTitle}</Text>
+                <Text className="mb-5 mt-2 font-body text-body text-ink-soft">{copy.letterbox.noBoxBody}</Text>
+                <InkButton
+                  disabled={openLetterbox.isPending}
+                  label={openLetterbox.isPending ? copy.letterbox.puttingUp : copy.letterbox.putUp}
+                  onPress={() => openLetterbox.mutate()}
+                />
+                {openLetterbox.error ? (
+                  <Text className="mt-3 font-body text-body text-accent-ink">
+                    {describeProblem(openLetterbox.error)}
+                  </Text>
+                ) : null}
+              </Paper>
             ) : (
               <>
-                <Text className="mb-4 mt-2 font-body text-body text-ink-soft">{copy.testKit.body}</Text>
-                <InkButton
-                  disabled={testKit.isPending}
-                  label={testKit.isPending ? copy.testKit.asking : copy.testKit.ask}
-                  onPress={() => testKit.mutate()}
-                  tone="plain"
-                />
-                {testKit.error ? (
-                  <Text className="mt-3 font-body text-body text-accent-ink">{describeProblem(testKit.error)}</Text>
+                <Yesterday decimals={decimals} token={token} today={today} />
+
+                {question.data ? (
+                  <Envelope
+                    accessibilityLabel={`${copy.home.question}. ${formatTokens(question.data.circular.pot, decimals)} ${token} ${copy.home.toShare}.`}
+                    edge
+                    onPress={() => router.push('/question')}
+                    stamp={<SunStamp backing={palette.paperRaised} size={66} />}
+                  >
+                    <Text className="font-title text-heading text-ink">{copy.home.question}</Text>
+                    <Text className="mt-2 font-caption text-caption text-ink-soft">{copy.home.toShare}</Text>
+                    <Text className="font-display text-title text-ink">
+                      {formatTokens(question.data.circular.pot, decimals)} {token}
+                    </Text>
+                    <Text className="mt-1 font-caption text-caption text-ink-soft">
+                      {question.data.myChoice !== null
+                        ? copy.home.answered(
+                            formatTokensRoughly(shareAfterBurn(question.data.circular), decimals),
+                            token,
+                          )
+                        : copy.home.notAnswered}
+                    </Text>
+                  </Envelope>
+                ) : question.isLoading ? null : (
+                  <Paper className="px-6 py-5">
+                    <Text className="font-body text-body text-ink-soft">{copy.circular.none}</Text>
+                    <View className="mt-3">
+                      <InkButton label={copy.circular.ask} onPress={() => router.push('/ask')} tone="plain" />
+                    </View>
+                  </Paper>
+                )}
+
+                {cards.map((card, index) => (
+                  <CardEnvelope
+                    card={card}
+                    decimals={decimals}
+                    key={card.address}
+                    now={now}
+                    offset={offset}
+                    onOpen={() => router.push(`/card/${card.address}`)}
+                    tilt={index % 2 === 0 ? -0.6 : 0.6}
+                    token={token}
+                  />
+                ))}
+
+                {cards.length === 0 ? (
+                  <View className="items-center pt-2">
+                    <Paper className="px-6 py-4" tilt={-2}>
+                      <Text className="text-center font-hand text-hand text-ink">{copy.home.noCards}</Text>
+                      <Text className="mt-1 text-center font-caption text-caption text-ink-faint">
+                        {copy.letterbox.nextPost(describeDelivery(nextDelivery(now, offset), now, offset))}
+                      </Text>
+                    </Paper>
+                  </View>
                 ) : null}
               </>
             )}
           </View>
-        ) : null}
-
-        {office.isLoading || mine.isLoading ? null : !office.data ? (
-          <Notice>{copy.letterbox.closedHere}</Notice>
-        ) : !letterbox ? (
-          <View className="rounded-card border border-rule bg-paper-raised px-5 py-6">
-            <Text className="font-title text-heading text-ink">{copy.letterbox.noBoxTitle}</Text>
-            <Text className="mb-5 mt-2 font-body text-body text-ink-soft">{copy.letterbox.noBoxBody}</Text>
-            <InkButton
-              disabled={openLetterbox.isPending}
-              label={openLetterbox.isPending ? copy.letterbox.puttingUp : copy.letterbox.putUp}
-              onPress={() => openLetterbox.mutate()}
-            />
-            {openLetterbox.error ? (
-              <Text className="mt-3 font-body text-body text-accent-ink">{describeProblem(openLetterbox.error)}</Text>
-            ) : null}
-          </View>
-        ) : cards.length === 0 ? (
-          <View className="rounded-card border border-rule bg-paper-raised px-5 py-8">
-            <Text className="font-hand text-hand text-ink">{copy.letterbox.empty}</Text>
-            <Text className="mt-3 font-body text-body text-ink-soft">{copy.letterbox.emptyHint}</Text>
-            <View className="my-5 h-px bg-rule" />
-            <Text className="font-caption text-caption text-ink-faint">
-              {copy.letterbox.nextPost(describeDelivery(nextDelivery(now, offset), now, offset))}
-            </Text>
-          </View>
-        ) : (
-          <View className="gap-3">
-            {cards.map((card) => (
-              <CardRow
-                card={card}
-                decimals={decimals}
-                key={card.address}
-                now={now}
-                offset={offset}
-                onOpen={() => router.push(`/card/${card.address}`)}
-                token={token}
-              />
-            ))}
-          </View>
         )}
-      </View>
-
-      <View className="mt-8 gap-3">
-        {seal ? (
-          <Text className="font-body text-body text-ink-soft">
-            {hasFreeStamp(seal, now) ? copy.counter.stampReady : copy.counter.stampUsed}
-          </Text>
-        ) : letterbox ? (
-          <>
-            <TextLink
-              label={verify.isPending ? copy.letterbox.claimingStamp : copy.letterbox.claimStamp}
-              onPress={() => (verify.isPending ? undefined : verify.mutate())}
-            />
-            {verify.error ? (
-              <Text className="font-body text-body text-accent-ink">{describeProblem(verify.error)}</Text>
-            ) : null}
-          </>
-        ) : null}
-        <InkButton disabled={isBusy || !office.data} label={copy.counter.write} onPress={() => router.push('/write')} />
-        <View className="flex-row justify-between pt-1">
-          <TextLink label={copy.letterbox.kept} onPress={() => router.push('/kept')} />
-          <TextLink label={copy.wallet.leave} onPress={onLeave} />
-        </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+      <TabBar current="home" />
+    </View>
   )
 }
 
-// A card lying face down: who it is from, what is inside, and its stamp.
-function CardRow({
+// A share from a question that has closed, waiting to be collected.
+function Yesterday({ decimals, token, today }: { decimals: number; token: string; today: number }) {
+  const previous = useCircular(today - 1)
+  const collect = useCollectCircular()
+  // An answer that still exists for a closed day is a share nobody has collected.
+  const waiting = previous.data && previous.data.myChoice !== null ? previous.data.circular : null
+  if (!waiting) {
+    return null
+  }
+  return (
+    <Paper className="px-6 py-5">
+      <Text className="font-body text-body text-ink">
+        {copy.circular.waiting(formatTokensRoughly(shareAfterBurn(waiting), decimals), token)}
+      </Text>
+      <View className="mt-4">
+        <InkButton
+          disabled={collect.isPending}
+          label={collect.isPending ? copy.circular.collecting : copy.circular.collect}
+          onPress={() => collect.mutate(waiting)}
+        />
+      </View>
+      {collect.error ? (
+        <Text className="mt-3 font-body text-body text-accent-ink">{describeProblem(collect.error)}</Text>
+      ) : null}
+    </Paper>
+  )
+}
+
+// A card still in its envelope: who it is from, what is inside, and its stamp.
+function CardEnvelope({
   card,
   decimals,
   now,
   offset,
   onOpen,
+  tilt,
   token,
 }: {
   card: PostedCard
@@ -210,52 +249,32 @@ function CardRow({
   now: number
   offset: number
   onOpen: () => void
+  tilt: number
   token: string
 }) {
   const palette = usePalette()
   const name = useSkrName(card.sender)
   const from = copy.letterbox.from(name.data ?? ellipsify(card.sender))
   const stamp = stampById(card.stamp)
-  const arrived = Number(card.deliverAt) <= now
+  const hasArrived = Number(card.deliverAt) <= now
   const inside =
     card.postage > 0n
       ? copy.letterbox.paidInside(formatTokens(card.postage, decimals), token)
       : copy.letterbox.freeStamp
-  const status = arrived
-    ? copy.letterbox.onDoormat
-    : copy.letterbox.arrives(describeDelivery(Number(card.deliverAt), now, offset))
+  const status = hasArrived ? inside : copy.letterbox.arrives(describeDelivery(Number(card.deliverAt), now, offset))
 
   return (
-    <Pressable
-      accessibilityHint={arrived ? 'Opens the card' : undefined}
-      accessibilityLabel={`${from}. ${inside}. ${status}.`}
-      accessibilityRole="button"
-      className={`flex-row items-center justify-between rounded-card border border-rule bg-paper-raised px-4 py-3 ${arrived ? 'active:bg-paper-sunk' : 'opacity-60'}`}
-      disabled={!arrived}
-      onPress={onOpen}
-    >
-      <View className="flex-1 pr-3">
-        <Text className="font-caption text-caption uppercase tracking-widest text-ink-faint">{status}</Text>
-        <Text className="font-hand text-hand text-ink">{from}</Text>
-        <Text className="font-body text-body text-ink-soft">{inside}</Text>
-      </View>
-      <StampArt art={stamp.art} backing={palette.paperRaised} label={stamp.name} size={0.62} />
-    </Pressable>
-  )
-}
-
-function Notice({ children }: { children: string }) {
-  return (
-    <View className="rounded-card border border-rule bg-paper-raised px-5 py-6">
-      <Text className="font-body text-body text-ink-soft">{children}</Text>
+    <View style={{ opacity: hasArrived ? 1 : 0.6 }}>
+      <Envelope
+        accessibilityLabel={`${copy.home.postcard}. ${from}. ${status}.`}
+        onPress={hasArrived ? onOpen : undefined}
+        stamp={<StampArt art={stamp.art} backing={palette.paperRaised} label={stamp.name} size={0.78} />}
+        tilt={tilt}
+      >
+        <Text className="font-title text-heading text-ink">{copy.home.postcard}</Text>
+        <Text className="mt-1 font-hand text-hand text-ink">{from}</Text>
+        <Text className="font-caption text-caption text-ink-soft">{status}</Text>
+      </Envelope>
     </View>
-  )
-}
-
-function TextLink({ label, onPress }: { label: string; onPress: () => void }) {
-  return (
-    <Pressable accessibilityRole="button" hitSlop={10} onPress={onPress}>
-      <Text className="font-label text-label text-ink-soft underline">{label}</Text>
-    </Pressable>
   )
 }

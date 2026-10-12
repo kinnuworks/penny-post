@@ -38,7 +38,7 @@ export function PriceDesk({
   const kept = wanted !== null && !complaint ? wanted - (wanted * BigInt(burnBps)) / 10_000n : null
 
   return (
-    <View className="mb-5 rounded-card border border-rule bg-paper-raised px-5 py-5">
+    <View>
       <Text className="font-title text-heading text-ink">{copy.price.title}</Text>
       <View className="mt-3 flex-row items-center gap-3">
         <TextInput

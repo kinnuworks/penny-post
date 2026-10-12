@@ -2,70 +2,75 @@
 @import 'uniwind';
 
 /*
- * The counter of a small post office: card stock, a rubber cancel stamp, a
- * brass letter slot. One accent, pillar-box vermilion. Dark mode is the same
- * room after closing with one lamp on, so it stays brown and never goes grey.
+ * Morning post on a kitchen table: cream paper, tan envelopes, ink that is
+ * nearly black, and one warm accent the colour of the sun on a stamp. Dark
+ * mode is the same table by lamplight, so it stays brown and never goes grey.
  */
 
 @theme {
   /* Each weight is its own font file on Android, so each gets its own name. */
-  --font-display: 'Besley_700Bold';
-  --font-title: 'Besley_600SemiBold';
-  --font-postmark: 'Besley_700Bold';
-  --font-body: 'Mukta_400Regular';
-  --font-caption: 'Mukta_500Medium';
-  --font-label: 'Mukta_600SemiBold';
-  --font-hand: 'Kalam_400Regular';
+  --font-display: 'Lora_700Bold';
+  --font-title: 'Lora_600SemiBold';
+  --font-postmark: 'Lora_700Bold';
+  --font-body: 'Lora_400Regular';
+  --font-caption: 'Lora_500Medium';
+  --font-label: 'Lora_600SemiBold';
+  --font-hand: 'Caveat_500Medium';
+  --font-script: 'Caveat_700Bold';
 
   /* size / line height */
-  --text-display: 40px;
+  --text-script: 46px;
+  --text-script--line-height: 50px;
+  --text-display: 38px;
   --text-display--line-height: 44px;
   --text-title: 28px;
-  --text-title--line-height: 32px;
+  --text-title--line-height: 34px;
   --text-heading: 22px;
   --text-heading--line-height: 28px;
-  --text-body: 17px;
-  --text-body--line-height: 26px;
+  --text-body: 16px;
+  --text-body--line-height: 24px;
   --text-label: 15px;
   --text-label--line-height: 20px;
   --text-caption: 13px;
   --text-caption--line-height: 18px;
   --text-postmark: 11px;
   --text-postmark--line-height: 12px;
-  --text-hand: 20px;
-  --text-hand--line-height: 28px;
+  --text-hand: 25px;
+  --text-hand--line-height: 30px;
 
-  /* Card stock has square-ish corners. Nothing here is a pill. */
-  --radius-card: 6px;
+  /* Paper has soft corners. Buttons are pills. */
+  --radius-card: 14px;
   --radius-stamp: 2px;
 }
 
 @layer theme {
   :root {
     @variant light {
-      --color-paper: #f4ebdd;
-      --color-paper-raised: #fbf5ea;
-      --color-paper-sunk: #e9ddc9;
-      --color-ink: #241c17;
-      --color-ink-soft: #5e5146;
-      --color-ink-faint: #9a8b7b;
-      --color-rule: #d9cbb4;
-      --color-accent: #d4412b;
-      --color-accent-ink: #b5321f;
-      --color-on-accent: #fbf5ea;
+      --color-paper: #faf3e5;
+      --color-paper-raised: #f4e8d2;
+      --color-paper-sunk: #eadbc0;
+      --color-ink: #262220;
+      --color-ink-soft: #5e544a;
+      --color-ink-faint: #9b8d7c;
+      --color-rule: #e0d0b3;
+      --color-accent: #e0862d;
+      --color-accent-ink: #b85c14;
+      --color-on-accent: #fff9ec;
+      --color-sun: #efae45;
     }
 
     @variant dark {
-      --color-paper: #1f1915;
-      --color-paper-raised: #2a221c;
-      --color-paper-sunk: #171210;
-      --color-ink: #f1e6d4;
-      --color-ink-soft: #bfaf9a;
-      --color-ink-faint: #7d6f60;
-      --color-rule: #3a2f27;
-      --color-accent: #ee6a4f;
-      --color-accent-ink: #ee6a4f;
-      --color-on-accent: #1f1915;
+      --color-paper: #1e1915;
+      --color-paper-raised: #2b241d;
+      --color-paper-sunk: #16120f;
+      --color-ink: #f3e8d5;
+      --color-ink-soft: #c2b29c;
+      --color-ink-faint: #7f7161;
+      --color-rule: #3b3027;
+      --color-accent: #f0a04a;
+      --color-accent-ink: #f0a04a;
+      --color-on-accent: #1e1915;
+      --color-sun: #efae45;
     }
   }
 }

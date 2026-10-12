@@ -4,7 +4,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { InkButton } from '../../components/ink-button'
 import { StampArt } from '../../components/stamp-art'
 import { copy } from '../../copy'
-import { usePalette } from '../../theme'
+import { paperShadow, usePalette } from '../../theme'
 import { describeProblem } from '../../utils/describe-problem'
 import { ellipsify } from '../../utils/ellipsify'
 import { formatTokens } from '../../utils/format-tokens'
@@ -32,13 +32,11 @@ export interface Draft {
 export function WriteScreen({
   error,
   isPosting,
-  onBack,
   onDrawStranger,
   onPost,
 }: {
   error: string | null
   isPosting: boolean
-  onBack: () => void
   /** Draws a stranger from the pen-pal exchange and returns their name or address. */
   onDrawStranger: () => Promise<string>
   onPost: (draft: Draft) => void
@@ -130,26 +128,32 @@ export function WriteScreen({
   }
 
   return (
-    <ScrollView className="flex-1" contentContainerClassName="px-6 pb-10 pt-6" keyboardShouldPersistTaps="handled">
-      <Pressable accessibilityRole="button" hitSlop={12} onPress={onBack}>
-        <Text className="font-caption text-caption uppercase tracking-widest text-ink-faint">{copy.write.back}</Text>
-      </Pressable>
-      <Text className="mb-5 mt-1 font-title text-title text-ink">{copy.write.title}</Text>
+    <ScrollView className="flex-1" contentContainerClassName="px-6 pb-10 pt-8" keyboardShouldPersistTaps="handled">
+      <Text className="font-script text-script text-ink">{copy.write.title}</Text>
+      <Text className="mb-6 mt-1 font-body text-body text-ink-soft">{copy.write.sub}</Text>
 
-      <FlipCard
-        back={<PostcardBack card={card} to={asWrittenOnACard(to)} />}
-        front={<PostcardFront photo={card.photo} />}
-        onTurn={setSide}
-        showing={side}
-      />
-      <Text className="mt-2 text-center font-caption text-caption text-ink-faint">{copy.write.turnHint}</Text>
+      <View>
+        <View
+          className="absolute bottom-0 left-0 right-0 top-0 rounded-[8px] border border-rule bg-paper-sunk"
+          style={{ transform: [{ rotate: '2.5deg' }] }}
+        />
+        <View style={[paperShadow, { borderRadius: 8, transform: [{ rotate: '-1deg' }] }]}>
+          <FlipCard
+            back={<PostcardBack card={card} to={asWrittenOnACard(to)} />}
+            front={<PostcardFront photo={card.photo} />}
+            onTurn={setSide}
+            showing={side}
+          />
+        </View>
+      </View>
+      <Text className="mt-4 text-center font-caption text-caption text-ink-faint">{copy.write.turnHint}</Text>
 
       <Label>{copy.write.toLabel}</Label>
       <TextInput
         accessibilityLabel={copy.write.toLabel}
         autoCapitalize="none"
         autoCorrect={false}
-        className="rounded-card border border-rule bg-paper-raised px-4 py-3 font-body text-body text-ink"
+        className="rounded-[12px] border border-rule bg-paper-raised px-4 py-3 font-body text-body text-ink"
         onChangeText={(value) => {
           setComplaint(null)
           setIsForStranger(false)
@@ -248,7 +252,7 @@ export function WriteScreen({
               accessibilityLabel={`${option.name} stamp`}
               accessibilityRole="radio"
               accessibilityState={{ selected: isChosen }}
-              className={`rounded-stamp border-2 p-1.5 ${isChosen ? 'border-accent' : 'border-transparent'}`}
+              className={`rounded-stamp border-2 p-1.5 ${isChosen ? 'border-ink' : 'border-transparent'}`}
               key={option.id}
               onPress={() => {
                 void Haptics.selectionAsync()

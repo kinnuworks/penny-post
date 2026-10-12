@@ -9,7 +9,7 @@ import { describeWalletError } from '../utils/describe-wallet-error'
 
 export default function App() {
   const insets = useSafeAreaInsets()
-  const { account, connect, disconnect } = useMobileWallet()
+  const { account, connect } = useMobileWallet()
   const [error, setError] = useState<string | null>(null)
   const [isBusy, setIsBusy] = useState(false)
 
@@ -31,13 +31,18 @@ export default function App() {
     }
   }
 
-  return (
-    <View className="flex-1 bg-paper" style={{ paddingBottom: insets.bottom, paddingTop: insets.top }}>
-      {account ? (
-        <LetterboxScreen address={account.address.toString()} isBusy={isBusy} onLeave={() => void run(disconnect)} />
-      ) : (
+  if (!account) {
+    return (
+      <View className="flex-1 bg-ink">
         <WelcomeScreen error={error} isBusy={isBusy} onConnect={() => void run(connect)} />
-      )}
+        <StatusBar style="dark" />
+      </View>
+    )
+  }
+
+  return (
+    <View className="flex-1 bg-paper" style={{ paddingTop: insets.top }}>
+      <LetterboxScreen address={account.address} />
       <StatusBar style="auto" />
     </View>
   )

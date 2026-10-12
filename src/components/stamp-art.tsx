@@ -38,7 +38,7 @@ export function StampArt({
       <G>{picture(art, accent, ink)}</G>
       <SvgText
         fill={ink}
-        fontFamily="Besley_700Bold"
+        fontFamily="Lora_700Bold"
         fontSize={6.5}
         letterSpacing={1.2}
         textAnchor="middle"
@@ -70,7 +70,7 @@ function picture(art: Art, accent: string, ink: string) {
         <>
           <Rect fill={accent} height={50} width={44} x={14} y={14} />
           <Rect fill="none" height={42} stroke={cardStock.face} strokeWidth={0.8} width={36} x={18} y={18} />
-          <SvgText fill={cardStock.face} fontFamily="Besley_700Bold" fontSize={26} textAnchor="middle" x={36} y={48}>
+          <SvgText fill={cardStock.face} fontFamily="Lora_700Bold" fontSize={26} textAnchor="middle" x={36} y={48}>
             1d
           </SvgText>
         </>

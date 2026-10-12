@@ -7,14 +7,15 @@ Every Seeker came with an address. Penny Post lets people write to it. The post 
 In 1840 the Penny Post made the sender pay for a letter instead of the person receiving it. Here the sender still pays, and the reader keeps the postage. This is an entry for [Clock In](https://solanamobile.radiant.nexus/), the third Solana Mobile hackathon.
 
 <p>
-  <img src="docs/screens/letterbox.png" width="190" alt="The letterbox: the day's question for every Seeker, answered, with a paid card waiting on the doormat.">
-  <img src="docs/screens/card-face-down.png" width="190" alt="A card face down. It shows who sent it and that 10 SKR is inside, with a button to sign for it.">
-  <img src="docs/screens/card-picture.png" width="190" alt="The same card after signing, picture side up. 9 SKR has been paid to the reader.">
-  <img src="docs/screens/card-message.png" width="190" alt="The card turned over to its message, with a postmark and a stamp.">
-  <img src="docs/screens/writing.png" width="190" alt="Writing a card by hand, with the stamp book and the postage quote underneath.">
+  <img src="docs/screens/welcome.png" width="190" alt="The welcome screen: a letterbox on a hill at sunrise, and one button.">
+  <img src="docs/screens/letterbox.png" width="190" alt="Home. Two envelopes: today's question with 300 test SKR to share, and a postcard from someone with 10 test SKR inside.">
+  <img src="docs/screens/question.png" width="190" alt="Today's question on its card, with two answers to choose from and a button to send the answer.">
+  <img src="docs/screens/youre-in.png" width="190" alt="After answering: a sun stamp, the words You're in, the count for each answer and this phone's share.">
+  <img src="docs/screens/card-face-down.png" width="190" alt="A postcard face down. It shows who sent it and that 10 test SKR is inside, with a button to sign for it.">
+  <img src="docs/screens/card-picture.png" width="190" alt="The same card after signing, picture side up. 9 test SKR has been paid to the reader.">
 </p>
 
-These are from the signed release build, running on an Android emulator against a local fork of mainnet.
+These are from the signed release build, running on an Android emulator against the devnet deployment.
 
 ## How it works
 

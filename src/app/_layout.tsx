@@ -2,12 +2,12 @@
 import '../../polyfill'
 import '../global.css'
 
-import { Besley_600SemiBold } from '@expo-google-fonts/besley/600SemiBold'
-import { Besley_700Bold } from '@expo-google-fonts/besley/700Bold'
-import { Kalam_400Regular } from '@expo-google-fonts/kalam/400Regular'
-import { Mukta_400Regular } from '@expo-google-fonts/mukta/400Regular'
-import { Mukta_500Medium } from '@expo-google-fonts/mukta/500Medium'
-import { Mukta_600SemiBold } from '@expo-google-fonts/mukta/600SemiBold'
+import { Caveat_500Medium } from '@expo-google-fonts/caveat/500Medium'
+import { Caveat_700Bold } from '@expo-google-fonts/caveat/700Bold'
+import { Lora_400Regular } from '@expo-google-fonts/lora/400Regular'
+import { Lora_500Medium } from '@expo-google-fonts/lora/500Medium'
+import { Lora_600SemiBold } from '@expo-google-fonts/lora/600SemiBold'
+import { Lora_700Bold } from '@expo-google-fonts/lora/700Bold'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import {
   AppIdentity,
@@ -43,12 +43,12 @@ const queryClient = new QueryClient()
 
 export default function Layout() {
   const [fontsLoaded, fontError] = useFonts({
-    Besley_600SemiBold,
-    Besley_700Bold,
-    Kalam_400Regular,
-    Mukta_400Regular,
-    Mukta_500Medium,
-    Mukta_600SemiBold,
+    Caveat_500Medium,
+    Caveat_700Bold,
+    Lora_400Regular,
+    Lora_500Medium,
+    Lora_600SemiBold,
+    Lora_700Bold,
   })
 
   useEffect(() => {
@@ -70,7 +70,7 @@ export default function Layout() {
           networks={networks}
           render={({ selectedNetwork }) => (
             <MobileWalletProvider cluster={selectedNetwork} identity={identity}>
-              <Stack screenOptions={{ animation: 'slide_from_bottom', headerShown: false }} />
+              <Stack screenOptions={{ animation: 'fade_from_bottom', headerShown: false }} />
             </MobileWalletProvider>
           )}
         />

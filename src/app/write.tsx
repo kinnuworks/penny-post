@@ -3,9 +3,12 @@ import { useState } from 'react'
 import { Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { InkButton } from '../components/ink-button'
+import { SunStamp } from '../components/sun'
+import { TabBar } from '../components/tab-bar'
 import { copy } from '../copy'
 import { useDrawPenPal, usePostCard, type PostedReceipt } from '../features/post/use-post'
 import { WriteScreen } from '../features/write/write-screen'
+import { usePalette } from '../theme'
 import { describeProblem } from '../utils/describe-problem'
 import { ellipsify } from '../utils/ellipsify'
 
@@ -19,14 +22,14 @@ export default function Write() {
   const [round, setRound] = useState(0)
 
   return (
-    <View className="flex-1 bg-paper" style={{ paddingBottom: insets.bottom, paddingTop: insets.top }}>
+    <View className="flex-1 bg-paper" style={{ paddingTop: insets.top }}>
       {receipt ? (
         <Posted
           onAnother={() => {
             setReceipt(null)
             setRound((current) => current + 1)
           }}
-          onHome={() => router.back()}
+          onHome={() => router.dismissTo('/')}
           receipt={receipt}
         />
       ) : (
@@ -34,31 +37,35 @@ export default function Write() {
           error={postCard.error ? describeProblem(postCard.error) : null}
           isPosting={postCard.isPending}
           key={round}
-          onBack={() => router.back()}
           onDrawStranger={() => drawPenPal.mutateAsync()}
           onPost={(draft) => postCard.mutate(draft, { onSuccess: setReceipt })}
         />
       )}
+      <TabBar current="send" />
     </View>
   )
 }
 
 // What the counter says once the card has gone, and what kind of post it went by.
 function Posted({ onAnother, onHome, receipt }: { onAnother: () => void; onHome: () => void; receipt: PostedReceipt }) {
+  const palette = usePalette()
   return (
-    <View className="flex-1 justify-between px-6 pb-8 pt-10">
-      <View>
-        <Text className="font-display text-display text-ink">{copy.posted.title}</Text>
-        <Text className="mt-4 font-hand text-hand text-ink">
+    <View className="flex-1 justify-between px-7 pb-8 pt-14">
+      <View className="items-center">
+        <View style={{ transform: [{ rotate: '-6deg' }] }}>
+          <SunStamp backing={palette.paper} size={112} />
+        </View>
+        <Text className="mt-8 font-script text-[54px] leading-[60px] text-ink">{copy.posted.title}</Text>
+        <Text className="mt-3 text-center font-hand text-hand text-ink">
           {receipt.express ? copy.counter.postedExpress : copy.counter.posted}
         </Text>
-        <Text className="mt-4 font-body text-body text-ink-soft">
+        <Text className="mt-3 text-center font-body text-body text-ink-soft">
           {receipt.sealed ? copy.posted.sealed : copy.posted.openCard}
         </Text>
         {receipt.delivered ? null : (
-          <Text className="mt-4 font-body text-body text-accent-ink">{copy.posted.waiting}</Text>
+          <Text className="mt-4 text-center font-body text-body text-accent-ink">{copy.posted.waiting}</Text>
         )}
-        <Text className="mt-6 font-caption text-caption text-ink-faint" selectable>
+        <Text className="mt-6 text-center font-caption text-caption text-ink-faint" selectable>
           {copy.posted.receipt(ellipsify(receipt.signature, 6))}
         </Text>
       </View>

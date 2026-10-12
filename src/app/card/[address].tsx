@@ -1,8 +1,10 @@
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useState } from 'react'
-import { Pressable, ScrollView, Text, View } from 'react-native'
+import { ScrollView, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { InkButton } from '../../components/ink-button'
+import { ScreenHeader } from '../../components/screen-header'
+import { paperShadow } from '../../theme'
 import { copy } from '../../copy'
 import { emptyCard, type CardContent } from '../../features/card/card'
 import { FlipCard } from '../../features/card/flip-card'
@@ -41,35 +43,38 @@ export default function CardScreen() {
 
   return (
     <View className="flex-1 bg-paper" style={{ paddingBottom: insets.bottom, paddingTop: insets.top }}>
-      <ScrollView className="flex-1" contentContainerClassName="flex-grow justify-between px-6 pb-8 pt-6">
+      <ScrollView className="flex-1" contentContainerClassName="flex-grow justify-between px-6 pb-8">
         <View>
-          <Pressable accessibilityRole="button" hitSlop={12} onPress={goHome}>
-            <Text className="font-caption text-caption uppercase tracking-widest text-ink-faint">{copy.open.done}</Text>
-          </Pressable>
-          <Text className="mb-5 mt-1 font-title text-title text-ink">{copy.open.title}</Text>
+          <ScreenHeader backLabel={copy.open.done} onBack={goHome} title={copy.open.title} />
+          <View className="h-5" />
 
           {!card ? (
             <Text className="font-body text-body text-ink-soft">{copy.open.gone}</Text>
           ) : opened ? (
             <>
-              <FlipCard
-                back={
-                  <PostcardBack
-                    card={opened.content}
-                    postmark={{ date: postmarkDate(Number(card.postedAt)), place: 'Penny Post' }}
-                    to="You"
-                  />
-                }
-                front={<PostcardFront photo={opened.content.photo} />}
-                onTurn={setSide}
-                showing={side}
-              />
-              <Text className="mt-2 text-center font-caption text-caption text-ink-faint">{copy.write.turnHint}</Text>
-              <Text className="mt-6 font-body text-body text-ink">
-                {opened.paid > 0n ? copy.open.paid(formatTokens(opened.paid, decimals), token) : copy.open.free}
+              <View style={[paperShadow, { borderRadius: 8, transform: [{ rotate: '-1.2deg' }] }]}>
+                <FlipCard
+                  back={
+                    <PostcardBack
+                      card={opened.content}
+                      postmark={{ date: postmarkDate(Number(card.postedAt)), place: 'Penny Post' }}
+                      to="You"
+                    />
+                  }
+                  front={<PostcardFront photo={opened.content.photo} />}
+                  onTurn={setSide}
+                  showing={side}
+                />
+              </View>
+              <Text className="mt-4 text-center font-caption text-caption text-ink-faint">{copy.write.turnHint}</Text>
+              <Text className="mt-6 text-center font-script text-[38px] leading-[44px] text-ink">
+                {opened.paid > 0n ? copy.open.yours(formatTokens(opened.paid, decimals), token) : copy.open.freeShort}
+              </Text>
+              <Text className="mt-1 text-center font-body text-body text-ink-soft">
+                {opened.paid > 0n ? copy.open.inWallet : copy.open.free}
               </Text>
               {opened.signature ? (
-                <Text className="mt-2 font-caption text-caption text-ink-faint" selectable>
+                <Text className="mt-3 text-center font-caption text-caption text-ink-faint" selectable>
                   {copy.open.receipt(ellipsify(opened.signature, 6))}
                 </Text>
               ) : null}
@@ -77,27 +82,36 @@ export default function CardScreen() {
           ) : (
             <>
               {/* Face down: the stamp and the address show, the message does not. */}
-              <PostcardBack
-                card={emptyCard(card.stamp)}
-                postmark={{ date: postmarkDate(Number(card.postedAt)), place: 'Penny Post' }}
-                to="You"
-              />
-              <Text className="mt-6 font-hand text-hand text-ink">
+              <View>
+                {/* Another card underneath, so this one reads as the top of a small pile. */}
+                <View
+                  className="absolute bottom-0 left-0 right-0 top-0 rounded-[8px] border border-rule bg-paper-sunk"
+                  style={{ transform: [{ rotate: '2.5deg' }] }}
+                />
+                <View style={[paperShadow, { borderRadius: 8, transform: [{ rotate: '-1.5deg' }] }]}>
+                  <PostcardBack
+                    card={emptyCard(card.stamp)}
+                    postmark={{ date: postmarkDate(Number(card.postedAt)), place: 'Penny Post' }}
+                    to="You"
+                  />
+                </View>
+              </View>
+              <Text className="mt-8 text-center font-script text-[36px] leading-[42px] text-ink">
                 {copy.letterbox.from(senderName.data ?? ellipsify(card.sender))}
               </Text>
-              <Text className="font-body text-body text-ink-soft">
+              <Text className="mt-1 text-center font-body text-body text-ink-soft">
                 {card.postage > 0n
                   ? copy.letterbox.paidInside(formatTokens(card.postage, decimals), token)
                   : copy.letterbox.freeStamp}
               </Text>
-              <Text className="mt-3 font-body text-body text-ink-soft">
+              <Text className="mt-3 text-center font-body text-body text-ink-soft">
                 {wasReturned ? copy.open.returned : copy.open.hint}
               </Text>
             </>
           )}
 
           {problem ? (
-            <Text className="mt-4 font-body text-body text-accent-ink">{describeProblem(problem)}</Text>
+            <Text className="mt-4 text-center font-body text-body text-accent-ink">{describeProblem(problem)}</Text>
           ) : null}
         </View>
 

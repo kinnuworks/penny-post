@@ -8,8 +8,62 @@ export const copy = {
   welcome: {
     title: 'You have an address. Nobody has written to it yet.',
     body: 'Penny Post is a letterbox for your wallet. Friends write for free. Anyone else pays postage, and the postage is yours when you turn the card over.',
+    line: 'A letterbox for your wallet.',
+    foot: 'One post a day. A question for everyone, and cards from people.',
     connect: 'Show me my letterbox',
     connecting: 'Finding your wallet',
+  },
+
+  tabs: {
+    home: 'Home',
+    archive: 'Archive',
+    send: 'Send',
+    profile: 'Profile',
+  },
+
+  home: {
+    greeting: (hour: number) => (hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'),
+    arrived: 'Your post has arrived.',
+    questionOnly: 'The post has been. One card for everyone today.',
+    nothing: 'Nothing on the doormat yet.',
+    question: "Today's question",
+    toShare: 'To share',
+    answered: (amount: string, token: string) => `You're in. About ${amount} ${token} so far.`,
+    notAnswered: 'One tap. Every phone that answers shares it.',
+    postcard: 'A postcard',
+    noCards: 'No cards today. The postman did look.',
+  },
+
+  question: {
+    title: "Today's question",
+    back: 'Back to the post',
+    send: 'Send my answer',
+    sending: 'Sending your answer',
+    toShare: 'To share',
+    youreIn: "You're in!",
+    inBody: 'You share the pot with every phone that answers.',
+    tomorrow: 'Come back tomorrow for a new question.',
+    alsoCollects: (amount: string, token: string) =>
+      `Yesterday's share, about ${amount} ${token}, is collected with this answer.`,
+    yours: '(your answer)',
+    iHaveSeeker: 'I have a Seeker',
+    looking: 'Looking for your Seeker',
+  },
+
+  profile: {
+    title: 'Profile',
+    noName: 'Your letterbox',
+    kept: 'Cards kept',
+    earned: 'Earned from cards',
+    priceRow: 'A stranger pays',
+    bell: 'Morning post',
+    bellAt: '8:00',
+    stamp: "Today's free stamp",
+    stampReady: 'On the counter',
+    stampUsed: 'Used',
+    seeker: 'Seeker',
+    ask: "Ask tomorrow's question",
+    network: 'Network',
   },
 
   letterbox: {
@@ -43,7 +97,7 @@ export const copy = {
     asking: 'Fetching one from the back',
     given: 'It is in your wallet.',
     nextLetterbox: 'Put up a letterbox next.',
-    nextSeeker: 'Now tap "I have a Seeker" at the foot of this page.',
+    nextSeeker: 'Now open today\'s question and tap "I have a Seeker".',
   },
 
   circular: {
@@ -108,13 +162,16 @@ export const copy = {
   },
 
   open: {
-    title: 'A card for you',
+    title: 'Postcard',
     hint: 'Sign for it and it turns over.',
     sign: 'Sign for it',
     signing: 'Signing',
     sendBack: 'Send it back unopened',
     sendingBack: 'Sending it back',
     paid: (amount: string, token: string) => `${amount} ${token} is yours. It is in your wallet now.`,
+    yours: (amount: string, token: string) => `${amount} ${token} is yours`,
+    inWallet: 'It is in your wallet now.',
+    freeShort: 'Yours to keep',
     free: 'No postage on this one. It came on a free stamp.',
     receipt: (signature: string) => `Signed for. Receipt ${signature}`,
     done: 'Back to the letterbox',
@@ -134,8 +191,9 @@ export const copy = {
   },
 
   kept: {
-    title: 'Kept',
-    empty: 'Nothing here yet. Cards you open are kept on this phone.',
+    title: 'Archive',
+    sub: 'Cards you have opened. They live on this phone.',
+    empty: 'Nothing here yet.',
     back: 'Back to the letterbox',
     paid: (amount: string, token: string) => `Paid you ${amount} ${token}`,
   },
@@ -178,7 +236,8 @@ export const copy = {
   },
 
   write: {
-    title: 'Write a card',
+    title: 'Send a postcard',
+    sub: 'Share a moment from your world.',
     back: 'Back to the letterbox',
     turnHint: 'Tap the card to turn it over.',
     toLabel: 'Who is it for?',

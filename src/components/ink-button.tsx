@@ -3,8 +3,8 @@ import { Pressable, Text } from 'react-native'
 
 type Tone = 'accent' | 'plain'
 
-// The one button shape in the app: a flat inked block with square-ish corners,
-// like a rubber stamp's face.
+// The one button shape in the app: a pill, filled with ink for the thing to do
+// next and outlined for the other way out.
 export function InkButton({
   disabled,
   label,
@@ -17,8 +17,8 @@ export function InkButton({
   tone?: Tone
 }) {
   const surface =
-    tone === 'accent' ? 'bg-accent active:bg-accent-ink' : 'border border-ink bg-transparent active:bg-paper-sunk'
-  const text = tone === 'accent' ? 'text-on-accent' : 'text-ink'
+    tone === 'accent' ? 'bg-ink active:opacity-80' : 'border border-ink bg-transparent active:bg-paper-sunk'
+  const text = tone === 'accent' ? 'text-paper' : 'text-ink'
 
   return (
     <Pressable
@@ -29,7 +29,7 @@ export function InkButton({
         void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
         onPress()
       }}
-      className={`min-h-[52px] items-center justify-center rounded-card px-6 ${surface} ${disabled ? 'opacity-50' : ''}`}
+      className={`min-h-[54px] items-center justify-center rounded-full px-6 ${surface} ${disabled ? 'opacity-50' : ''}`}
     >
       {/* Full width and centred. Sized to its own text, Android can measure a
           label one pixel short and drop its last word onto a line nobody sees. */}

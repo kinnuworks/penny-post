@@ -46,11 +46,11 @@ export function PostcardFront({ photo }: { photo: string | null }) {
           justifyContent: 'center',
         }}
       >
-        <Text style={{ color: cardStock.ink, fontFamily: 'Besley_700Bold', fontSize: 26, letterSpacing: 6 }}>
+        <Text style={{ color: cardStock.ink, fontFamily: 'Lora_700Bold', fontSize: 26, letterSpacing: 6 }}>
           POST CARD
         </Text>
         <View style={{ backgroundColor: cardStock.accent, height: 1.5, marginVertical: 8, width: 120 }} />
-        <Text style={{ color: cardStock.inkSoft, fontFamily: 'Mukta_500Medium', fontSize: 12, letterSpacing: 2 }}>
+        <Text style={{ color: cardStock.inkSoft, fontFamily: 'Lora_500Medium', fontSize: 12, letterSpacing: 2 }}>
           THE PICTURE GOES ON THIS SIDE
         </Text>
       </View>
@@ -89,7 +89,7 @@ export function PostcardBack({
             ))}
           </Svg>
         ) : (
-          <Text style={{ color: cardStock.ink, fontFamily: 'Kalam_400Regular', fontSize: 15, lineHeight: 21 }}>
+          <Text style={{ color: cardStock.ink, fontFamily: 'Caveat_500Medium', fontSize: 20, lineHeight: 23 }}>
             {card.message}
           </Text>
         )}
@@ -98,7 +98,7 @@ export function PostcardBack({
             style={{
               bottom: 0,
               color: cardStock.inkSoft,
-              fontFamily: 'Mukta_500Medium',
+              fontFamily: 'Lora_500Medium',
               fontSize: 10,
               left: 0,
               letterSpacing: 1,
@@ -123,12 +123,12 @@ export function PostcardBack({
           </View>
         ) : null}
         <View style={{ flex: 1, justifyContent: 'flex-end' }}>
-          <Text style={{ color: cardStock.inkSoft, fontFamily: 'Mukta_500Medium', fontSize: 10, letterSpacing: 1 }}>
+          <Text style={{ color: cardStock.inkSoft, fontFamily: 'Lora_500Medium', fontSize: 10, letterSpacing: 1 }}>
             TO
           </Text>
           <Text
             numberOfLines={2}
-            style={{ color: cardStock.ink, fontFamily: 'Kalam_400Regular', fontSize: 17, lineHeight: 22 }}
+            style={{ color: cardStock.ink, fontFamily: 'Caveat_500Medium', fontSize: 22, lineHeight: 25 }}
           >
             {to || ' '}
           </Text>

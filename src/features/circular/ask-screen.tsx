@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { InkButton } from '../../components/ink-button'
+import { ScreenHeader } from '../../components/screen-header'
 import { copy } from '../../copy'
 import { usePalette } from '../../theme'
 import { describeProblem } from '../../utils/describe-problem'
@@ -74,12 +75,9 @@ export function AskScreen({ onDone }: { onDone: () => void }) {
   }
 
   return (
-    <ScrollView className="flex-1" contentContainerClassName="px-6 pb-10 pt-10" keyboardShouldPersistTaps="handled">
-      <Pressable accessibilityRole="button" hitSlop={10} onPress={onDone}>
-        <Text className="font-caption text-caption uppercase tracking-widest text-ink-faint">{copy.ask.back}</Text>
-      </Pressable>
-      <Text className="mt-1 font-title text-title text-ink">{copy.ask.title}</Text>
-      <Text className="mt-2 font-body text-body text-ink-soft">{copy.ask.intro}</Text>
+    <ScrollView className="flex-1" contentContainerClassName="px-6 pb-10" keyboardShouldPersistTaps="handled">
+      <ScreenHeader backLabel={copy.ask.back} onBack={onDone} title={copy.ask.title} />
+      <Text className="mt-4 font-body text-body text-ink-soft">{copy.ask.intro}</Text>
 
       <Label>{copy.ask.questionLabel}</Label>
       <TextInput
