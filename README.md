@@ -97,6 +97,26 @@ The program does not change. Which token is postage and which group counts as a 
 
 What is left before mainnet, in order: a review of the program by someone outside the project, moving the program's upgrade authority and the post office admin to a multisig, a run on a physical Seeker with Seed Vault, and the dApp Store listing.
 
+## The first morning, and the hundredth
+
+A letterbox is only worth opening if something is in it. Here is how that holds before there is a crowd.
+
+- **The question needs nobody else.** It goes to every Seeker at once, so a person who knows no one on Penny Post still has post on their first morning, and is paid for answering it.
+- **One sponsor fills every letterbox.** A single pot of SKR is a day of post for everyone. Until builders are bidding for days, the project puts up the pot. At today's price 300 SKR is about five dollars a day.
+- **Write to a stranger.** Posting a card to a stranger puts you in line for the next stranger's card, one for one. Postcrossing has run this exchange with paper since 2005.
+- **A new letterbox gets a welcome card** within seconds, so the first thing a person does is open post.
+- **Scarcity protects the reader.** Three paid cards a day and a price the reader sets, so a busy letterbox earns more and is never flooded.
+
+There are no users yet, so none of this is proven. What we will count when there are, all of it readable from the chain with no analytics in the app:
+
+| Question                           | Measure                                                                                  |
+| ---------------------------------- | ---------------------------------------------------------------------------------------- |
+| Do people come back?               | Share of Genesis Tokens that answer on consecutive days                                  |
+| Is the question worth ten seconds? | Answers per day against letterboxes open                                                 |
+| Will strangers pay to be read?     | Paid cards posted, and the share that are opened before they expire                      |
+| Do readers value their attention?  | How many raise their price above the floor                                               |
+| Will builders sponsor a day?       | Days sponsored by a wallet other than the project's, and days taken over by a larger pot |
+
 ## Run it
 
 You need Node 20 or newer, pnpm, JDK 17, the Android SDK, and an Android phone with a Solana wallet installed. Expo Go will not work, because Mobile Wallet Adapter needs a development build.
