@@ -29,7 +29,7 @@ export const copy = {
     question: "Today's question",
     toShare: 'To share',
     answered: (amount: string, token: string) => `You're in. About ${amount} ${token} so far.`,
-    notAnswered: 'One tap. Every phone that answers shares it.',
+    notAnswered: 'One tap, and you share it.',
     postcard: 'A postcard',
     noCards: 'No cards today. The postman did look.',
   },
@@ -64,6 +64,26 @@ export const copy = {
     seeker: 'Seeker',
     ask: "Ask tomorrow's question",
     network: 'Network',
+  },
+
+  intro: {
+    skip: 'Skip',
+    next: 'Next',
+    connect: 'Connect my wallet',
+    pages: [
+      {
+        title: 'Post comes once a day',
+        body: 'At eight each morning something lands on your doormat. Opening it takes ten seconds.',
+      },
+      {
+        title: 'One question for everyone',
+        body: 'Somebody puts up SKR and asks every Seeker a question. Tap an answer, and everyone who answered shares the pot.',
+      },
+      {
+        title: 'Cards from people',
+        body: 'A stranger pays your price to write to you. You keep 90% when you open their card. If you never open it, their postage goes back.',
+      },
+    ],
   },
 
   letterbox: {
@@ -193,7 +213,7 @@ export const copy = {
   kept: {
     title: 'Archive',
     sub: 'Cards you have opened. They live on this phone.',
-    empty: 'Nothing here yet.',
+    empty: 'Nothing kept yet. Open a card and it lands here.',
     back: 'Back to the letterbox',
     paid: (amount: string, token: string) => `Paid you ${amount} ${token}`,
   },

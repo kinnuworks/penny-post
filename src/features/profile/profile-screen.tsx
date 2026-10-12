@@ -2,11 +2,10 @@ import { useQuery } from '@tanstack/react-query'
 import { useMobileWallet } from '@wallet-ui/react-native-kit'
 import { useRouter } from 'expo-router'
 import { useState, type ReactNode } from 'react'
-import { Pressable, ScrollView, Text, View } from 'react-native'
+import { Image, Pressable, ScrollView, Text, View } from 'react-native'
 import Svg, { Path } from 'react-native-svg'
 import { InkButton } from '../../components/ink-button'
 import { Paper } from '../../components/paper'
-import { SunDoodle } from '../../components/sun'
 import { TabBar } from '../../components/tab-bar'
 import { copy } from '../../copy'
 import { usePalette } from '../../theme'
@@ -21,11 +20,12 @@ import { hasFreeStamp } from '../post/chain'
 import { tokenName } from '../post/token-name'
 import { useMyLetterbox, usePostOffice, useSkrName, useVerifyLetterbox } from '../post/use-post'
 
+const badge = require('../../../assets/avatar.jpg')
+
 // Who this letterbox belongs to, what it has earned, and its few settings.
 export function ProfileScreen() {
   const router = useRouter()
   const now = useNow()
-  const palette = usePalette()
   const { account, chain, disconnect } = useMobileWallet()
   const owner = account?.address
   const office = usePostOffice()
@@ -60,9 +60,12 @@ export function ProfileScreen() {
     <View className="flex-1">
       <ScrollView className="flex-1" contentContainerClassName="px-6 pb-10 pt-8">
         <View className="mb-6 flex-row items-center gap-4">
-          <View className="h-[72px] w-[72px] items-center justify-center rounded-full border border-rule bg-paper-raised">
-            <SunDoodle color={palette.accent} size={52} />
-          </View>
+          <Image
+            accessibilityElementsHidden
+            importantForAccessibility="no"
+            source={badge}
+            style={{ borderRadius: 38, height: 76, width: 76 }}
+          />
           <View className="flex-1">
             <Text className="font-display text-title text-ink" numberOfLines={1}>
               {name.data ?? copy.profile.noName}

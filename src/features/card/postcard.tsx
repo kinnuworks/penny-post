@@ -118,7 +118,7 @@ export function PostcardBack({
           <StampArt art={stamp.art} backing={cardStock.face} label={stamp.name} size={0.72} />
         </View>
         {postmark ? (
-          <View style={{ position: 'absolute', right: 34, top: 18, transform: [{ scale: 0.72 }] }}>
+          <View style={{ position: 'absolute', right: 40, top: 6, transform: [{ scale: 0.92 }] }}>
             <Postmark date={postmark.date} place={postmark.place} />
           </View>
         ) : null}

@@ -6,14 +6,14 @@
     "version": "0.1.0",
     "userInterfaceStyle": "automatic",
     "orientation": "portrait",
-    "backgroundColor": "#F4EBDD",
+    "backgroundColor": "#FAF3E5",
     "android": {
       "package": "post.penny.app",
       "versionCode": 1,
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-foreground.png",
-        "backgroundColor": "#F4EBDD"
+        "backgroundColor": "#FDF8E9"
       }
     },
     "plugins": [
@@ -31,10 +31,10 @@
         {
           "image": "./assets/splash.png",
           "imageWidth": 160,
-          "backgroundColor": "#F4EBDD",
+          "backgroundColor": "#FAF3E5",
           "dark": {
             "image": "./assets/splash.png",
-            "backgroundColor": "#1F1915"
+            "backgroundColor": "#1E1915"
           }
         }
       ],

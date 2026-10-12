@@ -1,9 +1,10 @@
 import type { Address } from '@solana/kit'
 import { useRouter } from 'expo-router'
 import { useEffect } from 'react'
-import { ScrollView, Text, View } from 'react-native'
-import { Envelope } from '../../components/envelope'
+import { ScrollView, Text, useColorScheme, View } from 'react-native'
+import { Envelope, ENVELOPE_TONE } from '../../components/envelope'
 import { InkButton } from '../../components/ink-button'
+import { Rise } from '../../components/motion'
 import { Paper } from '../../components/paper'
 import { StampArt } from '../../components/stamp-art'
 import { SunDoodle, SunStamp } from '../../components/sun'
@@ -41,7 +42,6 @@ export function LetterboxScreen({ address }: { address: Address }) {
   const openLetterbox = useOpenLetterbox()
   const testKit = useTestKit()
   const myName = useSkrName(address)
-  const palette = usePalette()
   useFlushOutbox()
 
   const token = office.data ? tokenName(office.data.postageMint) : ''
@@ -144,26 +144,27 @@ export function LetterboxScreen({ address }: { address: Address }) {
                 <Yesterday decimals={decimals} token={token} today={today} />
 
                 {question.data ? (
-                  <Envelope
-                    accessibilityLabel={`${copy.home.question}. ${formatTokens(question.data.circular.pot, decimals)} ${token} ${copy.home.toShare}.`}
-                    edge
-                    onPress={() => router.push('/question')}
-                    stamp={<SunStamp backing={palette.paperRaised} size={66} />}
-                  >
-                    <Text className="font-title text-heading text-ink">{copy.home.question}</Text>
-                    <Text className="mt-2 font-caption text-caption text-ink-soft">{copy.home.toShare}</Text>
-                    <Text className="font-display text-title text-ink">
-                      {formatTokens(question.data.circular.pot, decimals)} {token}
-                    </Text>
-                    <Text className="mt-1 font-caption text-caption text-ink-soft">
-                      {question.data.myChoice !== null
-                        ? copy.home.answered(
-                            formatTokensRoughly(shareAfterBurn(question.data.circular), decimals),
-                            token,
-                          )
-                        : copy.home.notAnswered}
-                    </Text>
-                  </Envelope>
+                  <Rise>
+                    <Envelope
+                      accessibilityLabel={`${copy.home.question}. ${formatTokens(question.data.circular.pot, decimals)} ${token} ${copy.home.toShare}.`}
+                      onPress={() => router.push('/question')}
+                      stamp={<SunStamp size={62} />}
+                    >
+                      <Text className="font-title text-heading text-ink">{copy.home.question}</Text>
+                      <Text className="mt-1 font-caption text-caption text-ink-soft">{copy.home.toShare}</Text>
+                      <Text adjustsFontSizeToFit className="font-display text-title text-ink" numberOfLines={1}>
+                        {formatTokens(question.data.circular.pot, decimals)} {token}
+                      </Text>
+                      <Text adjustsFontSizeToFit className="font-caption text-caption text-ink-soft" numberOfLines={1}>
+                        {question.data.myChoice !== null
+                          ? copy.home.answered(
+                              formatTokensRoughly(shareAfterBurn(question.data.circular), decimals),
+                              token,
+                            )
+                          : copy.home.notAnswered}
+                      </Text>
+                    </Envelope>
+                  </Rise>
                 ) : question.isLoading ? null : (
                   <Paper className="px-6 py-5">
                     <Text className="font-body text-body text-ink-soft">{copy.circular.none}</Text>
@@ -174,16 +175,17 @@ export function LetterboxScreen({ address }: { address: Address }) {
                 )}
 
                 {cards.map((card, index) => (
-                  <CardEnvelope
-                    card={card}
-                    decimals={decimals}
-                    key={card.address}
-                    now={now}
-                    offset={offset}
-                    onOpen={() => router.push(`/card/${card.address}`)}
-                    tilt={index % 2 === 0 ? -0.6 : 0.6}
-                    token={token}
-                  />
+                  <Rise delay={120 + index * 110} key={card.address}>
+                    <CardEnvelope
+                      card={card}
+                      decimals={decimals}
+                      now={now}
+                      offset={offset}
+                      onOpen={() => router.push(`/card/${card.address}`)}
+                      tilt={index % 2 === 0 ? -0.6 : 0.6}
+                      token={token}
+                    />
+                  </Rise>
                 ))}
 
                 {cards.length === 0 ? (
@@ -252,6 +254,7 @@ function CardEnvelope({
   tilt: number
   token: string
 }) {
+  const isDark = useColorScheme() === 'dark'
   const palette = usePalette()
   const name = useSkrName(card.sender)
   const from = copy.letterbox.from(name.data ?? ellipsify(card.sender))
@@ -268,12 +271,23 @@ function CardEnvelope({
       <Envelope
         accessibilityLabel={`${copy.home.postcard}. ${from}. ${status}.`}
         onPress={hasArrived ? onOpen : undefined}
-        stamp={<StampArt art={stamp.art} backing={palette.paperRaised} label={stamp.name} size={0.78} />}
+        stamp={
+          <StampArt
+            art={stamp.art}
+            backing={isDark ? palette.paperRaised : ENVELOPE_TONE}
+            label={stamp.name}
+            size={0.72}
+          />
+        }
         tilt={tilt}
       >
         <Text className="font-title text-heading text-ink">{copy.home.postcard}</Text>
-        <Text className="mt-1 font-hand text-hand text-ink">{from}</Text>
-        <Text className="font-caption text-caption text-ink-soft">{status}</Text>
+        <Text adjustsFontSizeToFit className="mt-1 font-hand text-hand text-ink" numberOfLines={1}>
+          {from}
+        </Text>
+        <Text adjustsFontSizeToFit className="font-caption text-caption text-ink-soft" numberOfLines={1}>
+          {status}
+        </Text>
       </Envelope>
     </View>
   )

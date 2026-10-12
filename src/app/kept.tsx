@@ -2,9 +2,8 @@ import type { Address } from '@solana/kit'
 import { useQuery } from '@tanstack/react-query'
 import { useMobileWallet } from '@wallet-ui/react-native-kit'
 import { useState } from 'react'
-import { ScrollView, Text, View } from 'react-native'
+import { Image, ScrollView, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Paper } from '../components/paper'
 import { TabBar } from '../components/tab-bar'
 import { copy } from '../copy'
 import { FlipCard } from '../features/card/flip-card'
@@ -16,6 +15,8 @@ import { ellipsify } from '../utils/ellipsify'
 import { formatTokens } from '../utils/format-tokens'
 import { paperShadow } from '../theme'
 import { postmarkDate } from '../utils/postmark-date'
+
+const tray = require('../../assets/empty-archive.webp')
 
 // Every card the reader has opened. They live on this phone only.
 export default function Kept() {
@@ -41,10 +42,15 @@ export default function Kept() {
             ))}
           </View>
         ) : kept.isLoading ? null : (
-          <View className="items-center pt-6">
-            <Paper className="px-6 py-5" tilt={-2}>
-              <Text className="text-center font-hand text-hand text-ink">{copy.kept.empty}</Text>
-            </Paper>
+          <View className="items-center pt-8">
+            <Image
+              accessibilityElementsHidden
+              importantForAccessibility="no"
+              resizeMode="contain"
+              source={tray}
+              style={{ height: 210, width: 270 }}
+            />
+            <Text className="mt-4 w-full text-center font-hand text-hand text-ink">{copy.kept.empty}</Text>
           </View>
         )}
       </ScrollView>

@@ -1,3 +1,4 @@
+import { Image } from 'react-native'
 import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from 'react-native-svg'
 import type { StampArt as Art } from '../features/card/stamps'
 import { cardStock } from '../theme'
@@ -7,9 +8,18 @@ const HEIGHT = 88
 const BITE = 3.2
 const BITE_GAP = 8
 
-// A postage stamp: perforated edge, a ruled frame, one small picture in two
-// inks. `backing` is the colour of whatever the stamp sits on, used to cut the
-// perforations out of its edge.
+const printed: Partial<Record<Art, number>> = {
+  express: require('../../assets/stamp-express.webp'),
+  kite: require('../../assets/stamp-kite.webp'),
+  'penny-red': require('../../assets/stamp-penny-red.webp'),
+  'pillar-box': require('../../assets/stamp-pillar-box.webp'),
+}
+/** Width over height of the printed stamps. */
+const PRINT_SHAPE = 1145 / 1374
+
+// A postage stamp. Four of them are printed pictures. Any other is drawn:
+// perforated edge, a ruled frame, one small picture in two inks, and `backing`
+// is the colour it sits on, used to cut the perforations out of its edge.
 export function StampArt({
   art,
   backing,
@@ -22,6 +32,18 @@ export function StampArt({
   size?: number
 }) {
   const { accent, face, ink } = cardStock
+  const print = printed[art]
+  if (print) {
+    const width = WIDTH * size * 1.06
+    return (
+      <Image
+        accessibilityLabel={`${label} stamp`}
+        resizeMode="contain"
+        source={print}
+        style={{ height: width / PRINT_SHAPE, width }}
+      />
+    )
+  }
 
   return (
     <Svg

@@ -1,27 +1,35 @@
-import { Text, View } from 'react-native'
+import { Image, Text, View } from 'react-native'
 
-// A round cancel mark: place around the rim, date across the middle. Rotated a
-// few degrees, because nobody at a counter stamps straight.
+const ink = require('../../assets/postmark.webp')
+
+// A round cancel mark with its wavy lines, and the date struck in the middle
+// of the ring. Rotated a few degrees, because nobody at a counter stamps straight.
 export function Postmark({ date, place, tilt = -8 }: { date: string; place: string; tilt?: number }) {
   return (
     <View
       accessibilityLabel={`Postmarked ${place}, ${date}`}
-      className="h-24 w-24 items-center justify-center rounded-full border-2 border-ink-soft opacity-80"
-      style={{ transform: [{ rotate: `${tilt}deg` }] }}
+      style={{ height: 96, opacity: 0.85, transform: [{ rotate: `${tilt}deg` }], width: 96 }}
     >
-      <View className="h-[84px] w-[84px] items-center justify-center rounded-full border border-ink-soft">
-        {/* A fixed width, so a long place name shrinks to fit the ring. Sized to
-            its own text, Android can drop the last word instead. */}
+      <Image resizeMode="contain" source={ink} style={{ height: 96, width: 96 }} />
+      {/* The ring sits left of centre in the picture, so the date does too. */}
+      <View
+        style={{ alignItems: 'center', height: 96, justifyContent: 'center', left: 9, position: 'absolute', width: 56 }}
+      >
         <Text
           adjustsFontSizeToFit
-          className="w-[74px] text-center font-postmark text-postmark uppercase tracking-wide text-ink-soft"
-          minimumFontScale={0.5}
-          numberOfLines={1}
+          numberOfLines={2}
+          style={{
+            color: '#4a2e1f',
+            fontFamily: 'Lora_700Bold',
+            fontSize: 9,
+            letterSpacing: 0.6,
+            lineHeight: 11,
+            textAlign: 'center',
+            width: 40,
+          }}
         >
-          {place}
+          {date.toUpperCase()}
         </Text>
-        <View className="my-1 h-px w-14 bg-ink-soft" />
-        <Text className="font-postmark text-postmark uppercase tracking-widest text-ink-soft">{date}</Text>
       </View>
     </View>
   )

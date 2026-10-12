@@ -120,6 +120,7 @@ export default function CardScreen() {
             <>
               <InkButton
                 disabled={isBusy}
+                arrow
                 label={openCard.isPending ? copy.open.signing : copy.open.sign}
                 onPress={() =>
                   openCard.mutate(card, {

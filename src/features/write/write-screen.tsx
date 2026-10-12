@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics'
 import { useState } from 'react'
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native'
+import { Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { InkButton } from '../../components/ink-button'
 import { StampArt } from '../../components/stamp-art'
 import { copy } from '../../copy'
@@ -19,6 +19,8 @@ import { tokenName } from '../post/token-name'
 import { usePostOffice, useQuote } from '../post/use-post'
 import { HandwritingPad } from './handwriting-pad'
 import { pickPhoto, type PhotoSource } from './pick-photo'
+
+const prints = require('../../../assets/polaroids.webp')
 
 type Mode = 'hand' | 'typed'
 
@@ -129,8 +131,21 @@ export function WriteScreen({
 
   return (
     <ScrollView className="flex-1" contentContainerClassName="px-6 pb-10 pt-8" keyboardShouldPersistTaps="handled">
-      <Text className="font-script text-script text-ink">{copy.write.title}</Text>
-      <Text className="mb-6 mt-1 font-body text-body text-ink-soft">{copy.write.sub}</Text>
+      <View className="mb-5 flex-row items-center justify-between">
+        <View className="flex-1 pr-2">
+          <Text adjustsFontSizeToFit className="font-script text-script text-ink" numberOfLines={1}>
+            {copy.write.title}
+          </Text>
+          <Text className="mt-1 font-body text-body text-ink-soft">{copy.write.sub}</Text>
+        </View>
+        <Image
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+          resizeMode="contain"
+          source={prints}
+          style={{ height: 72, width: 96 }}
+        />
+      </View>
 
       <View>
         <View
@@ -245,25 +260,27 @@ export function WriteScreen({
 
       <Label>{copy.write.stampLabel}</Label>
       <ScrollView contentContainerClassName="gap-3 pr-6" horizontal showsHorizontalScrollIndicator={false}>
-        {stamps.map((option) => {
-          const isChosen = option.id === card.stampId
-          return (
-            <Pressable
-              accessibilityLabel={`${option.name} stamp`}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: isChosen }}
-              className={`rounded-stamp border-2 p-1.5 ${isChosen ? 'border-ink' : 'border-transparent'}`}
-              key={option.id}
-              onPress={() => {
-                void Haptics.selectionAsync()
-                change({ stampId: option.id })
-                setSide('back')
-              }}
-            >
-              <StampArt art={option.art} backing={palette.paper} label={option.name} />
-            </Pressable>
-          )
-        })}
+        {stamps
+          .filter((option) => option.art !== 'runner')
+          .map((option) => {
+            const isChosen = option.id === card.stampId
+            return (
+              <Pressable
+                accessibilityLabel={`${option.name} stamp`}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: isChosen }}
+                className={`rounded-stamp border-2 p-1.5 ${isChosen ? 'border-ink' : 'border-transparent'}`}
+                key={option.id}
+                onPress={() => {
+                  void Haptics.selectionAsync()
+                  change({ stampId: option.id })
+                  setSide('back')
+                }}
+              >
+                <StampArt art={option.art} backing={palette.paper} label={option.name} />
+              </Pressable>
+            )
+          })}
       </ScrollView>
       <Text className="mt-2 font-body text-body text-ink-soft">{stamp.note}</Text>
 
@@ -289,7 +306,7 @@ export function WriteScreen({
       {(complaint ?? error) ? (
         <Text className="mb-3 font-body text-body text-accent-ink">{complaint ?? error}</Text>
       ) : null}
-      <InkButton disabled={isPosting} label={isPosting ? copy.write.posting : copy.write.post} onPress={post} />
+      <InkButton disabled={isPosting} arrow label={isPosting ? copy.write.posting : copy.write.post} onPress={post} />
     </ScrollView>
   )
 }

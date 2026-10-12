@@ -8,7 +8,6 @@ import { TabBar } from '../components/tab-bar'
 import { copy } from '../copy'
 import { useDrawPenPal, usePostCard, type PostedReceipt } from '../features/post/use-post'
 import { WriteScreen } from '../features/write/write-screen'
-import { usePalette } from '../theme'
 import { describeProblem } from '../utils/describe-problem'
 import { ellipsify } from '../utils/ellipsify'
 
@@ -48,12 +47,11 @@ export default function Write() {
 
 // What the counter says once the card has gone, and what kind of post it went by.
 function Posted({ onAnother, onHome, receipt }: { onAnother: () => void; onHome: () => void; receipt: PostedReceipt }) {
-  const palette = usePalette()
   return (
     <View className="flex-1 justify-between px-7 pb-8 pt-14">
       <View className="items-center">
         <View style={{ transform: [{ rotate: '-6deg' }] }}>
-          <SunStamp backing={palette.paper} size={112} />
+          <SunStamp size={112} />
         </View>
         <Text
           className="mt-8 w-full text-center font-script text-[54px] leading-[62px] text-ink"

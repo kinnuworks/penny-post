@@ -1,10 +1,14 @@
 import * as Haptics from 'expo-haptics'
-import { Pressable, Text, View } from 'react-native'
+import { useEffect, useState } from 'react'
+import { Animated, Easing, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import Svg, { Circle, Defs, Ellipse, LinearGradient, Path, Rect, Stop, Text as SvgText } from 'react-native-svg'
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg'
+import { Give, Rise } from '../../components/motion'
 import { copy } from '../../copy'
 
-// The first thing anyone sees: a letterbox on a hill at sunrise, waiting.
+const sunset = require('../../../assets/welcome.jpg')
+
+// The first thing anyone sees: a letterbox on a hill at sunset, waiting.
 export function WelcomeScreen({
   error,
   isBusy,
@@ -27,112 +31,103 @@ export function WelcomeScreen({
         style={{ paddingBottom: insets.bottom + 24, paddingTop: insets.top + 56 }}
       >
         <View className="items-center">
-          {/* Full width and centred. Sized to its own text, Android can measure it
-              a pixel short and drop the second word. */}
-          <Text
-            adjustsFontSizeToFit
-            className="w-full text-center font-script text-[72px] leading-[84px] text-[#2a1d14]"
-            numberOfLines={1}
-            style={{ transform: [{ rotate: '-5deg' }] }}
-            textBreakStrategy="simple"
-          >
-            {copy.appName}
-          </Text>
-          <Text className="mt-3 text-center font-body text-[20px] leading-[28px] text-[#3a2a1c]">
-            {copy.welcome.line}
-          </Text>
+          <Rise delay={150} style={{ alignSelf: 'stretch' }}>
+            {/* Full width and centred. Sized to its own text, Android can measure it
+                a pixel short and drop the second word. */}
+            <Text
+              adjustsFontSizeToFit
+              className="w-full text-center font-script text-[72px] leading-[84px] text-[#2a1d14]"
+              numberOfLines={1}
+              style={{ transform: [{ rotate: '-5deg' }] }}
+              textBreakStrategy="simple"
+            >
+              {copy.appName}
+            </Text>
+          </Rise>
+          <Rise delay={380} style={{ alignSelf: 'stretch' }}>
+            <Text className="mt-3 w-full text-center font-body text-[20px] leading-[28px] text-[#3a2a1c]">
+              {copy.welcome.line}
+            </Text>
+          </Rise>
         </View>
 
-        <View>
+        <Rise delay={650}>
           {error ? <Text className="mb-3 text-center font-body text-body text-[#fff3dc]">{error}</Text> : null}
-          <Pressable
+          <Give
+            accessibilityLabel={copy.welcome.connect}
             accessibilityRole="button"
             accessibilityState={{ disabled: isBusy }}
-            className={`min-h-[56px] flex-row items-center justify-center rounded-full bg-[#fbf3e2] px-6 active:opacity-90 ${isBusy ? 'opacity-70' : ''}`}
             disabled={isBusy}
             onPress={() => {
               void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
               onConnect()
             }}
+            style={{ borderRadius: 999, boxShadow: '0px 10px 24px rgba(0, 0, 0, 0.35)' }}
           >
-            <Text className="font-label text-[17px] text-[#2a1d14]">
-              {isBusy ? copy.welcome.connecting : copy.welcome.connect}
-            </Text>
-          </Pressable>
-          <Text className="mt-4 text-center font-caption text-caption text-[#f3e3c6]">{copy.welcome.foot}</Text>
-        </View>
+            <View
+              className={`min-h-[58px] flex-row items-center justify-center rounded-full bg-[#fbf3e2] px-7 ${isBusy ? 'opacity-70' : ''}`}
+            >
+              <Text className="flex-1 text-center font-label text-[17px] text-[#2a1d14]" textBreakStrategy="simple">
+                {isBusy ? copy.welcome.connecting : copy.welcome.connect}
+              </Text>
+            </View>
+          </Give>
+          <Text className="mt-4 w-full text-center font-caption text-caption text-[#f3e3c6]">{copy.welcome.foot}</Text>
+        </Rise>
       </View>
     </View>
   )
 }
 
+// A real letterbox at sunset, with the foot of the picture darkened so the
+// button and the line under it stay readable.
 function Sunrise() {
+  // The picture drifts closer and back, slowly enough to be felt more than seen.
+  const [drift] = useState(() => new Animated.Value(0))
+  useEffect(() => {
+    const breathing = Animated.loop(
+      Animated.sequence([
+        Animated.timing(drift, {
+          duration: 16_000,
+          easing: Easing.inOut(Easing.quad),
+          toValue: 1,
+          useNativeDriver: true,
+        }),
+        Animated.timing(drift, {
+          duration: 16_000,
+          easing: Easing.inOut(Easing.quad),
+          toValue: 0,
+          useNativeDriver: true,
+        }),
+      ]),
+    )
+    breathing.start()
+    return () => breathing.stop()
+  }, [drift])
+
   return (
-    <Svg height="100%" preserveAspectRatio="xMidYMid slice" viewBox="0 0 360 780" width="100%">
-      <Defs>
-        <LinearGradient id="sky" x1="0" x2="0" y1="0" y2="1">
-          <Stop offset="0" stopColor="#f0a85e" />
-          <Stop offset="0.3" stopColor="#f6c283" />
-          <Stop offset="0.52" stopColor="#fbe2ae" />
-          <Stop offset="1" stopColor="#f6c283" />
-        </LinearGradient>
-        <LinearGradient id="dusk" x1="0" x2="0" y1="0" y2="1">
-          <Stop offset="0" stopColor="#1c150d" stopOpacity="0" />
-          <Stop offset="1" stopColor="#1c150d" stopOpacity="0.72" />
-        </LinearGradient>
-        <LinearGradient id="box" x1="0" x2="1" y1="0" y2="0">
-          <Stop offset="0" stopColor="#8a5330" />
-          <Stop offset="1" stopColor="#5f3719" />
-        </LinearGradient>
-      </Defs>
-
-      <Rect fill="url(#sky)" height={780} width={360} />
-      <Circle cx={132} cy={392} fill="#fff4cf" opacity={0.35} r={58} />
-      <Circle cx={132} cy={392} fill="#fff4cf" opacity={0.55} r={36} />
-      <Circle cx={132} cy={392} fill="#fffbe8" r={20} />
-
-      {/* Far hills, then nearer ones, each a little darker. */}
-      <Path d="M0 420 L60 384 L112 408 L178 362 L240 402 L300 376 L360 410 L360 780 L0 780 Z" fill="#c79a82" />
-      <Path d="M0 452 L70 418 L140 446 L214 410 L290 450 L360 424 L360 780 L0 780 Z" fill="#a67e69" />
-      <Ellipse cx={180} cy={470} fill="#f9dca6" opacity={0.5} rx={200} ry={10} />
-      <Path d="M0 500 L88 466 L170 498 L250 470 L360 506 L360 780 L0 780 Z" fill="#6f6a48" />
-      <Path d="M0 566 Q90 520 190 556 T360 540 L360 780 L0 780 Z" fill="#4c4a30" />
-      <Path d="M0 640 Q120 580 230 620 T360 610 L360 780 L0 780 Z" fill="#2f2c1c" />
-
-      {/* The letterbox on its post. */}
-      <Rect fill="#3d2513" height={150} rx={2} width={12} x={226} y={548} />
-      <Path d="M168 478 L304 478 L312 494 L160 494 Z" fill="#4a2a13" />
-      <Rect fill="url(#box)" height={66} rx={4} width={136} x={168} y={492} />
-      <Rect fill="#2a180b" height={7} rx={3.5} width={74} x={199} y={506} />
-      <Rect fill="#e9d3a6" height={24} rx={2} width={100} x={186} y={524} />
-      <SvgText
-        fill="#4a2a13"
-        fontFamily="Lora_700Bold"
-        fontSize={10.5}
-        letterSpacing={1.6}
-        textAnchor="middle"
-        x={236}
-        y={540.5}
-      >
-        PENNY POST
-      </SvgText>
-      {/* The little flag, up: there is post. */}
-      <Rect fill="#3d2513" height={34} width={3} x={306} y={470} />
-      <Path d="M309 470 L328 477 L309 484 Z" fill="#d9622b" />
-
-      {/* Grass in front, catching the light. */}
-      {[18, 46, 82, 120, 152, 262, 296, 332].map((x, index) => (
-        <Path
-          d={`M${x} 690 q4 -26 ${index % 2 ? 9 : -7} -40 M${x + 6} 690 q2 -20 ${index % 2 ? -8 : 10} -30`}
-          fill="none"
-          key={x}
-          stroke="#8a7a3c"
-          strokeLinecap="round"
-          strokeWidth={2}
-        />
-      ))}
-
-      <Rect fill="url(#dusk)" height={330} width={360} y={450} />
-    </Svg>
+    <View style={{ flex: 1, overflow: 'hidden' }}>
+      <Animated.Image
+        accessibilityLabel="A wooden letterbox on a hill above the sea at sunset"
+        resizeMode="cover"
+        source={sunset}
+        style={{
+          height: '100%',
+          transform: [{ scale: drift.interpolate({ inputRange: [0, 1], outputRange: [1, 1.09] }) }],
+          width: '100%',
+        }}
+      />
+      <View style={{ bottom: 0, height: '38%', left: 0, position: 'absolute', right: 0 }}>
+        <Svg height="100%" preserveAspectRatio="none" viewBox="0 0 10 10" width="100%">
+          <Defs>
+            <LinearGradient id="dusk" x1="0" x2="0" y1="0" y2="1">
+              <Stop offset="0" stopColor="#1c150d" stopOpacity="0" />
+              <Stop offset="1" stopColor="#1c150d" stopOpacity="0.82" />
+            </LinearGradient>
+          </Defs>
+          <Rect fill="url(#dusk)" height={10} width={10} />
+        </Svg>
+      </View>
+    </View>
   )
 }

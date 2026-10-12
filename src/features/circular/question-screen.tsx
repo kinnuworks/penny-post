@@ -1,7 +1,8 @@
 import { useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
-import { Animated, Pressable, ScrollView, Text, View } from 'react-native'
+import { Animated, Easing, Pressable, ScrollView, Text, View } from 'react-native'
 import { InkButton } from '../../components/ink-button'
+import { Rise } from '../../components/motion'
 import { Paper } from '../../components/paper'
 import { ScreenHeader } from '../../components/screen-header'
 import { SunDoodle, SunStamp } from '../../components/sun'
@@ -74,7 +75,9 @@ export function QuestionScreen() {
         )
       ) : (
         <>
-          <Ballot circular={view.circular} disabled={answer.isPending} onPick={setPicked} picked={picked} />
+          <Rise>
+            <Ballot circular={view.circular} disabled={answer.isPending} onPick={setPicked} picked={picked} />
+          </Rise>
 
           <View className="mt-6 gap-3">
             {hasSeal ? (
@@ -86,6 +89,7 @@ export function QuestionScreen() {
                 ) : null}
                 <InkButton
                   disabled={picked === null || answer.isPending}
+                  arrow
                   label={answer.isPending ? copy.question.sending : copy.question.send}
                   onPress={() => {
                     if (picked !== null) {
@@ -138,7 +142,6 @@ function Ballot({
   onPick: (choice: number) => void
   picked: number | null
 }) {
-  const palette = usePalette()
   const sponsor = useSkrName(circular.sponsor)
 
   return (
@@ -150,7 +153,7 @@ function Ballot({
             {copy.circular.from(sponsor.data ?? ellipsify(circular.sponsor))}
           </Text>
         </View>
-        <SunStamp backing={palette.paperRaised} size={58} />
+        <SunStamp size={58} />
       </View>
       <Text className="mb-5 mt-4 font-title text-[24px] leading-[31px] text-ink">{circular.question}</Text>
 
@@ -198,9 +201,15 @@ function YoureIn({
 }) {
   const palette = usePalette()
   const [landing] = useState(() => new Animated.Value(0))
+  const [turning] = useState(() => new Animated.Value(0))
   useEffect(() => {
     Animated.spring(landing, { friction: 5, tension: 70, toValue: 1, useNativeDriver: true }).start()
-  }, [landing])
+    const turn = Animated.loop(
+      Animated.timing(turning, { duration: 50_000, easing: Easing.linear, toValue: 1, useNativeDriver: true }),
+    )
+    turn.start()
+    return () => turn.stop()
+  }, [landing, turning])
   const most = Math.max(1, ...circular.tallies.slice(0, circular.options.length))
 
   return (
@@ -215,10 +224,15 @@ function YoureIn({
         }}
       >
         <View className="items-center justify-center">
-          <View style={{ position: 'absolute' }}>
+          <Animated.View
+            style={{
+              position: 'absolute',
+              transform: [{ rotate: turning.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] }) }],
+            }}
+          >
             <SunDoodle color={palette.accent} ring={false} size={250} stroke={0.7} />
-          </View>
-          <SunStamp backing={palette.paper} size={132} />
+          </Animated.View>
+          <SunStamp size={132} />
         </View>
       </Animated.View>
 
