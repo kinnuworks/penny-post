@@ -102,11 +102,13 @@
   },
   "overrides": {
     "react-native-reanimated": "4.5.4",
-    "react-native-worklets": "0.10.4"
+    "react-native-worklets": "0.10.4",
+    "xcode>uuid": "11.1.1"
   },
   "resolutions": {
     "react-native-reanimated": "4.5.4",
-    "react-native-worklets": "0.10.4"
+    "react-native-worklets": "0.10.4",
+    "xcode>uuid": "11.1.1"
   },
   "private": true
 }
