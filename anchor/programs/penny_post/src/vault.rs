@@ -1,5 +1,5 @@
-//! Token moves out of a card's vault. Every card has its own vault, and the
-//! card account is the vault's authority, so there is no shared pool to drain.
+//! Token moves out of a vault. Every card and every circular has its own vault,
+//! and that account is the vault's authority, so there is no shared pool to drain.
 
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Burn, CloseAccount, TransferChecked};
@@ -8,7 +8,7 @@ pub struct VaultAccounts<'info> {
     pub token_program: AccountInfo<'info>,
     pub vault: AccountInfo<'info>,
     pub mint: AccountInfo<'info>,
-    /// The card account, which signs with its own seeds.
+    /// The card or circular that owns the vault. It signs with its own seeds.
     pub card: AccountInfo<'info>,
 }
 

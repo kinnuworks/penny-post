@@ -34,12 +34,18 @@ import {
   type SelfPlanAndSendFunctions,
 } from '@solana/kit/program-client-core'
 import {
+  getAnswerCodec,
   getCardCodec,
+  getCircularCodec,
   getLetterboxCodec,
   getPostOfficeCodec,
   getSealCodec,
+  type Answer,
+  type AnswerArgs,
   type Card,
   type CardArgs,
+  type Circular,
+  type CircularArgs,
   type Letterbox,
   type LetterboxArgs,
   type PostOffice,
@@ -48,34 +54,50 @@ import {
   type SealArgs,
 } from '../accounts'
 import {
+  getAnswerCircularInstruction,
+  getCloseCircularInstructionAsync,
+  getCollectCircularInstructionAsync,
   getOpenCardInstructionAsync,
   getOpenLetterboxInstructionAsync,
   getOpenPostOfficeInstructionAsync,
   getPostCardInstructionAsync,
+  getPostCircularInstructionAsync,
   getReturnCardInstructionAsync,
   getSetLetterboxInstructionAsync,
   getSetTermsInstructionAsync,
   getVerifyLetterboxInstructionAsync,
+  parseAnswerCircularInstruction,
+  parseCloseCircularInstruction,
+  parseCollectCircularInstruction,
   parseOpenCardInstruction,
   parseOpenLetterboxInstruction,
   parseOpenPostOfficeInstruction,
   parsePostCardInstruction,
+  parsePostCircularInstruction,
   parseReturnCardInstruction,
   parseSetLetterboxInstruction,
   parseSetTermsInstruction,
   parseVerifyLetterboxInstruction,
+  type AnswerCircularInput,
+  type CloseCircularAsyncInput,
+  type CollectCircularAsyncInput,
   type OpenCardAsyncInput,
   type OpenLetterboxAsyncInput,
   type OpenPostOfficeAsyncInput,
+  type ParsedAnswerCircularInstruction,
+  type ParsedCloseCircularInstruction,
+  type ParsedCollectCircularInstruction,
   type ParsedOpenCardInstruction,
   type ParsedOpenLetterboxInstruction,
   type ParsedOpenPostOfficeInstruction,
   type ParsedPostCardInstruction,
+  type ParsedPostCircularInstruction,
   type ParsedReturnCardInstruction,
   type ParsedSetLetterboxInstruction,
   type ParsedSetTermsInstruction,
   type ParsedVerifyLetterboxInstruction,
   type PostCardAsyncInput,
+  type PostCircularAsyncInput,
   type ReturnCardAsyncInput,
   type SetLetterboxAsyncInput,
   type SetTermsAsyncInput,
@@ -83,8 +105,10 @@ import {
 } from '../instructions'
 import {
   findCardPda,
+  findCircularPda,
   findLetterboxPda,
   findPostOfficePda,
+  findPotVaultPda,
   findRecipientLetterboxPda,
   findSealPda,
   findVaultPda,
@@ -94,7 +118,9 @@ export const PENNY_POST_PROGRAM_ADDRESS =
   'D5LZ7kUmpXhE2hsKHnse9itthWHX6j8o4EkGcfz2MLAD' as Address<'D5LZ7kUmpXhE2hsKHnse9itthWHX6j8o4EkGcfz2MLAD'>
 
 export enum PennyPostAccount {
+  Answer,
   Card,
+  Circular,
   Letterbox,
   PostOffice,
   Seal,
@@ -105,11 +131,29 @@ export function identifyPennyPostAccount(account: { data: ReadonlyUint8Array } |
   if (
     containsBytes(
       data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(new Uint8Array([119, 227, 103, 4, 0, 164, 56, 37])),
+      0,
+    )
+  ) {
+    return PennyPostAccount.Answer
+  }
+  if (
+    containsBytes(
+      data,
       fixEncoderSize(getBytesEncoder(), 8).encode(new Uint8Array([166, 250, 46, 230, 152, 63, 140, 182])),
       0,
     )
   ) {
     return PennyPostAccount.Card
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(new Uint8Array([240, 209, 49, 78, 235, 234, 58, 115])),
+      0,
+    )
+  ) {
+    return PennyPostAccount.Circular
   }
   if (
     containsBytes(
@@ -148,6 +192,9 @@ export enum PennyPostEvent {
   CardOpened,
   CardPosted,
   CardReturned,
+  CircularAnswered,
+  CircularCollected,
+  CircularPosted,
   LetterboxVerified,
 }
 
@@ -183,6 +230,33 @@ export function identifyPennyPostEvent(event: { data: ReadonlyUint8Array } | Rea
   if (
     containsBytes(
       data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(new Uint8Array([99, 36, 46, 17, 69, 58, 215, 9])),
+      0,
+    )
+  ) {
+    return PennyPostEvent.CircularAnswered
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(new Uint8Array([115, 142, 21, 162, 223, 249, 88, 38])),
+      0,
+    )
+  ) {
+    return PennyPostEvent.CircularCollected
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(new Uint8Array([139, 104, 97, 94, 9, 231, 189, 186])),
+      0,
+    )
+  ) {
+    return PennyPostEvent.CircularPosted
+  }
+  if (
+    containsBytes(
+      data,
       fixEncoderSize(getBytesEncoder(), 8).encode(new Uint8Array([166, 24, 70, 84, 50, 47, 119, 3])),
       0,
     )
@@ -193,10 +267,14 @@ export function identifyPennyPostEvent(event: { data: ReadonlyUint8Array } | Rea
 }
 
 export enum PennyPostInstruction {
+  AnswerCircular,
+  CloseCircular,
+  CollectCircular,
   OpenCard,
   OpenLetterbox,
   OpenPostOffice,
   PostCard,
+  PostCircular,
   ReturnCard,
   SetLetterbox,
   SetTerms,
@@ -207,6 +285,33 @@ export function identifyPennyPostInstruction(
   instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
 ): PennyPostInstruction {
   const data = 'data' in instruction ? instruction.data : instruction
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(new Uint8Array([203, 209, 208, 78, 93, 213, 82, 105])),
+      0,
+    )
+  ) {
+    return PennyPostInstruction.AnswerCircular
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(new Uint8Array([93, 180, 163, 203, 238, 224, 136, 126])),
+      0,
+    )
+  ) {
+    return PennyPostInstruction.CloseCircular
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(new Uint8Array([35, 10, 89, 126, 132, 21, 190, 52])),
+      0,
+    )
+  ) {
+    return PennyPostInstruction.CollectCircular
+  }
   if (
     containsBytes(
       data,
@@ -242,6 +347,15 @@ export function identifyPennyPostInstruction(
     )
   ) {
     return PennyPostInstruction.PostCard
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(new Uint8Array([241, 94, 255, 215, 21, 253, 59, 223])),
+      0,
+    )
+  ) {
+    return PennyPostInstruction.PostCircular
   }
   if (
     containsBytes(
@@ -286,10 +400,14 @@ export function identifyPennyPostInstruction(
 }
 
 export type ParsedPennyPostInstruction<TProgram extends string = 'D5LZ7kUmpXhE2hsKHnse9itthWHX6j8o4EkGcfz2MLAD'> =
+  | ({ instructionType: PennyPostInstruction.AnswerCircular } & ParsedAnswerCircularInstruction<TProgram>)
+  | ({ instructionType: PennyPostInstruction.CloseCircular } & ParsedCloseCircularInstruction<TProgram>)
+  | ({ instructionType: PennyPostInstruction.CollectCircular } & ParsedCollectCircularInstruction<TProgram>)
   | ({ instructionType: PennyPostInstruction.OpenCard } & ParsedOpenCardInstruction<TProgram>)
   | ({ instructionType: PennyPostInstruction.OpenLetterbox } & ParsedOpenLetterboxInstruction<TProgram>)
   | ({ instructionType: PennyPostInstruction.OpenPostOffice } & ParsedOpenPostOfficeInstruction<TProgram>)
   | ({ instructionType: PennyPostInstruction.PostCard } & ParsedPostCardInstruction<TProgram>)
+  | ({ instructionType: PennyPostInstruction.PostCircular } & ParsedPostCircularInstruction<TProgram>)
   | ({ instructionType: PennyPostInstruction.ReturnCard } & ParsedReturnCardInstruction<TProgram>)
   | ({ instructionType: PennyPostInstruction.SetLetterbox } & ParsedSetLetterboxInstruction<TProgram>)
   | ({ instructionType: PennyPostInstruction.SetTerms } & ParsedSetTermsInstruction<TProgram>)
@@ -300,6 +418,18 @@ export function parsePennyPostInstruction<TProgram extends string>(
 ): ParsedPennyPostInstruction<TProgram> {
   const instructionType = identifyPennyPostInstruction(instruction)
   switch (instructionType) {
+    case PennyPostInstruction.AnswerCircular: {
+      assertIsInstructionWithAccounts(instruction)
+      return { instructionType: PennyPostInstruction.AnswerCircular, ...parseAnswerCircularInstruction(instruction) }
+    }
+    case PennyPostInstruction.CloseCircular: {
+      assertIsInstructionWithAccounts(instruction)
+      return { instructionType: PennyPostInstruction.CloseCircular, ...parseCloseCircularInstruction(instruction) }
+    }
+    case PennyPostInstruction.CollectCircular: {
+      assertIsInstructionWithAccounts(instruction)
+      return { instructionType: PennyPostInstruction.CollectCircular, ...parseCollectCircularInstruction(instruction) }
+    }
     case PennyPostInstruction.OpenCard: {
       assertIsInstructionWithAccounts(instruction)
       return { instructionType: PennyPostInstruction.OpenCard, ...parseOpenCardInstruction(instruction) }
@@ -315,6 +445,10 @@ export function parsePennyPostInstruction<TProgram extends string>(
     case PennyPostInstruction.PostCard: {
       assertIsInstructionWithAccounts(instruction)
       return { instructionType: PennyPostInstruction.PostCard, ...parsePostCardInstruction(instruction) }
+    }
+    case PennyPostInstruction.PostCircular: {
+      assertIsInstructionWithAccounts(instruction)
+      return { instructionType: PennyPostInstruction.PostCircular, ...parsePostCircularInstruction(instruction) }
     }
     case PennyPostInstruction.ReturnCard: {
       assertIsInstructionWithAccounts(instruction)
@@ -350,13 +484,24 @@ export type PennyPostPlugin = {
 }
 
 export type PennyPostPluginAccounts = {
+  answer: ReturnType<typeof getAnswerCodec> & SelfFetchFunctions<AnswerArgs, Answer>
   card: ReturnType<typeof getCardCodec> & SelfFetchFunctions<CardArgs, Card>
+  circular: ReturnType<typeof getCircularCodec> & SelfFetchFunctions<CircularArgs, Circular>
   letterbox: ReturnType<typeof getLetterboxCodec> & SelfFetchFunctions<LetterboxArgs, Letterbox>
   postOffice: ReturnType<typeof getPostOfficeCodec> & SelfFetchFunctions<PostOfficeArgs, PostOffice>
   seal: ReturnType<typeof getSealCodec> & SelfFetchFunctions<SealArgs, Seal>
 }
 
 export type PennyPostPluginInstructions = {
+  answerCircular: (
+    input: AnswerCircularInput,
+  ) => ReturnType<typeof getAnswerCircularInstruction> & SelfPlanAndSendFunctions
+  closeCircular: (
+    input: CloseCircularAsyncInput,
+  ) => ReturnType<typeof getCloseCircularInstructionAsync> & SelfPlanAndSendFunctions
+  collectCircular: (
+    input: CollectCircularAsyncInput,
+  ) => ReturnType<typeof getCollectCircularInstructionAsync> & SelfPlanAndSendFunctions
   openCard: (input: OpenCardAsyncInput) => ReturnType<typeof getOpenCardInstructionAsync> & SelfPlanAndSendFunctions
   openLetterbox: (
     input: OpenLetterboxAsyncInput,
@@ -365,6 +510,9 @@ export type PennyPostPluginInstructions = {
     input: OpenPostOfficeAsyncInput,
   ) => ReturnType<typeof getOpenPostOfficeInstructionAsync> & SelfPlanAndSendFunctions
   postCard: (input: PostCardAsyncInput) => ReturnType<typeof getPostCardInstructionAsync> & SelfPlanAndSendFunctions
+  postCircular: (
+    input: PostCircularAsyncInput,
+  ) => ReturnType<typeof getPostCircularInstructionAsync> & SelfPlanAndSendFunctions
   returnCard: (
     input: ReturnCardAsyncInput,
   ) => ReturnType<typeof getReturnCardInstructionAsync> & SelfPlanAndSendFunctions
@@ -378,11 +526,13 @@ export type PennyPostPluginInstructions = {
 }
 
 export type PennyPostPluginPdas = {
+  potVault: typeof findPotVaultPda
+  postOffice: typeof findPostOfficePda
   vault: typeof findVaultPda
   recipientLetterbox: typeof findRecipientLetterboxPda
-  postOffice: typeof findPostOfficePda
   letterbox: typeof findLetterboxPda
   card: typeof findCardPda
+  circular: typeof findCircularPda
   seal: typeof findSealPda
 }
 
@@ -395,27 +545,35 @@ export function pennyPostProgram() {
     return extendClient(client, {
       pennyPost: <PennyPostPlugin>{
         accounts: {
+          answer: addSelfFetchFunctions(client, getAnswerCodec()),
           card: addSelfFetchFunctions(client, getCardCodec()),
+          circular: addSelfFetchFunctions(client, getCircularCodec()),
           letterbox: addSelfFetchFunctions(client, getLetterboxCodec()),
           postOffice: addSelfFetchFunctions(client, getPostOfficeCodec()),
           seal: addSelfFetchFunctions(client, getSealCodec()),
         },
         instructions: {
+          answerCircular: (input) => addSelfPlanAndSendFunctions(client, getAnswerCircularInstruction(input)),
+          closeCircular: (input) => addSelfPlanAndSendFunctions(client, getCloseCircularInstructionAsync(input)),
+          collectCircular: (input) => addSelfPlanAndSendFunctions(client, getCollectCircularInstructionAsync(input)),
           openCard: (input) => addSelfPlanAndSendFunctions(client, getOpenCardInstructionAsync(input)),
           openLetterbox: (input) => addSelfPlanAndSendFunctions(client, getOpenLetterboxInstructionAsync(input)),
           openPostOffice: (input) => addSelfPlanAndSendFunctions(client, getOpenPostOfficeInstructionAsync(input)),
           postCard: (input) => addSelfPlanAndSendFunctions(client, getPostCardInstructionAsync(input)),
+          postCircular: (input) => addSelfPlanAndSendFunctions(client, getPostCircularInstructionAsync(input)),
           returnCard: (input) => addSelfPlanAndSendFunctions(client, getReturnCardInstructionAsync(input)),
           setLetterbox: (input) => addSelfPlanAndSendFunctions(client, getSetLetterboxInstructionAsync(input)),
           setTerms: (input) => addSelfPlanAndSendFunctions(client, getSetTermsInstructionAsync(input)),
           verifyLetterbox: (input) => addSelfPlanAndSendFunctions(client, getVerifyLetterboxInstructionAsync(input)),
         },
         pdas: {
+          potVault: findPotVaultPda,
+          postOffice: findPostOfficePda,
           vault: findVaultPda,
           recipientLetterbox: findRecipientLetterboxPda,
-          postOffice: findPostOfficePda,
           letterbox: findLetterboxPda,
           card: findCardPda,
+          circular: findCircularPda,
           seal: findSealPda,
         },
         identifyAccount: identifyPennyPostAccount,

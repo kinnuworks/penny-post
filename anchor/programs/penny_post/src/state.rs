@@ -101,6 +101,65 @@ pub struct Card {
     pub burn_bps: u16,
 }
 
+/// One question put to every Seeker for one UTC day. Whoever asks puts up the
+/// pot. Each Genesis Token can answer once, and when the day closes the pot is
+/// shared equally among the phones that answered, less the burn share. The
+/// sender pays and the readers are paid, the same as for a card.
+#[account]
+#[derive(InitSpace)]
+pub struct Circular {
+    pub sponsor: Pubkey,
+    /// The UTC day, counted from the Unix epoch, that the question is open for.
+    pub day: u32,
+    /// What the sponsor put up, in base units of the postage token.
+    pub pot: u64,
+    /// The post office's burn share on the day the circular was posted.
+    pub burn_bps: u16,
+    /// Phones that have answered.
+    pub answers: u32,
+    /// Shares paid out so far.
+    pub collected: u32,
+    /// Answers per option, in the order the options are listed.
+    pub tallies: [u32; 4],
+    #[max_len(120)]
+    pub question: String,
+    #[max_len(4, 28)]
+    pub options: Vec<String>,
+    pub bump: u8,
+}
+
+impl Circular {
+    /// The moment the question stops taking answers and shares can be collected.
+    pub fn closes_at(&self) -> Option<i64> {
+        use crate::constants::SECONDS_PER_DAY;
+        i64::from(self.day)
+            .checked_add(1)?
+            .checked_mul(SECONDS_PER_DAY)
+    }
+
+    /// What each phone that answered is owed before the burn, rounded down.
+    pub fn share(&self) -> u64 {
+        self.pot.checked_div(u64::from(self.answers)).unwrap_or(0)
+    }
+}
+
+/// One phone's answer to a circular. Its address is derived from the Genesis
+/// Token's mint, so a token answers once whichever wallet holds it.
+#[account]
+#[derive(InitSpace)]
+pub struct Answer {
+    pub circular: Pubkey,
+    pub sgt_mint: Pubkey,
+    pub answerer: Pubkey,
+    pub choice: u8,
+    pub bump: u8,
+}
+
+/// The UTC day a timestamp falls on, counted from the Unix epoch.
+pub fn utc_day(timestamp: i64) -> i64 {
+    timestamp.div_euclid(crate::constants::SECONDS_PER_DAY)
+}
+
 /// Next 08:00 in the reader's time zone, strictly after `now`.
 pub fn next_delivery(now: i64, utc_offset_minutes: i16) -> Option<i64> {
     use crate::constants::*;
@@ -167,5 +226,39 @@ mod tests {
     #[test]
     fn never_overflows_on_hostile_clocks() {
         assert_eq!(next_delivery(i64::MAX, 840), None);
+    }
+
+    fn a_circular(day: u32, pot: u64, answers: u32) -> Circular {
+        Circular {
+            sponsor: Pubkey::default(),
+            day,
+            pot,
+            burn_bps: 1_000,
+            answers,
+            collected: 0,
+            tallies: [0; 4],
+            question: String::new(),
+            options: Vec::new(),
+            bump: 0,
+        }
+    }
+
+    #[test]
+    fn a_circular_closes_at_the_next_utc_midnight() {
+        let day = u32::try_from(utc_day(MIDNIGHT_UTC)).unwrap();
+        assert_eq!(
+            a_circular(day, 0, 0).closes_at(),
+            Some(MIDNIGHT_UTC + 86_400)
+        );
+        assert_eq!(utc_day(MIDNIGHT_UTC + 86_399), i64::from(day));
+        assert_eq!(utc_day(MIDNIGHT_UTC + 86_400), i64::from(day) + 1);
+    }
+
+    #[test]
+    fn a_circular_shares_its_pot_equally_and_rounds_down() {
+        assert_eq!(a_circular(0, 100, 3).share(), 33);
+        assert_eq!(a_circular(0, 100, 1).share(), 100);
+        // Nobody answered: there is no share, and the pot goes back to its sponsor.
+        assert_eq!(a_circular(0, 100, 0).share(), 0);
     }
 }

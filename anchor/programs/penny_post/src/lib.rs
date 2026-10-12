@@ -6,6 +6,10 @@
 //! nobody opens goes back to its sender after a week.
 //!
 //! A wallet that holds a Seeker Genesis Token gets one free stamp a day.
+//!
+//! Once a day there can also be a circular: one question put to every Seeker.
+//! Its sponsor pays, each Genesis Token answers once, and the phones that
+//! answered share the pot when the day closes.
 
 pub mod constants;
 pub mod error;
@@ -103,5 +107,27 @@ pub mod penny_post {
 
     pub fn return_card(ctx: Context<ReturnCard>) -> Result<()> {
         crate::instructions::return_card::handle_return_card(ctx)
+    }
+
+    pub fn post_circular(
+        ctx: Context<PostCircular>,
+        day: u32,
+        question: String,
+        options: Vec<String>,
+        pot: u64,
+    ) -> Result<()> {
+        crate::instructions::post_circular::handle_post_circular(ctx, day, question, options, pot)
+    }
+
+    pub fn answer_circular(ctx: Context<AnswerCircular>, choice: u8) -> Result<()> {
+        crate::instructions::answer_circular::handle_answer_circular(ctx, choice)
+    }
+
+    pub fn collect_circular(ctx: Context<CollectCircular>) -> Result<()> {
+        crate::instructions::collect_circular::handle_collect_circular(ctx)
+    }
+
+    pub fn close_circular(ctx: Context<CloseCircular>) -> Result<()> {
+        crate::instructions::close_circular::handle_close_circular(ctx)
     }
 }

@@ -2,6 +2,9 @@
 export class PostProblem extends Error {
   constructor(
     public reason:
+      | 'already-answered'
+      | 'bid-too-low'
+      | 'day-taken'
       | 'letterbox-full'
       | 'no-such-reader'
       | 'nobody-waiting'
@@ -10,7 +13,10 @@ export class PostProblem extends Error {
       | 'no-genesis-token'
       | 'not-arrived'
       | 'office-closed'
+      | 'pot-too-low'
       | 'price-changed'
+      | 'question-closed'
+      | 'question-open'
       | 'sealed-for-another-phone'
       | 'short-of-postage'
       | 'short-of-sol'

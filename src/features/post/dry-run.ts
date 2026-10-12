@@ -1,4 +1,9 @@
 import {
+  PENNY_POST_ERROR__CIRCULAR_ALREADY_OPEN,
+  PENNY_POST_ERROR__CIRCULAR_BID_TOO_LOW,
+  PENNY_POST_ERROR__CIRCULAR_NOT_OPEN,
+  PENNY_POST_ERROR__CIRCULAR_POT_TOO_LOW,
+  PENNY_POST_ERROR__CIRCULAR_STILL_OPEN,
   PENNY_POST_ERROR__EXPRESS_FEE_TOO_HIGH,
   PENNY_POST_ERROR__GENESIS_TOKEN_NOT_HELD,
   PENNY_POST_ERROR__LETTERBOX_FULL,
@@ -29,10 +34,17 @@ const PLACEHOLDER_LIFETIME = { blockhash: '11111111111111111111111111111111' as 
 
 // Anchor's code for an account that should exist and does not.
 const ACCOUNT_NOT_INITIALIZED = 3012
+// The system program's code for making an account where one already is.
+const ALREADY_IN_USE = 0
 // The token program and the system program both use 1 for "not enough".
 const NOT_ENOUGH = 1
 
 const REFUSALS: Record<number, PostProblem['reason']> = {
+  [PENNY_POST_ERROR__CIRCULAR_ALREADY_OPEN]: 'day-taken',
+  [PENNY_POST_ERROR__CIRCULAR_BID_TOO_LOW]: 'bid-too-low',
+  [PENNY_POST_ERROR__CIRCULAR_NOT_OPEN]: 'question-closed',
+  [PENNY_POST_ERROR__CIRCULAR_POT_TOO_LOW]: 'pot-too-low',
+  [PENNY_POST_ERROR__CIRCULAR_STILL_OPEN]: 'question-open',
   [PENNY_POST_ERROR__EXPRESS_FEE_TOO_HIGH]: 'price-changed',
   [PENNY_POST_ERROR__GENESIS_TOKEN_NOT_HELD]: 'no-genesis-token',
   [PENNY_POST_ERROR__LETTERBOX_FULL]: 'letterbox-full',
@@ -91,6 +103,11 @@ export function explainRefusal(err: unknown, logs: readonly string[]): Error {
   }
 
   const code = customCodeOf(err)
+  // An answer lives at an address made from the Genesis Token. If that address
+  // is taken, this phone has answered already.
+  if (code === ALREADY_IN_USE && text.includes('already in use')) {
+    return new PostProblem('already-answered')
+  }
   if (code === NOT_ENOUGH) {
     return new PostProblem(text.includes('insufficient lamports') ? 'short-of-sol' : 'short-of-postage')
   }

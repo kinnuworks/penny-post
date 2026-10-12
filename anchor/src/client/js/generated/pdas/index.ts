@@ -7,8 +7,10 @@
  */
 
 export * from './card'
+export * from './circular'
 export * from './letterbox'
 export * from './postOffice'
+export * from './potVault'
 export * from './recipientLetterbox'
 export * from './seal'
 export * from './vault'

@@ -35,8 +35,9 @@ import {
   validatorTime,
 } from './harness'
 
-// Everything that depends on the time of day. These tests move the validator's
-// clock forward and it cannot go back, so this file runs last.
+// Everything about cards that depends on the time of day. These tests move the
+// validator's clock forward and it cannot go back, so this file and the one
+// after it run last.
 
 const KOLKATA = 330
 const SECONDS_PER_DAY = 86_400n

@@ -8,7 +8,15 @@
 
 import type { ReadonlyUint8Array } from '@solana/kit'
 
+export const ANSWER_SEED: ReadonlyUint8Array = new Uint8Array([97, 110, 115, 119, 101, 114])
+
 export const CARD_SEED: ReadonlyUint8Array = new Uint8Array([99, 97, 114, 100])
+
+export const CIRCULAR_SEED: ReadonlyUint8Array = new Uint8Array([99, 105, 114, 99, 117, 108, 97, 114])
+
+export const CIRCULAR_VAULT_SEED: ReadonlyUint8Array = new Uint8Array([
+  99, 105, 114, 99, 117, 108, 97, 114, 95, 118, 97, 117, 108, 116,
+])
 
 export const LETTERBOX_SEED: ReadonlyUint8Array = new Uint8Array([108, 101, 116, 116, 101, 114, 98, 111, 120])
 

@@ -10,6 +10,7 @@ import { ellipsify } from '../../utils/ellipsify'
 import { formatTokens, groupThousands } from '../../utils/format-tokens'
 import { useNow } from '../../utils/use-now'
 import { stampById } from '../card/stamps'
+import { CircularCard } from '../circular/circular-card'
 import { hasFreeStamp, type PostedCard } from '../post/chain'
 import { describeDelivery, deviceUtcOffsetMinutes, nextDelivery } from '../post/delivery'
 import { askToRing, setMorningBells } from '../post/morning-bell'
@@ -97,6 +98,9 @@ export function LetterboxScreen({
         ) : (
           <View className="mb-5" />
         )}
+
+        {/* The day's question for every Seeker sits above the post addressed to this one. */}
+        {letterbox ? <CircularCard /> : null}
 
         {office.isLoading || mine.isLoading ? null : !office.data ? (
           <Notice>{copy.letterbox.closedHere}</Notice>

@@ -54,14 +54,44 @@ export const PENNY_POST_ERROR__GENESIS_TOKEN_NOT_HELD = 0x1781 // 6017
 export const PENNY_POST_ERROR__OVERFLOW = 0x1782 // 6018
 /** ExpressFeeTooHigh: The express fee is higher than the sender agreed to */
 export const PENNY_POST_ERROR__EXPRESS_FEE_TOO_HIGH = 0x1783 // 6019
+/** CircularDayPassed: That day has already gone */
+export const PENNY_POST_ERROR__CIRCULAR_DAY_PASSED = 0x1784 // 6020
+/** CircularBadQuestion: A circular needs a question and two to four short answers */
+export const PENNY_POST_ERROR__CIRCULAR_BAD_QUESTION = 0x1785 // 6021
+/** CircularPotTooLow: The pot is below what a circular must carry */
+export const PENNY_POST_ERROR__CIRCULAR_POT_TOO_LOW = 0x1786 // 6022
+/** CircularBidTooLow: That day is taken, and taking it over needs a pot a tenth larger */
+export const PENNY_POST_ERROR__CIRCULAR_BID_TOO_LOW = 0x1787 // 6023
+/** CircularAlreadyOpen: A question that is already open cannot be replaced */
+export const PENNY_POST_ERROR__CIRCULAR_ALREADY_OPEN = 0x1788 // 6024
+/** MissingPreviousSponsor: Taking over a day needs the previous sponsor's accounts, to pay them back */
+export const PENNY_POST_ERROR__MISSING_PREVIOUS_SPONSOR = 0x1789 // 6025
+/** CircularNotOpen: This question is not open today */
+export const PENNY_POST_ERROR__CIRCULAR_NOT_OPEN = 0x178a // 6026
+/** CircularStillOpen: This question is still open */
+export const PENNY_POST_ERROR__CIRCULAR_STILL_OPEN = 0x178b // 6027
+/** BadChoice: That is not one of the answers */
+export const PENNY_POST_ERROR__BAD_CHOICE = 0x178c // 6028
+/** CircularNotFinished: Some phones have not collected their share yet */
+export const PENNY_POST_ERROR__CIRCULAR_NOT_FINISHED = 0x178d // 6029
 
 export type PennyPostError =
+  | typeof PENNY_POST_ERROR__BAD_CHOICE
   | typeof PENNY_POST_ERROR__BAD_LETTERBOX
   | typeof PENNY_POST_ERROR__BAD_UTC_OFFSET
   | typeof PENNY_POST_ERROR__BURN_SHARE_TOO_HIGH
+  | typeof PENNY_POST_ERROR__CIRCULAR_ALREADY_OPEN
+  | typeof PENNY_POST_ERROR__CIRCULAR_BAD_QUESTION
+  | typeof PENNY_POST_ERROR__CIRCULAR_BID_TOO_LOW
+  | typeof PENNY_POST_ERROR__CIRCULAR_DAY_PASSED
+  | typeof PENNY_POST_ERROR__CIRCULAR_NOT_FINISHED
+  | typeof PENNY_POST_ERROR__CIRCULAR_NOT_OPEN
+  | typeof PENNY_POST_ERROR__CIRCULAR_POT_TOO_LOW
+  | typeof PENNY_POST_ERROR__CIRCULAR_STILL_OPEN
   | typeof PENNY_POST_ERROR__EXPRESS_FEE_TOO_HIGH
   | typeof PENNY_POST_ERROR__GENESIS_TOKEN_NOT_HELD
   | typeof PENNY_POST_ERROR__LETTERBOX_FULL
+  | typeof PENNY_POST_ERROR__MISSING_PREVIOUS_SPONSOR
   | typeof PENNY_POST_ERROR__MISSING_READER_TOKEN
   | typeof PENNY_POST_ERROR__MISSING_SENDER_TOKEN
   | typeof PENNY_POST_ERROR__NO_SEAL
@@ -80,12 +110,22 @@ export type PennyPostError =
 let pennyPostErrorMessages: Record<PennyPostError, string> | undefined
 if (process.env['NODE_ENV'] !== 'production') {
   pennyPostErrorMessages = {
+    [PENNY_POST_ERROR__BAD_CHOICE]: `That is not one of the answers`,
     [PENNY_POST_ERROR__BAD_LETTERBOX]: `The recipient letterbox account does not hold a letterbox`,
     [PENNY_POST_ERROR__BAD_UTC_OFFSET]: `That time zone offset is outside UTC-12:00 to UTC+14:00`,
     [PENNY_POST_ERROR__BURN_SHARE_TOO_HIGH]: `The burn share is above the 20% ceiling`,
+    [PENNY_POST_ERROR__CIRCULAR_ALREADY_OPEN]: `A question that is already open cannot be replaced`,
+    [PENNY_POST_ERROR__CIRCULAR_BAD_QUESTION]: `A circular needs a question and two to four short answers`,
+    [PENNY_POST_ERROR__CIRCULAR_BID_TOO_LOW]: `That day is taken, and taking it over needs a pot a tenth larger`,
+    [PENNY_POST_ERROR__CIRCULAR_DAY_PASSED]: `That day has already gone`,
+    [PENNY_POST_ERROR__CIRCULAR_NOT_FINISHED]: `Some phones have not collected their share yet`,
+    [PENNY_POST_ERROR__CIRCULAR_NOT_OPEN]: `This question is not open today`,
+    [PENNY_POST_ERROR__CIRCULAR_POT_TOO_LOW]: `The pot is below what a circular must carry`,
+    [PENNY_POST_ERROR__CIRCULAR_STILL_OPEN]: `This question is still open`,
     [PENNY_POST_ERROR__EXPRESS_FEE_TOO_HIGH]: `The express fee is higher than the sender agreed to`,
     [PENNY_POST_ERROR__GENESIS_TOKEN_NOT_HELD]: `The Genesis Token is not in this wallet`,
     [PENNY_POST_ERROR__LETTERBOX_FULL]: `This letterbox has taken its paid cards for that day`,
+    [PENNY_POST_ERROR__MISSING_PREVIOUS_SPONSOR]: `Taking over a day needs the previous sponsor's accounts, to pay them back`,
     [PENNY_POST_ERROR__MISSING_READER_TOKEN]: `A paid card needs the reader's token account`,
     [PENNY_POST_ERROR__MISSING_SENDER_TOKEN]: `Postage or an express fee needs the sender's token account`,
     [PENNY_POST_ERROR__NO_SEAL]: `A free card needs a seal held by the sender`,

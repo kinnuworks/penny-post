@@ -42,4 +42,24 @@ pub enum PostError {
     Overflow,
     #[msg("The express fee is higher than the sender agreed to")]
     ExpressFeeTooHigh,
+    #[msg("That day has already gone")]
+    CircularDayPassed,
+    #[msg("A circular needs a question and two to four short answers")]
+    CircularBadQuestion,
+    #[msg("The pot is below what a circular must carry")]
+    CircularPotTooLow,
+    #[msg("That day is taken, and taking it over needs a pot a tenth larger")]
+    CircularBidTooLow,
+    #[msg("A question that is already open cannot be replaced")]
+    CircularAlreadyOpen,
+    #[msg("Taking over a day needs the previous sponsor's accounts, to pay them back")]
+    MissingPreviousSponsor,
+    #[msg("This question is not open today")]
+    CircularNotOpen,
+    #[msg("This question is still open")]
+    CircularStillOpen,
+    #[msg("That is not one of the answers")]
+    BadChoice,
+    #[msg("Some phones have not collected their share yet")]
+    CircularNotFinished,
 }

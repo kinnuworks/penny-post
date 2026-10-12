@@ -6,10 +6,14 @@
  * @see https://github.com/codama-idl/codama
  */
 
+export * from './answerCircular'
+export * from './closeCircular'
+export * from './collectCircular'
 export * from './openCard'
 export * from './openLetterbox'
 export * from './openPostOffice'
 export * from './postCard'
+export * from './postCircular'
 export * from './returnCard'
 export * from './setLetterbox'
 export * from './setTerms'

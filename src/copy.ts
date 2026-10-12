@@ -36,6 +36,53 @@ export const copy = {
     claimingStamp: 'Looking for your Seeker',
   },
 
+  circular: {
+    caption: 'To every Seeker',
+    from: (who: string) => `Asked by ${who}`,
+    pot: (amount: string, token: string) => `${amount} ${token} is shared between every phone that answers.`,
+    soFar: (count: number) => (count === 1 ? '1 phone has answered.' : `${count} phones have answered.`),
+    noneYet: 'Nobody has answered yet.',
+    answering: 'Sending your answer',
+    youSaid: (answer: string) => `You said ${answer}.`,
+    tally: (answer: string, count: number) => `${answer} ${count}`,
+    shareNow: (amount: string, token: string) => `At this count your share is ${amount} ${token}.`,
+    paidWhen: (when: string) => `It is paid when the day closes, ${when}.`,
+    seekersOnly: 'Only a Seeker can answer. One phone, one answer.',
+    waiting: (amount: string, token: string) =>
+      `Yesterday's question has closed. ${amount} ${token} is waiting for you.`,
+    collect: 'Collect it',
+    collecting: 'Collecting',
+    none: 'No question today.',
+    ask: 'Ask every Seeker one',
+  },
+
+  ask: {
+    title: 'Ask every Seeker',
+    back: 'Back to the letterbox',
+    intro:
+      'Your question goes to every letterbox for one day. Each Seeker answers once, and they share your pot when the day closes. If nobody answers, the pot comes back.',
+    questionLabel: 'Your question',
+    questionPlaceholder: 'Tea or coffee, first thing?',
+    answersLabel: 'The answers',
+    answerPlaceholder: (index: number) => `Answer ${index}`,
+    addAnswer: 'Add another answer',
+    potLabel: 'The pot',
+    potFloor: (amount: string, token: string) => `At least ${amount} ${token}.`,
+    dayLabel: 'The day',
+    today: 'Today',
+    tomorrow: 'Tomorrow',
+    free: 'Free',
+    taken: (amount: string, token: string) => `Taken at ${amount} ${token}`,
+    outbid: (amount: string, token: string) =>
+      `That day is taken. ${amount} ${token} or more takes it over, and the first asker gets their pot back.`,
+    open: 'Today already has a question, and phones are answering it.',
+    notAnAmount: 'That is not an amount. Try something like 200.',
+    send: 'Send it to every letterbox',
+    sending: 'Sending it',
+    sent: 'It is in every letterbox.',
+    sentBody: (when: string) => `Seekers can answer ${when}. When the day closes they share the pot.`,
+  },
+
   price: {
     change: 'Change it',
     title: 'What a stranger pays',
@@ -83,6 +130,12 @@ export const copy = {
   },
 
   problems: {
+    'already-answered': 'This phone has answered already. One phone, one answer.',
+    'bid-too-low': 'Somebody has that day, and taking it over needs a pot a tenth larger than theirs.',
+    'day-taken': 'That question is already open and phones are answering it. Pick another day.',
+    'pot-too-low': 'That pot is too small to go to every Seeker. Put a little more in.',
+    'question-closed': 'That question has closed. There is a new one each day.',
+    'question-open': 'The question is still open. Shares are paid once the day closes.',
     'letterbox-full': 'Their letterbox has had its three paid cards for that morning. Try again tomorrow.',
     'no-such-reader': 'Nobody goes by that name. Check the spelling, or use their wallet address.',
     'nobody-waiting':

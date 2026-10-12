@@ -14,6 +14,391 @@ export type PennyPost = {
   },
   "instructions": [
     {
+      "name": "answerCircular",
+      "discriminator": [
+        203,
+        209,
+        208,
+        78,
+        93,
+        213,
+        82,
+        105
+      ],
+      "accounts": [
+        {
+          "name": "answerer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "circular",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  105,
+                  114,
+                  99,
+                  117,
+                  108,
+                  97,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "circular.day",
+                "account": "circular"
+              }
+            ]
+          }
+        },
+        {
+          "name": "seal",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  101,
+                  97,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "seal.sgtMint",
+                "account": "seal"
+              }
+            ]
+          }
+        },
+        {
+          "name": "sgtToken",
+          "docs": [
+            "Token-2022, and the handler requires that it holds the seal's token for",
+            "the answerer right now."
+          ]
+        },
+        {
+          "name": "answer",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  110,
+                  115,
+                  119,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "circular"
+              },
+              {
+                "kind": "account",
+                "path": "seal.sgtMint",
+                "account": "seal"
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "choice",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "closeCircular",
+      "discriminator": [
+        93,
+        180,
+        163,
+        203,
+        238,
+        224,
+        136,
+        126
+      ],
+      "accounts": [
+        {
+          "name": "caller",
+          "signer": true
+        },
+        {
+          "name": "sponsor",
+          "writable": true,
+          "relations": [
+            "circular"
+          ]
+        },
+        {
+          "name": "circular",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  105,
+                  114,
+                  99,
+                  117,
+                  108,
+                  97,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "circular.day",
+                "account": "circular"
+              }
+            ]
+          }
+        },
+        {
+          "name": "potVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  105,
+                  114,
+                  99,
+                  117,
+                  108,
+                  97,
+                  114,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "circular"
+              }
+            ]
+          }
+        },
+        {
+          "name": "sponsorToken",
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "postOffice",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  115,
+                  116,
+                  95,
+                  111,
+                  102,
+                  102,
+                  105,
+                  99,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "postageMint",
+          "writable": true,
+          "relations": [
+            "postOffice"
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "collectCircular",
+      "discriminator": [
+        35,
+        10,
+        89,
+        126,
+        132,
+        21,
+        190,
+        52
+      ],
+      "accounts": [
+        {
+          "name": "answerer",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "answer"
+          ]
+        },
+        {
+          "name": "circular",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  105,
+                  114,
+                  99,
+                  117,
+                  108,
+                  97,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "circular.day",
+                "account": "circular"
+              }
+            ]
+          },
+          "relations": [
+            "answer"
+          ]
+        },
+        {
+          "name": "answer",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  110,
+                  115,
+                  119,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "circular"
+              },
+              {
+                "kind": "account",
+                "path": "answer.sgtMint",
+                "account": "answer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "potVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  105,
+                  114,
+                  99,
+                  117,
+                  108,
+                  97,
+                  114,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "circular"
+              }
+            ]
+          }
+        },
+        {
+          "name": "answererToken",
+          "writable": true
+        },
+        {
+          "name": "postOffice",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  115,
+                  116,
+                  95,
+                  111,
+                  102,
+                  102,
+                  105,
+                  99,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "postageMint",
+          "writable": true,
+          "relations": [
+            "postOffice"
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "openCard",
       "discriminator": [
         161,
@@ -539,6 +924,156 @@ export type PennyPost = {
       ]
     },
     {
+      "name": "postCircular",
+      "discriminator": [
+        241,
+        94,
+        255,
+        215,
+        21,
+        253,
+        59,
+        223
+      ],
+      "accounts": [
+        {
+          "name": "sponsor",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "circular",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  105,
+                  114,
+                  99,
+                  117,
+                  108,
+                  97,
+                  114
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "day"
+              }
+            ]
+          }
+        },
+        {
+          "name": "potVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  105,
+                  114,
+                  99,
+                  117,
+                  108,
+                  97,
+                  114,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "circular"
+              }
+            ]
+          }
+        },
+        {
+          "name": "sponsorToken",
+          "writable": true
+        },
+        {
+          "name": "previousSponsor",
+          "docs": [
+            "recorded on the circular, and pays their rent deposit back to it."
+          ],
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "previousSponsorToken",
+          "writable": true,
+          "optional": true
+        },
+        {
+          "name": "postOffice",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  115,
+                  116,
+                  95,
+                  111,
+                  102,
+                  102,
+                  105,
+                  99,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "postageMint",
+          "relations": [
+            "postOffice"
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "day",
+          "type": "u32"
+        },
+        {
+          "name": "question",
+          "type": "string"
+        },
+        {
+          "name": "options",
+          "type": {
+            "vec": "string"
+          }
+        },
+        {
+          "name": "pot",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "returnCard",
       "discriminator": [
         125,
@@ -911,6 +1446,19 @@ export type PennyPost = {
   ],
   "accounts": [
     {
+      "name": "answer",
+      "discriminator": [
+        119,
+        227,
+        103,
+        4,
+        0,
+        164,
+        56,
+        37
+      ]
+    },
+    {
       "name": "card",
       "discriminator": [
         166,
@@ -921,6 +1469,19 @@ export type PennyPost = {
         63,
         140,
         182
+      ]
+    },
+    {
+      "name": "circular",
+      "discriminator": [
+        240,
+        209,
+        49,
+        78,
+        235,
+        234,
+        58,
+        115
       ]
     },
     {
@@ -1001,6 +1562,45 @@ export type PennyPost = {
         249,
         46,
         210
+      ]
+    },
+    {
+      "name": "circularAnswered",
+      "discriminator": [
+        99,
+        36,
+        46,
+        17,
+        69,
+        58,
+        215,
+        9
+      ]
+    },
+    {
+      "name": "circularCollected",
+      "discriminator": [
+        115,
+        142,
+        21,
+        162,
+        223,
+        249,
+        88,
+        38
+      ]
+    },
+    {
+      "name": "circularPosted",
+      "discriminator": [
+        139,
+        104,
+        97,
+        94,
+        9,
+        231,
+        189,
+        186
       ]
     },
     {
@@ -1117,9 +1717,91 @@ export type PennyPost = {
       "code": 6019,
       "name": "expressFeeTooHigh",
       "msg": "The express fee is higher than the sender agreed to"
+    },
+    {
+      "code": 6020,
+      "name": "circularDayPassed",
+      "msg": "That day has already gone"
+    },
+    {
+      "code": 6021,
+      "name": "circularBadQuestion",
+      "msg": "A circular needs a question and two to four short answers"
+    },
+    {
+      "code": 6022,
+      "name": "circularPotTooLow",
+      "msg": "The pot is below what a circular must carry"
+    },
+    {
+      "code": 6023,
+      "name": "circularBidTooLow",
+      "msg": "That day is taken, and taking it over needs a pot a tenth larger"
+    },
+    {
+      "code": 6024,
+      "name": "circularAlreadyOpen",
+      "msg": "A question that is already open cannot be replaced"
+    },
+    {
+      "code": 6025,
+      "name": "missingPreviousSponsor",
+      "msg": "Taking over a day needs the previous sponsor's accounts, to pay them back"
+    },
+    {
+      "code": 6026,
+      "name": "circularNotOpen",
+      "msg": "This question is not open today"
+    },
+    {
+      "code": 6027,
+      "name": "circularStillOpen",
+      "msg": "This question is still open"
+    },
+    {
+      "code": 6028,
+      "name": "badChoice",
+      "msg": "That is not one of the answers"
+    },
+    {
+      "code": 6029,
+      "name": "circularNotFinished",
+      "msg": "Some phones have not collected their share yet"
     }
   ],
   "types": [
+    {
+      "name": "answer",
+      "docs": [
+        "One phone's answer to a circular. Its address is derived from the Genesis",
+        "Token's mint, so a token answers once whichever wallet holds it."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "circular",
+            "type": "pubkey"
+          },
+          {
+            "name": "sgtMint",
+            "type": "pubkey"
+          },
+          {
+            "name": "answerer",
+            "type": "pubkey"
+          },
+          {
+            "name": "choice",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
     {
       "name": "card",
       "docs": [
@@ -1271,6 +1953,153 @@ export type PennyPost = {
           },
           {
             "name": "refunded",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "circular",
+      "docs": [
+        "One question put to every Seeker for one UTC day. Whoever asks puts up the",
+        "pot. Each Genesis Token can answer once, and when the day closes the pot is",
+        "shared equally among the phones that answered, less the burn share. The",
+        "sender pays and the readers are paid, the same as for a card."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "sponsor",
+            "type": "pubkey"
+          },
+          {
+            "name": "day",
+            "docs": [
+              "The UTC day, counted from the Unix epoch, that the question is open for."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "pot",
+            "docs": [
+              "What the sponsor put up, in base units of the postage token."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "burnBps",
+            "docs": [
+              "The post office's burn share on the day the circular was posted."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "answers",
+            "docs": [
+              "Phones that have answered."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "collected",
+            "docs": [
+              "Shares paid out so far."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "tallies",
+            "docs": [
+              "Answers per option, in the order the options are listed."
+            ],
+            "type": {
+              "array": [
+                "u32",
+                4
+              ]
+            }
+          },
+          {
+            "name": "question",
+            "type": "string"
+          },
+          {
+            "name": "options",
+            "type": {
+              "vec": "string"
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "circularAnswered",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "circular",
+            "type": "pubkey"
+          },
+          {
+            "name": "sgtMint",
+            "type": "pubkey"
+          },
+          {
+            "name": "choice",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "circularCollected",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "circular",
+            "type": "pubkey"
+          },
+          {
+            "name": "answerer",
+            "type": "pubkey"
+          },
+          {
+            "name": "paid",
+            "type": "u64"
+          },
+          {
+            "name": "burned",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "circularPosted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "circular",
+            "type": "pubkey"
+          },
+          {
+            "name": "sponsor",
+            "type": "pubkey"
+          },
+          {
+            "name": "day",
+            "type": "u32"
+          },
+          {
+            "name": "pot",
             "type": "u64"
           }
         ]
@@ -1491,9 +2320,24 @@ export type PennyPost = {
   ],
   "constants": [
     {
+      "name": "answerSeed",
+      "type": "bytes",
+      "value": "[97, 110, 115, 119, 101, 114]"
+    },
+    {
       "name": "cardSeed",
       "type": "bytes",
       "value": "[99, 97, 114, 100]"
+    },
+    {
+      "name": "circularSeed",
+      "type": "bytes",
+      "value": "[99, 105, 114, 99, 117, 108, 97, 114]"
+    },
+    {
+      "name": "circularVaultSeed",
+      "type": "bytes",
+      "value": "[99, 105, 114, 99, 117, 108, 97, 114, 95, 118, 97, 117, 108, 116]"
     },
     {
       "name": "letterboxSeed",
