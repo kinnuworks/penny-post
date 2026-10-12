@@ -4,7 +4,7 @@ Penny Post holds other people's postage for up to a week, so this file says plai
 
 ## Status
 
-The program has 25 unit tests and 41 end-to-end tests, which run on a local fork of mainnet against the real SKR mint and a real Seeker Genesis Token. It has not been deployed, the app has not been run on a phone, and nobody outside the project has reviewed any of it. Do not send it funds you would mind losing.
+The program has 30 unit tests and 54 end-to-end tests, which run on a local fork of mainnet against the real SKR mint and six real Seeker Genesis Tokens. It has not been deployed. The app has run on an Android emulator against that fork, and not yet on a physical phone. Nobody outside the project has reviewed any of it. Do not send it funds you would mind losing.
 
 On 10 October 2026 the program was read a second time with one aim, to break it. That pass found no way to take postage, a refund or rent. It did find six smaller faults. All six are fixed and each has a test. They are listed under "Found and fixed" below.
 
@@ -37,6 +37,10 @@ It does not trust the app, the server, or any account a caller passes without a 
 | A sender gets past three paid cards a day by mixing express and ordinary cards | The day the limit counts against only moves forward, so one kind cannot reset the other's count.                                                                                                                                                 |
 | A stranger's card carries a wallet-draining link                               | Card text is drawn as plain text, and handwriting as strokes that are checked to be plain path commands. Nothing inside a card can be tapped.                                                                                                    |
 | The app shows "sent" for a card that failed on-chain                           | A signature from the wallet is not treated as done. The app waits for the cluster to confirm the transaction and checks its result first.                                                                                                        |
+| One phone answers the day's question many times                                | An answer's address is made from the Genesis Token's mint, so a second one cannot be created. The token must be in the answering wallet at that moment.                                                                                          |
+| A sponsor takes the pot back after phones have answered                        | The pot returns only if nobody answered. Otherwise it can only leave as equal shares or be burned.                                                                                                                                               |
+| A sponsor who is outbid loses their pot or their rent                          | Taking over a day pays the first sponsor's pot and rent back in the same transaction. A question that is already open cannot be replaced at all.                                                                                                 |
+| Rounding or stray tokens leave the pot impossible to empty                     | The last phone to collect sweeps what is left, and it is burned.                                                                                                                                                                                 |
 
 ## The card store
 
@@ -63,6 +67,9 @@ The pen-pal exchange is a second small function, `supabase/functions/exchange`, 
 - A sender's SOL rent for the card and vault (about 0.004 SOL) is locked until the card is opened or returned.
 - An old holder's letterbox keeps its `seal_mint` field after the token moves on. That field grants nothing. The program checks the seal's `holder` and the token account itself before it gives a free stamp.
 - The floor price and the express fee have no ceiling. A hostile admin could set a floor so high that nobody posts a paid card. That would stop new post. It could not reach postage already in a vault.
+- A circular's answers and counts are public on-chain. The app hides the count until a phone has answered, but anyone can read the chain. Nothing is paid for picking the popular answer, so this changes what people see and not what they earn.
+- Somebody with several Seekers gets several shares of a circular. It is one answer per phone, which is what it says.
+- A share nobody collects within a month of the day closing is burned, and the small rent on that answer account stays where it is.
 - Three paid cards fill a reader's day. Someone could post three, leave them, and take the postage back a week later, at the cost of having it locked up. The reader can open them and keep the money instead.
 - The free stamp resets at midnight UTC, the same moment for everyone.
 - The reading key for sealed letters is made on the phone and kept in its secure storage. It is not derived from a wallet signature, because any app that got the same message signed could derive the same key. The cost is that a new phone means a new key, and a sealed letter not yet opened on the old phone cannot be read on the new one. It can still be sent back.

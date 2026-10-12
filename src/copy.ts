@@ -54,6 +54,7 @@ export const copy = {
     collecting: 'Collecting',
     none: 'No question today.',
     ask: 'Ask every Seeker one',
+    askNext: "Ask tomorrow's question",
   },
 
   ask: {

@@ -59,17 +59,22 @@ export function CircularCard() {
       ) : null}
 
       {view ? (
-        <Question
-          circular={view.circular}
-          decimals={decimals}
-          hasSeal={hasSeal}
-          isBusy={answer.isPending}
-          myChoice={view.myChoice}
-          now={now}
-          onAnswer={(choice) => answer.mutate({ alsoCollect: waiting ?? undefined, choice, day: today })}
-          problem={answer.error ? describeProblem(answer.error) : null}
-          token={token}
-        />
+        <>
+          <Question
+            circular={view.circular}
+            decimals={decimals}
+            hasSeal={hasSeal}
+            isBusy={answer.isPending}
+            myChoice={view.myChoice}
+            now={now}
+            onAnswer={(choice) => answer.mutate({ alsoCollect: waiting ?? undefined, choice, day: today })}
+            problem={answer.error ? describeProblem(answer.error) : null}
+            token={token}
+          />
+          <Pressable accessibilityRole="button" className="self-end" hitSlop={10} onPress={() => router.push('/ask')}>
+            <Text className="font-caption text-caption text-ink-soft underline">{copy.circular.askNext}</Text>
+          </Pressable>
+        </>
       ) : (
         <View className="flex-row flex-wrap items-baseline gap-x-2">
           <Text className="font-caption text-caption text-ink-faint">{copy.circular.none}</Text>
