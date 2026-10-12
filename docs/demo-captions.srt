@@ -1,71 +1,59 @@
 1
-00:00:00,000 --> 00:00:05,450
-Penny Post. Every Seeker came with an address, a .skr name. Nobody writes to it. This is a letterbox for your wallet, and the post comes once a day.
+00:00:00,300 --> 00:00:03,550
+Every Seeker came with an address. Nobody writes to it.
 
 2
-00:00:05,500 --> 00:00:11,650
-A letterbox for your wallet. One button, and it asks my wallet to connect.
+00:00:04,600 --> 00:00:06,880
+Penny Post. A letterbox for your wallet.
 
 3
-00:00:11,700 --> 00:00:20,221
-Connected. Every signature in this app goes through Mobile Wallet Adapter. The wallet on screen is Solana Mobile's reference test wallet. Any wallet that speaks Mobile Wallet Adapter does the same job.
+00:00:07,400 --> 00:00:10,790
+One question a day, and everyone who answers shares the pot.
 
 4
-00:00:20,271 --> 00:00:33,221
-One card for everyone. Somebody asked every Seeker a question and put up 300 SKR for whoever answers. I open the envelope and pick my answer.
+00:00:13,300 --> 00:00:16,970
+A stranger pays your price to write to you. You keep ninety percent.
 
 5
-00:00:33,271 --> 00:00:37,221
-The wallet opens and I sign. Every transaction is dry-run first, so one the program would refuse never opens the wallet.
+00:00:18,300 --> 00:00:20,440
+Never opened? Their money goes back.
 
 6
-00:00:37,271 --> 00:00:50,721
-The program checks my Seeker Genesis Token. Ten wallets on one phone still get one answer. When the day closes, every phone that answered gets an equal share. Mine is about 45 SKR, for ten seconds.
+00:00:22,600 --> 00:00:25,800
+A paid DM is a gate on a chat. This is the post.
 
 7
-00:00:50,771 --> 00:00:58,721
-Yesterday's share is waiting. There is a new question, and about 45 SKR from yesterday's. For this scene the local chain's clock and the phone's clock were moved forward a day.
+00:00:27,700 --> 00:00:29,190
+The post comes once a day.
 
 8
-00:00:58,771 --> 00:01:11,221
-Collect and answer together. The same approval collects yesterday's share and sends today's answer.
+00:00:31,350 --> 00:00:44,260
+This is the real app, running on Solana devnet. No wallet handy? Choose the practice wallet and tap Set me up. One tap puts up a letterbox. Seconds later, today's question and a welcome card land on the doormat.
 
 9
-00:01:11,271 --> 00:01:24,721
-One tap a day, and it pays. A builder can put one question in front of every Seeker and pay only the phones that respond.
+00:00:46,483 --> 00:00:50,433
+With your own wallet, every signature goes through Mobile Wallet Adapter.
 
 10
-00:01:24,771 --> 00:01:35,721
-A card from a stranger. They paid my price, 10 SKR, to reach me. The card is face down. I can see who sent it and what is inside, and nothing else.
+00:00:51,029 --> 00:01:06,769
+Every morning there is one card for everyone. Somebody asked every Seeker a question, and put up 300 SKR. I pick an answer and approve once. The program checks my Seeker Genesis Token, so one phone gets one answer. My share so far is 45 SKR.
 
 11
-00:01:35,771 --> 00:01:40,221
-The postage waits in escrow. If I ignore the card, their SKR goes back to them after a week. A letterbox takes three paid cards a day, at a price its owner sets, so it cannot be flooded.
+00:01:08,804 --> 00:01:26,774
+The next morning, yesterday's result is waiting, and so is my share. There is a new question too. One signature collects yesterday's SKR and answers today's. That is the habit. One tap a day, and it pays. For this scene, the local clock was moved forward a day.
 
 12
-00:01:40,271 --> 00:01:54,721
-9 SKR is mine. The card turns over. A tenth of the postage was burned. It was sealed to a key that never leaves this phone.
+00:01:32,063 --> 00:01:49,893
+The rest of the post is from people. A stranger paid my price, 10 SKR, to reach me, and their money waits in escrow. I can see who sent it, and nothing else, until I sign for it. The card comes out of its envelope, and 9 SKR is mine. If I had ignored it, their money would have gone back after a week.
 
 13
-00:01:54,771 --> 00:02:04,721
-To a .skr name or a wallet. The card at the top is the real thing, filled in as I go.
+00:01:53,313 --> 00:02:02,463
+Writing back. I write with my finger, pick a stamp, and see what it costs, and when it arrives, before I sign. It is sealed, so only their phone can read it.
 
 14
-00:02:04,771 --> 00:02:19,721
-What it costs, before I sign. I write the back with my finger. Postage is 12 SKR, which is this reader's price, and it arrives at eight tomorrow morning. Seeker owners also get one free stamp a day.
+00:02:09,556 --> 00:02:15,316
+I set my own price. And any builder can ask every Seeker tomorrow's question, by putting up the pot.
 
 15
-00:02:19,771 --> 00:02:29,721
-In the box. Sealed, so only their phone can read it. If they never open it, my postage comes back.
-
-16
-00:02:29,771 --> 00:02:36,221
-I set the price. A stranger pays what I ask, and I keep 90% when I open their card.
-
-17
-00:02:36,271 --> 00:02:46,221
-Ask every Seeker. Reach Seeker owners without an airdrop. Put up SKR, ask one question, and it goes to the phones that answer.
-
-18
-00:02:46,271 --> 00:02:54,221
-Live on Solana devnet, with a signed APK anyone can install. 31 unit tests and 54 end-to-end tests, run against real SKR and real Seeker Genesis Tokens on a fork of mainnet. Six faults found in our own review, fixed and written up. The post comes once a day.
+00:02:19,181 --> 00:02:26,841
+Penny Post. Live on Solana devnet, and tested against real SKR and real Seeker Genesis Tokens. The post comes once a day.
