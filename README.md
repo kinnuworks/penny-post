@@ -55,7 +55,7 @@ This table is kept honest. If a row says "not started", it is not in the build.
 
 ## Try it on devnet
 
-Install the APK on any Android phone. No wallet app is needed: on the first screen choose "Try it with a practice one", and the app makes a throwaway devnet wallet on the phone. Then tap "Set me up". One tap takes a test kit (a little SOL, 300 stand-in SKR and a stand-in Genesis Token), puts up a letterbox and shows the token to the program. A welcome card lands a few seconds later. Answer the day's question, open the card, and write back.
+Install [the APK](https://github.com/kinnuworks/penny-post/releases/download/v1.0.0/penny-post.apk) on any Android phone. No wallet app is needed: on the first screen choose "Try it with a practice one", and the app makes a throwaway devnet wallet on the phone. Then tap "Set me up". One tap takes a test kit (a little SOL, 300 stand-in SKR and a stand-in Genesis Token), puts up a letterbox and shows the token to the program. A welcome card lands a few seconds later. Answer the day's question, open the card, and write back.
 
 To use your own wallet instead, set it to devnet and choose "Show me my letterbox". Every signature then goes through Mobile Wallet Adapter.
 

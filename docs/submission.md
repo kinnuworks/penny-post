@@ -39,7 +39,7 @@ The rest of the post is from people. You write a card with a photo on the front 
 - Letterboxes are addressed by `.skr` name, looked up on mainnet in both directions.
 - Letters to someone with a letterbox are sealed to a key made on their phone and kept in its secure storage. The camera and touch handwriting make the card.
 
-**What is real today.** The program has 31 unit tests and 54 end-to-end tests, run on a fork of mainnet against the real SKR mint and six real Genesis Tokens. It is deployed to devnet at `D5LZ7kUmpXhE2hsKHnse9itthWHX6j8o4EkGcfz2MLAD`, and the post office opened there on 12 October 2026. A question is scheduled for every day of the next three weeks. Every flow has been run from the signed release build on Android with Solana Mobile's reference wallet, against that deployment. [The app was run on [phone models].]
+**What is real today.** The program has 31 unit tests and 54 end-to-end tests, run on a fork of mainnet against the real SKR mint and six real Genesis Tokens. It is deployed to devnet at `D5LZ7kUmpXhE2hsKHnse9itthWHX6j8o4EkGcfz2MLAD`, and the post office opened there on 12 October 2026. A question is scheduled for every day of the next three weeks. Every flow has been run from the signed release build on Android with Solana Mobile's reference wallet, against that deployment.
 
 **Try it.** Install the APK on any Android phone. No wallet app is needed: choose "Try it with a practice one" and the app makes a throwaway devnet wallet on the phone. Tap "Set me up" and one tap takes a test kit, puts up a letterbox and shows a test Genesis Token to the program. A welcome card lands a few seconds later. Answer today's question and open the card. To use your own wallet, set it to devnet and every signature goes through Mobile Wallet Adapter.
 
@@ -49,14 +49,14 @@ The rest of the post is from people. You write a card with a photo on the front 
 
 ## Links
 
-- APK: [URL]
+- APK: https://github.com/kinnuworks/penny-post/releases/download/v1.0.0/penny-post.apk
 - Repository: https://github.com/kinnuworks/penny-post
 - Demo video: [URL]
 - Pitch deck: [URL]
 
 ## Before pressing submit
 
-- The repository has to be visible to the judges. It is private now. Either make it public or grant access through the Radiants GitHub app, whichever the form asks for.
+- The repository is public. If the form asks for the Radiants GitHub app as well, connect it there.
 - The pitch deck link is private until it is shared from its Share menu.
 - Install the APK from its public link on a phone that has never had the app, and answer the day's question or post one card.
 - Read the transcript the platform makes of the video, and fix anything it misheard.
