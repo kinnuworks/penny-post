@@ -2,6 +2,7 @@
 name = "penny_post"
 version = "0.1.0"
 description = "Penny Post: a letterbox for every .skr name. Postage sits in escrow until the reader signs for the card."
+license = "Apache-2.0"
 edition.workspace = true
 rust-version.workspace = true
 
