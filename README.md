@@ -8,6 +8,8 @@ Every Seeker came with an address. Penny Post lets people write to it. The post 
 
 In 1840 the Penny Post made the sender pay for a letter instead of the person receiving it. Here the sender still pays, and the reader keeps the postage. This is an entry for [Clock In](https://solanamobile.radiant.nexus/), the third Solana Mobile hackathon.
 
+The [pitch deck](docs/penny-post-deck.pdf) is twelve pages, and the [APK](https://github.com/kinnuworks/penny-post/releases/download/v1.0.0/penny-post.apk) installs on any Android phone.
+
 <p>
   <img src="docs/screens/welcome.png" width="190" alt="The welcome screen: a wooden letterbox on a hill at sunset, and one button.">
   <img src="docs/screens/letterbox.png" width="190" alt="Home. Two envelopes: today's question with 300 test SKR to share, and a postcard from someone with 10 test SKR inside.">

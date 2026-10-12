@@ -52,7 +52,7 @@ The rest of the post is from people. You write a card with a photo on the front 
 - APK: https://github.com/kinnuworks/penny-post/releases/download/v1.0.0/penny-post.apk
 - Repository: https://github.com/kinnuworks/penny-post
 - Demo video: [URL]
-- Pitch deck: [URL]
+- Pitch deck: docs/penny-post-deck.pdf in the repository, and the same file on Google Drive for the form: [URL]
 
 ## Before pressing submit
 
