@@ -70,6 +70,14 @@ Devnet has no SKR and no Seeker Genesis Token, so somebody trying the app there 
 - It takes no API key. Someone with many wallets can empty the pile, and then the counter says it has run out. Nothing of value is lost.
 - There is no counter on mainnet, and the app only offers it when the post office is running on a stand-in token.
 
+## The practice wallet
+
+On a test network the app can make a wallet of its own, so somebody can try it without installing or switching one.
+
+- The key is made on the phone and kept in its secure storage. It never leaves the phone, and no server sees it.
+- It signs by itself, without asking, which is the point of it and also why it must never hold anything of value.
+- It is offered only when the app is not on mainnet. With real SKR every signature goes through Mobile Wallet Adapter and the reader's own wallet.
+
 ## Known limits
 
 - An open postcard is stored unencrypted under its hash. The app does not show a card until the reader has signed for it, but a modified app could fetch and read one without opening it, which would leave the sender's postage unclaimed and returnable. A sealed letter can only be read by the reader's phone, and the same holds for it: that reader could read it without signing.

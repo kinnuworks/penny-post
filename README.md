@@ -55,7 +55,9 @@ This table is kept honest. If a row says "not started", it is not in the build.
 
 ## Try it on devnet
 
-Install the APK on an Android phone with a Solana wallet set to devnet, and connect. Devnet has no SKR and no Seekers, so the letterbox offers a test kit: a little SOL, 300 test SKR and a test Genesis Token. Take it, put up a letterbox, tap "I have a Seeker", and answer the day's question. To get a card, write to the pen pal at `CMNefAXQ6rsnkRpfjeSEa5t6U74hvb5TxtCNJdxjHfXs`, or use "Write to a stranger".
+Install the APK on any Android phone. No wallet app is needed: on the first screen choose "Try it with a practice one", and the app makes a throwaway devnet wallet on the phone. Then tap "Set me up". One tap takes a test kit (a little SOL, 300 stand-in SKR and a stand-in Genesis Token), puts up a letterbox and shows the token to the program. A welcome card lands a few seconds later. Answer the day's question, open the card, and write back.
+
+To use your own wallet instead, set it to devnet and choose "Show me my letterbox". Every signature then goes through Mobile Wallet Adapter.
 
 Everything on devnet is a stand-in with no value. The program is the same one that would run on mainnet, and it checks a stand-in Genesis Token exactly as it checks a real one.
 
