@@ -111,12 +111,12 @@ export function QuestionScreen() {
             ) : null}
           </View>
 
-          <View className="mt-6 items-center">
-            <Text className="font-caption text-caption text-ink-soft">{copy.question.toShare}</Text>
-            <Text className="mt-1 font-title text-heading text-ink">
+          <View className="mt-6">
+            <Text className="text-center font-caption text-caption text-ink-soft">{copy.question.toShare}</Text>
+            <Text className="mt-1 text-center font-title text-heading text-ink">
               {formatTokens(view.circular.pot, decimals)} {token}
             </Text>
-            <Text className="mt-1 font-caption text-caption text-ink-soft">
+            <Text className="mt-1 text-center font-caption text-caption text-ink-soft">
               {view.circular.answers === 0 ? copy.circular.noneYet : copy.circular.soFar(view.circular.answers)}
             </Text>
           </View>
@@ -222,7 +222,12 @@ function YoureIn({
         </View>
       </Animated.View>
 
-      <Text className="mt-8 font-script text-[54px] leading-[60px] text-ink">{copy.question.youreIn}</Text>
+      <Text
+        className="mt-8 w-full text-center font-script text-[54px] leading-[62px] text-ink"
+        textBreakStrategy="simple"
+      >
+        {copy.question.youreIn}
+      </Text>
       <Text className="mt-3 text-center font-body text-body text-ink-soft">
         {copy.question.inBody} {copy.circular.shareNow(formatTokensRoughly(shareAfterBurn(circular), decimals), token)}{' '}
         {copy.circular.paidWhen(untilClose(now, closesAt(circular.day)))}

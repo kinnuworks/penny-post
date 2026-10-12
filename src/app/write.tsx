@@ -55,8 +55,13 @@ function Posted({ onAnother, onHome, receipt }: { onAnother: () => void; onHome:
         <View style={{ transform: [{ rotate: '-6deg' }] }}>
           <SunStamp backing={palette.paper} size={112} />
         </View>
-        <Text className="mt-8 font-script text-[54px] leading-[60px] text-ink">{copy.posted.title}</Text>
-        <Text className="mt-3 text-center font-hand text-hand text-ink">
+        <Text
+          className="mt-8 w-full text-center font-script text-[54px] leading-[62px] text-ink"
+          textBreakStrategy="simple"
+        >
+          {copy.posted.title}
+        </Text>
+        <Text className="mt-3 w-full text-center font-hand text-hand text-ink">
           {receipt.express ? copy.counter.postedExpress : copy.counter.posted}
         </Text>
         <Text className="mt-3 text-center font-body text-body text-ink-soft">

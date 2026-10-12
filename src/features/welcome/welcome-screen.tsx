@@ -27,9 +27,14 @@ export function WelcomeScreen({
         style={{ paddingBottom: insets.bottom + 24, paddingTop: insets.top + 56 }}
       >
         <View className="items-center">
+          {/* Full width and centred. Sized to its own text, Android can measure it
+              a pixel short and drop the second word. */}
           <Text
-            className="font-script text-[72px] leading-[80px] text-[#2a1d14]"
+            adjustsFontSizeToFit
+            className="w-full text-center font-script text-[72px] leading-[84px] text-[#2a1d14]"
+            numberOfLines={1}
             style={{ transform: [{ rotate: '-5deg' }] }}
+            textBreakStrategy="simple"
           >
             {copy.appName}
           </Text>
