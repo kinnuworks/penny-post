@@ -63,6 +63,40 @@ To use your own wallet instead, set it to devnet and choose "Show me my letterbo
 
 Everything on devnet is a stand-in with no value. The program is the same one that would run on mainnet, and it checks a stand-in Genesis Token exactly as it checks a real one.
 
+## Check it yourself
+
+Nothing in this README has to be taken on trust. Each claim has a place to look.
+
+| Claim                                                   | Where to check it                                                                                                                                                                                                                                                               |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The program is deployed on devnet                       | [`D5LZ7kUmpXhE2hsKHnse9itthWHX6j8o4EkGcfz2MLAD`](https://explorer.solana.com/address/D5LZ7kUmpXhE2hsKHnse9itthWHX6j8o4EkGcfz2MLAD?cluster=devnet) on the explorer. The same address is in `anchor/Anchor.toml` and in `declare_id!` in `anchor/programs/penny_post/src/lib.rs`. |
+| Twelve instructions                                     | One file each in `anchor/programs/penny_post/src/instructions/`.                                                                                                                                                                                                                |
+| 31 unit tests                                           | `pnpm run anchor:unit`                                                                                                                                                                                                                                                          |
+| 54 end-to-end tests on a fork of mainnet                | `pnpm run anchor:test`. The four files are in `anchor/tests/`. They use the real SKR mint and real Genesis Token accounts, which the fork copies from mainnet.                                                                                                                  |
+| App unit tests                                          | `pnpm test`                                                                                                                                                                                                                                                                     |
+| The Genesis Token is checked inside the program         | `anchor/programs/penny_post/src/sgt.rs` reads the token's mint and the holder's account. No server is asked.                                                                                                                                                                    |
+| Postage sits in a vault that belongs to one card        | `anchor/programs/penny_post/src/vault.rs`, with `post_card.rs`, `open_card.rs` and `return_card.rs`.                                                                                                                                                                            |
+| Every signature goes through Mobile Wallet Adapter      | `src/features/post/use-send.ts`. Each transaction is simulated first in `src/features/post/dry-run.ts`, and the wallet opens only if the program would accept it.                                                                                                               |
+| The APK is the signed release build                     | [penny-post.apk](https://github.com/kinnuworks/penny-post/releases/download/v1.0.0/penny-post.apk), SHA-256 `69fe09d39f7eedbb8b5e4fec8153ed16022c5fb761a9891bc0f93dfc39dff35c`. Build your own with `pnpm run android:release`.                                                 |
+| A new user can get from install to a signed transaction | Install the APK, choose the practice wallet, tap "Set me up". The letterbox it puts up and the answer you send are ordinary devnet transactions, signed on the phone.                                                                                                           |
+| The faults we found in our own program                  | `SECURITY.md`, under "Found and fixed" and "Known limits".                                                                                                                                                                                                                      |
+
+## From devnet to mainnet
+
+The program does not change. Which token is postage and which group counts as a Seeker are two addresses stored in the post office account when it is opened, and the program reads them from there.
+
+|                              | On devnet today                                                                   | On mainnet                                                      |
+| ---------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Postage token                | A stand-in mint with six decimals, `2tqGk3fXK3XYGg69jhQUiMg1gQxHbFWTzYokXDVb8NDX` | SKR, `SKRbvo6Gf7GondiT3BbTfuRDPqLWei4j2Qy2NPGZhW3`              |
+| Seeker Genesis Token group   | A stand-in group, `8q2yydwrMykjBswHq29QiiTQMM711Th2MoanLpthMTiW`                  | The real group, `GT22s89nU4iWFkNXj1Bw6uYhJJWDRPpShHt4Bk8f99Te`  |
+| `.skr` names                 | Looked up on mainnet already                                                      | The same                                                        |
+| Test kit and practice wallet | On, so anyone can try the app                                                     | Off. The app only offers them when it is not pointed at mainnet |
+| Server keys                  | One devnet wallet of test tokens                                                  | None                                                            |
+
+`pnpm post-office open --cluster mainnet` opens the post office with the real SKR mint and the real group. The end-to-end tests already run this way, on a fork of mainnet, against those two addresses.
+
+What is left before mainnet, in order: a review of the program by someone outside the project, moving the program's upgrade authority and the post office admin to a multisig, a run on a physical Seeker with Seed Vault, and the dApp Store listing.
+
 ## Run it
 
 You need Node 20 or newer, pnpm, JDK 17, the Android SDK, and an Android phone with a Solana wallet installed. Expo Go will not work, because Mobile Wallet Adapter needs a development build.
@@ -89,7 +123,7 @@ pnpm test
 pnpm run ci
 ```
 
-The program needs the Rust, Solana and Anchor toolchains, and Surfpool for the end-to-end tests. `anchor:unit` runs the Rust unit tests. `anchor:test` starts a local validator that forks mainnet and runs all three test files in order.
+The program needs the Rust, Solana and Anchor toolchains, and Surfpool for the end-to-end tests. `anchor:unit` runs the Rust unit tests. `anchor:test` starts a local validator that forks mainnet and runs all four test files in order.
 
 ```bash
 pnpm run anchor:unit
