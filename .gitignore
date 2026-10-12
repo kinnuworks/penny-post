@@ -58,3 +58,4 @@ app-example
 /anchor/target/tmp
 **/*.rs.bk
 test-ledger
+.demo/

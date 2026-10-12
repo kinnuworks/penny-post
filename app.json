@@ -40,7 +40,8 @@
       ],
       "expo-secure-store",
       "expo-notifications",
-      "./plugins/with-release-signing"
+      "./plugins/with-release-signing",
+      "./plugins/with-localhost-cleartext"
     ],
     "icon": "./assets/icon.png"
   }
